@@ -1,0 +1,318 @@
+<!-- File: signups/templates/coordinator/coordinator_certificate_review.html
+     Purpose:
+       Coordinator-facing page to review all volunteer certificate submissions.
+       Allows filtering certificates, viewing files, approving, and rejecting.
+       Uses the medium-cerulean coordinator theme.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Certificate Review</title>
+
+    <style>
+        :root {
+            /* Blue palette matching coordinator dashboard */
+            --bg: #F0F8FF;
+            --primary: #4A90E2;
+            --primary-dark: #2E5C8A;
+            --card: #FFFFFF;
+            --text: #1F3A4D;
+            --muted: #6B7C8F;
+            --shadow: rgba(74, 144, 226, 0.15);
+            --pending: #bfa46f;
+            --approved: #4caf50;
+            --rejected: #d9534f;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            padding: 40px 30px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            padding: 32px;
+            background: var(--card);
+            border-radius: 20px;
+            box-shadow: 0 8px 22px var(--shadow);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            margin: 0 0 20px;
+        }
+
+        .filter-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
+        select {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+        }
+
+        .certificate-card {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 18px;
+            margin-bottom: 18px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+        }
+
+        .cert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .cert-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        .status-label {
+            font-size: 14px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            color: white;
+        }
+
+        .pending { background: var(--pending); }
+        .approved { background: var(--approved); }
+        .rejected { background: var(--rejected); }
+
+        p {
+            margin: 6px 0;
+            color: var(--muted);
+        }
+
+        .btn-row {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            color: white;
+        }
+
+        .approve-btn {
+            background: var(--approved);
+        }
+
+        .approve-btn:hover {
+            background: #3c8c3f;
+        }
+
+        .reject-btn {
+            background: var(--rejected);
+        }
+
+        .reject-btn:hover {
+            background: #b94440;
+        }
+
+        textarea {
+            margin-top: 10px;
+            width: 100%;
+            border-radius: 10px;
+            padding: 10px;
+            border: 1px solid #bbb;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 10px 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: background 0.25s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.25s ease;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <a class="btn back-btn" href="/coordinator/dashboard/">← Back</a>
+
+        <h1>Certificate Review</h1>
+
+        <!-- Filter -->
+        <div class="filter-bar">
+            <select id="filterStatus" onchange="renderCertificates()">
+                <option value="">All</option>
+                <option value="Pending">Pending</option>
+                <option value="Verified">Verified</option>
+                <option value="Rejected">Rejected</option>
+            </select>
+        </div>
+
+        <!-- Certificate List -->
+        <div id="certContainer"></div>
+
+    </div>
+
+<script>
+    let certificates = [];
+    let coordinatorEvents = [];
+
+    async function loadCertificates() {
+        // First get the current coordinator
+        const coordRes = await fetch("/api/coordinators/current/");
+        if (!coordRes.ok) return;
+        const coordinator = await coordRes.json();
+        
+        // Get all events for this coordinator
+        const eventsRes = await fetch(`/api/events/?coordinator=${coordinator.id}`);
+        if (!eventsRes.ok) return;
+        const eventsData = await eventsRes.json();
+        coordinatorEvents = Array.isArray(eventsData) ? eventsData : (eventsData.results || []);
+        
+        // Get all certificates
+        const res = await fetch("/api/certificates/");
+        if (!res.ok) return;
+        const allCerts = await res.json();
+        
+        // Filter to only show certificates for the coordinator's events
+        // Only show certificates that have an event linked
+        certificates = allCerts.filter(cert => 
+            cert.event && coordinatorEvents.some(e => e.id === cert.event)
+        );
+        
+        renderCertificates();
+    }
+
+    function renderCertificates() {
+        const container = document.getElementById("certContainer");
+        container.innerHTML = "";
+
+        const filter = document.getElementById("filterStatus").value;
+
+        certificates
+            .filter(c => (filter === "" || c.status === filter))
+            .forEach(cert => {
+                container.appendChild(renderCard(cert));
+            });
+    }
+
+    function renderCard(cert) {
+        const div = document.createElement("div");
+        div.className = "certificate-card";
+
+        const statusClass = cert.status.toLowerCase();
+        
+        // Find the event name for this certificate
+        const event = coordinatorEvents.find(e => e.id === cert.event);
+        const eventName = event ? event.name : "Unknown Event";
+
+        div.innerHTML = `
+            <div class="cert-header">
+                <div class="cert-title">${cert.title}</div>
+                <span class="status-label ${statusClass}">${cert.status}</span>
+            </div>
+
+            <p><strong>Volunteer:</strong> ${cert.user_name || cert.user_email || "Unknown"}</p>
+            <p><strong>Event:</strong> ${eventName}</p>
+            <p><strong>Uploaded:</strong> ${cert.uploaded_at}</p>
+
+            ${cert.file ? `<p><a href="${cert.file}" target="_blank">View File</a></p>` : ""}
+
+            <div class="btn-row" id="btn-row-${cert.id}">
+                ${cert.status !== "Verified" ? `<button class="btn approve-btn" onclick="approve(${cert.id})">Approve</button>` : ""}
+                ${cert.status !== "Rejected" ? `<button class="btn reject-btn" onclick="showRejectionBox(${cert.id})">Reject</button>` : ""}
+            </div>
+
+            <div id="reject-box-${cert.id}" style="display:none;">
+                <textarea id="reject-text-${cert.id}" placeholder="Reason for rejection"></textarea>
+                <button class="btn reject-btn" onclick="reject(${cert.id})">Submit Rejection</button>
+            </div>
+        `;
+
+        return div;
+    }
+
+    function showRejectionBox(id) {
+        document.getElementById(`reject-box-${id}`).style.display = "block";
+    }
+
+    async function approve(id) {
+        await fetch(`/api/certificates/${id}/`, {
+            method: "PATCH",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({status: "Verified"})
+        });
+        loadCertificates();
+    }
+
+    async function reject(id) {
+        const reason = document.getElementById(`reject-text-${id}`).value;
+
+        await fetch(`/api/certificates/${id}/`, {
+            method: "PATCH",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                status: "Rejected",
+                rejection_reason: reason
+            })
+        });
+
+        loadCertificates();
+    }
+
+    loadCertificates();
+</script>
+
+</body>
+</html>

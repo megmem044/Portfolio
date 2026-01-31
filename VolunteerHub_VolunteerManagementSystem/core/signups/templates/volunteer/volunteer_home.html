@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Volunteer Dashboard</title>
+    {% include 'session_timeout.html' %}
+    <style>
+        :root {
+            --bg: #FFEFF3;
+            --primary: #E46B8C;
+            --primary-dark: #C15575;
+            --card: #FFFFFF;
+            --text: #44393D;
+            --muted: #6F6A7A;
+            --shadow: rgba(228, 107, 140, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 28px;
+            font-size: 22px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 24px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+            transition: opacity 0.25s ease;
+        }
+
+        .nav-link:hover {
+            opacity: 0.85;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 28px;
+        }
+
+        .welcome-section {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 32px;
+            margin-bottom: 48px;
+            box-shadow: 0 2px 8px var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .welcome-text h1 {
+            margin: 0 0 8px 0;
+            font-size: 28px;
+            color: var(--primary-dark);
+        }
+
+        .welcome-text p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 15px;
+        }
+
+        .welcome-actions {
+            display: flex;
+            gap: 16px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .section-header {
+            font-size: 20px;
+            color: var(--primary-dark);
+            font-weight: 700;
+            margin-bottom: 24px;
+            margin-top: 0;
+        }
+
+        .opportunities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .quick-access-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        .card-item {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 2px 8px var(--shadow);
+            transition: all 0.25s ease;
+        }
+
+        .card-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .card-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin: 0 0 8px 0;
+        }
+
+        .card-description {
+            font-size: 14px;
+            color: var(--muted);
+            margin: 0 0 16px 0;
+            line-height: 1.5;
+        }
+
+        .card-btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.25s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .card-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .card-details {
+            font-size: 14px;
+            color: var(--muted);
+            margin: 12px 0 12px 0;
+            line-height: 1.6;
+        }
+
+        .card-details p {
+            margin: 6px 0;
+        }
+
+        .card-details strong {
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+
+        .cert-requirements {
+            margin: 12px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .cert-badge {
+            display: inline-block;
+            background: #FFF5F8;
+            color: var(--primary);
+            padding: 5px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid var(--primary);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--muted);
+            padding: 40px 20px;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div>Volunteer Dashboard</div>
+        <div class="nav-menu">
+            <a class="nav-link" href="/">Home</a>
+            <a class="nav-link" href="/volunteer/signin/">Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <div class="welcome-text">
+                <h1 id="welcomeName">Welcome, Volunteer</h1>
+                <p>Manage your profile, find opportunities, and track your volunteer work</p>
+            </div>
+            <div class="welcome-actions">
+                <a href="/volunteer/profile/" class="btn btn-primary">Manage Profile</a>
+            </div>
+        </div>
+
+        <!-- Suggested For You Section -->
+        <h2 class="section-header">Suggested For You</h2>
+        <div class="opportunities-grid" id="suggestedContainer">
+            <div class="empty-state">
+                <p>Loading opportunities...</p>
+            </div>
+        </div>
+
+        <!-- All Opportunities Section -->
+        <h2 class="section-header" style="margin-top: 48px;">All Opportunities</h2>
+        <div class="opportunities-grid" id="allOpportunitiesContainer">
+            <div class="empty-state">
+                <p>Loading opportunities...</p>
+            </div>
+        </div>
+
+        <!-- Approved Events Section -->
+        <h2 class="section-header" style="margin-top: 48px;">Approved Events</h2>
+        <div class="opportunities-grid" id="appliedEventsContainer">
+            <div class="empty-state">
+                <p>You don't have any approved events yet</p>
+            </div>
+        </div>
+
+        <!-- Quick Access Section -->
+        <h2 class="section-header" style="margin-top: 48px;">Quick Access</h2>
+        <div class="quick-access-grid">
+            <div class="card-item">
+                <h3 class="card-title">Your Schedule</h3>
+                <p class="card-description">View upcoming assigned shifts, event confirmations, and attendance details.</p>
+                <a href="/volunteer/schedule/" class="card-btn">View Schedule</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentVolunteer = null;
+
+        async function getVolunteerName() {
+            try {
+                const res = await fetch('/api/volunteers/current/', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                console.log('API Response Status:', res.status);
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    console.log('Volunteer data:', data);
+                    
+                    // Check if response has error field
+                    if (data.error) {
+                        showLoginPrompt();
+                        throw new Error(data.error);
+                    }
+                    
+                    currentVolunteer = data;
+                    document.getElementById('welcomeName').textContent = `Welcome, ${currentVolunteer.name}`;
+                    return currentVolunteer;
+                } else {
+                    console.log('API returned non-ok status:', res.status);
+                    showLoginPrompt();
+                    throw new Error(`API Error: ${res.status}`);
+                }
+            } catch (error) {
+                console.error('Error loading volunteer name:', error);
+                showLoginPrompt();
+                throw error;
+            }
+        }
+
+        function showLoginPrompt() {
+            // Redirect to signin page after a short delay
+            setTimeout(() => {
+                window.location.href = '/volunteer/signin/';
+            }, 500);
+        }
+
+        async function loadOpportunities() {
+            try {
+                const res = await fetch('/api/events/?status=published');
+                console.log('Fetch response status:', res.status);
+                
+                if (!res.ok) {
+                    console.log('API response status:', res.status);
+                    const text = await res.text();
+                    console.log('API response text:', text);
+                    throw new Error(`Failed to load opportunities: ${res.status}`);
+                }
+
+                let events = await res.json();
+                console.log('Raw API response:', events);
+                
+                // Handle pagination wrapper if it exists
+                if (events.results) {
+                    events = events.results;
+                }
+                if (!Array.isArray(events)) {
+                    events = [];
+                }
+                
+                console.log('Events after processing:', events);
+                
+                // Load volunteer requests to check status
+                let appliedEventIds = [];
+                let approvedEventIds = new Set();
+                if (currentVolunteer && currentVolunteer.id) {
+                    const appliedRes = await fetch(`/api/volunteer-requests/?volunteer=${currentVolunteer.id}`);
+                    const appliedRequests = appliedRes.ok ? await appliedRes.json() : [];
+                    appliedEventIds = appliedRequests.map(req => req.event);
+                    // Track approved events specifically
+                    approvedEventIds = new Set(appliedRequests.filter(req => req.status && req.status.toLowerCase() === 'approved').map(req => req.event));
+                }
+                
+                displayOpportunitiesBySuggestion(events, appliedEventIds, approvedEventIds);
+            } catch (error) {
+                console.error('Error loading opportunities:', error);
+                document.getElementById('suggestedContainer').innerHTML = `
+                    <div class="empty-state">
+                        <p>Unable to load opportunities</p>
+                    </div>
+                `;
+                document.getElementById('allOpportunitiesContainer').innerHTML = `
+                    <div class="empty-state">
+                        <p>Unable to load opportunities</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayOpportunitiesBySuggestion(events, appliedEventIds = [], approvedEventIds = new Set()) {
+            // Filter out deactivated events and approved events
+            const activeEvents = events.filter(event => event.is_active && !approvedEventIds.has(event.id));
+            
+            if (!activeEvents || activeEvents.length === 0) {
+                document.getElementById('suggestedContainer').innerHTML = `
+                    <div class="empty-state">
+                        <p>No opportunities available at this time</p>
+                    </div>
+                `;
+                document.getElementById('allOpportunitiesContainer').innerHTML = `
+                    <div class="empty-state">
+                        <p>No opportunities available at this time</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Get volunteer's cultural interests (IDs)
+            const volunteerInterestIds = currentVolunteer && currentVolunteer.cultural_interests 
+                ? currentVolunteer.cultural_interests.map(ci => typeof ci === 'object' ? ci.id : ci)
+                : [];
+
+            // Separate events into suggested (matching interests) and general (non-matching)
+            const suggestedEvents = [];
+            const generalEvents = [];
+
+            activeEvents.forEach(event => {
+                const eventInterestIds = event.cultural_interests || [];
+                const hasMatchingInterest = eventInterestIds.some(id => volunteerInterestIds.includes(id));
+                
+                if (hasMatchingInterest) {
+                    suggestedEvents.push(event);
+                } else {
+                    generalEvents.push(event);
+                }
+            });
+
+            // Sort by date (upcoming first)
+            const sortByDate = (a, b) => new Date(a.start_datetime) - new Date(b.start_datetime);
+            suggestedEvents.sort(sortByDate);
+            generalEvents.sort(sortByDate);
+
+            // Display suggested events
+            if (suggestedEvents.length === 0) {
+                document.getElementById('suggestedContainer').innerHTML = `
+                    <div class="empty-state">
+                        <p>No matching opportunities at this time</p>
+                    </div>
+                `;
+            } else {
+                document.getElementById('suggestedContainer').innerHTML = suggestedEvents.map(event => 
+                    createEventCard(event, appliedEventIds.includes(event.id))
+                ).join('');
+            }
+
+            // Display all other events
+            if (generalEvents.length === 0) {
+                document.getElementById('allOpportunitiesContainer').innerHTML = `
+                    <div class="empty-state">
+                        <p>No other opportunities available</p>
+                    </div>
+                `;
+            } else {
+                document.getElementById('allOpportunitiesContainer').innerHTML = generalEvents.map(event => 
+                    createEventCard(event, appliedEventIds.includes(event.id))
+                ).join('');
+            }
+        }
+
+        function createEventCard(event, isApplied = false, isApproved = false) {
+            // Format date and time
+            const startDate = new Date(event.start_datetime);
+            const endDate = new Date(event.end_datetime);
+            const formattedStartDate = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const formattedStartTime = startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            const formattedEndTime = endDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            
+            // Build certificate requirements
+            const certRequirements = [];
+            if (event.requires_first_aid) certRequirements.push('First Aid');
+            if (event.requires_food_safety) certRequirements.push('Food Safety');
+            const certsHTML = certRequirements.length > 0 ? certRequirements.map(c => `<span class="cert-badge">${c}</span>`).join('') : '';
+            
+            // Build button HTML - show Apply, Applied, or Approved status
+            let buttonHTML = '';
+            if (isApproved) {
+                buttonHTML = `<span class="card-btn approved-tag" style="background: #d4edda; color: #155724; cursor: default;">✓ Approved</span>`;
+            } else if (isApplied) {
+                buttonHTML = `<span class="card-btn" style="background: #C15575; cursor: default;">Applied</span>`;
+            } else {
+                buttonHTML = `<button class="card-btn" onclick="applyToEvent(${event.id})">Apply</button>`;
+            }
+            
+            return `
+                <div class="card-item">
+                    <h3 class="card-title">${event.name}</h3>
+                    <div class="card-details">
+                        <p><strong>Start:</strong> ${formattedStartDate}, ${formattedStartTime}</p>
+                        <p><strong>End:</strong> ${formattedStartDate}, ${formattedEndTime}</p>
+                        <p><strong>Location:</strong> ${event.location}</p>
+                        <p><strong>Created by:</strong> ${event.coordinator_name || 'Unknown'}</p>
+                        <p><strong>Max Volunteers:</strong> ${event.max_volunteers}</p>
+                        <p><strong>Status:</strong> ${event.status}</p>
+                    </div>
+                    ${certsHTML ? `<div class="cert-requirements">${certsHTML}</div>` : ''}
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <a href="/volunteer/opportunities/?event=${event.id}" class="card-btn">View Details</a>
+                        ${buttonHTML}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function applyToEvent(eventId) {
+            try {
+                // Get CSRF token from cookie
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                                  getCookie('csrftoken');
+
+                const response = await fetch('/api/volunteer-requests/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken || '',
+                    },
+                    body: JSON.stringify({
+                        event: eventId,
+                        volunteer: currentVolunteer.id
+                    })
+                });
+
+                console.log('Apply response status:', response.status);
+                const responseData = await response.json();
+                console.log('Apply response data:', responseData);
+
+                if (response.status === 201 || response.status === 200) {
+                    // Success
+                    loadAppliedEvents();
+                    loadOpportunities();
+                } else if (response.status === 409) {
+                    // Already applied
+                    alert('You have already applied to this event');
+                    loadAppliedEvents();
+                    loadOpportunities();
+                } else {
+                    alert('Failed to apply to event: ' + (responseData.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error applying to event:', error);
+                alert('Error applying to event: ' + error.message);
+            }
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        async function loadAppliedEvents() {
+            try {
+                if (!currentVolunteer || !currentVolunteer.id) {
+                    return;
+                }
+
+                const res = await fetch(`/api/volunteer-requests/?volunteer=${currentVolunteer.id}`);
+                if (!res.ok) {
+                    throw new Error('Failed to load approved events');
+                }
+
+                const requests = await res.json();
+                
+                // Filter for only approved requests
+                const approvedRequests = requests.filter(req => req.status && req.status.toLowerCase() === 'approved');
+                
+                if (!approvedRequests || approvedRequests.length === 0) {
+                    document.getElementById('appliedEventsContainer').innerHTML = `
+                        <div class="empty-state">
+                            <p>You don't have any approved events yet</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Fetch all events and filter to show only approved ones
+                const eventsRes = await fetch('/api/events/?status=published');
+                const allEvents = await eventsRes.json();
+                
+                const approvedEventIds = approvedRequests.map(req => req.event);
+                const approvedEvents = allEvents.filter(event => approvedEventIds.includes(event.id));
+                
+                // Sort by date
+                approvedEvents.sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime));
+
+                document.getElementById('appliedEventsContainer').innerHTML = approvedEvents.map(event => 
+                    createEventCard(event, false, true)
+                ).join('');
+
+            } catch (error) {
+                console.error('Error loading approved events:', error);
+                document.getElementById('appliedEventsContainer').innerHTML = `
+                    <div class="empty-state">
+                        <p>You don't have any approved events yet</p>
+                    </div>
+                `;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            getVolunteerName().then((volunteer) => {
+                if (volunteer) {
+                    loadOpportunities();
+                    loadAppliedEvents();
+                }
+            }).catch(() => {
+                // Already handled by showLoginPrompt() in getVolunteerName()
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!-- File: signups/templates/coordinator/coordinator_signup.html
+     Purpose:
+       Coordinator account creation with password support.
+       Uses cerulean blue UI used across coordinator interface.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Coordinator Signup</title>
+
+    <style>
+        :root {
+            --bg: #E9F4FF;
+            --primary: #4A90E2;
+            --primary-dark: #357ABD;
+            --card: #ffffff;
+            --text: #2F3A45;
+            --shadow: rgba(0,0,0,0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px 0;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+        }
+
+        .box {
+            width: 95%;
+            max-width: 520px;
+            background: var(--card);
+            padding: 34px;
+            border-radius: 20px;
+            box-shadow: 0 8px 18px var(--shadow);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            margin-top: 0;
+        }
+
+        label {
+            display: block;
+            margin-top: 18px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 6px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+        }
+
+        .submit-btn {
+            margin-top: 28px;
+            padding: 14px;
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        .submit-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .footer {
+            margin-top: 14px;
+            text-align: center;
+        }
+
+        .footer a {
+            color: var(--primary-dark);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .error {
+            color: #b00000;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="box">
+
+    <h1>Create Coordinator Account</h1>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label>Full Name</label>
+        <input type="text" name="name" required>
+
+        <label>Email</label>
+        <input type="email" name="email" required>
+
+        <label>Password</label>
+        <input type="password" name="password" required>
+
+        <label>Confirm Password</label>
+        <input type="password" name="password_confirm" required>
+
+        <label>Organization</label>
+        <input type="text" name="organization">
+
+        <button class="submit-btn" type="submit">Create Account</button>
+    </form>
+
+    <div class="footer">
+        Already registered?
+        <a href="/coordinator/signin/">Sign in</a>
+    </div>
+
+</div>
+
+</body>
+</html>

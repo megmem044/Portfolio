@@ -1,0 +1,182 @@
+<!-- File: signups/templates/signups/landingPage.html
+     Purpose:
+       Main landing page with mint green theme showing two cards:
+       1. Volunteer signup/signin
+       2. Coordinator signup/signin
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to Volunteer Hub</title>
+    <style>
+        :root {
+            --bg: #E8F5F0;
+            --primary: #26A69A;
+            --primary-dark: #00897B;
+            --card: #ffffff;
+            --text: #00695C;
+            --muted: #4DB6AC;
+            --shadow: rgba(38, 166, 154, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 60px 20px;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 60px;
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin: 0 0 15px 0;
+            color: var(--primary-dark);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: var(--muted);
+            margin: 0;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 50px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 45px 35px;
+            box-shadow: 0 8px 20px var(--shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px var(--shadow);
+        }
+
+        .card-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 20px;
+        }
+
+        .card-description {
+            color: var(--muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s ease;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .cards-container {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .card {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Volunteer Hub</h1>
+            <p>Welcome to VolunteerHub - Connect with meaningful opportunities</p>
+        </div>
+
+        <div class="cards-container">
+            <!-- Volunteer Card -->
+            <div class="card">
+                <h2 class="card-title">Volunteer</h2>
+                <p class="card-description">
+                    Join our community of volunteers and make a difference. Find opportunities that match your interests and skills.
+                </p>
+                <div class="button-group">
+                    <a href="/volunteer-signup/" class="btn btn-primary">Sign Up</a>
+                    <a href="/volunteer/signin/" class="btn btn-secondary">Sign In</a>
+                </div>
+            </div>
+
+            <!-- Coordinator Card -->
+            <div class="card">
+                <h2 class="card-title">Coordinator</h2>
+                <p class="card-description">
+                    Manage volunteer opportunities for your organization. Create, track, and manage volunteer initiatives.
+                </p>
+                <div class="button-group">
+                    <a href="/coordinator-signup/" class="btn btn-primary">Sign Up</a>
+                    <a href="/coordinator/signin/" class="btn btn-secondary">Sign In</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

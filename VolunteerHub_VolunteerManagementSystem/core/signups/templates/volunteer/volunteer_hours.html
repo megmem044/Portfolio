@@ -1,0 +1,203 @@
+<!-- File: signups/templates/volunteer/volunteer_hours.html
+     Purpose:
+       Displays all hours worked by the volunteer, including:
+       - Total accumulated hours
+       - Hours worked per event
+       Uses the blush pink volunteer theme and consistent card layout.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Hours</title>
+
+    <style>
+        :root {
+            --bg: #FFEFF3;
+            --primary: #E46B8C;
+            --primary-dark: #C15575;
+            --card: #ffffff;
+            --muted: #6F6A7A;
+            --shadow: rgba(228, 107, 140, 0.18);
+        }
+
+        * {
+            font-family: Inter, system-ui, Arial, sans-serif;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+        }
+
+        .page-header {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+            margin-top: 0;
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            background: var(--primary);
+            color: white;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 4px 10px var(--shadow);
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+            padding: 32px;
+            background: var(--card);
+            border-radius: 20px;
+            box-shadow: 0 6px 18px var(--shadow);
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 0;
+            color: var(--primary-dark);
+        }
+
+        .section-title {
+            margin-top: 32px;
+            margin-bottom: 10px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        .hours-box {
+            background: #fff6fa;
+            padding: 16px;
+            border-radius: 14px;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .event-card {
+            background: #ffffff;
+            padding: 18px;
+            border-radius: 14px;
+            margin-bottom: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .event-card p {
+            margin: 4px 0;
+            color: var(--muted);
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Your Hours</h1>
+
+    <div class="section-title">Total Hours Worked</div>
+    <div id="totalHoursBox" class="hours-box">0.00 hours</div>
+
+    <div class="section-title">Hours by Event</div>
+    <div id="eventsList">
+        <p style="color: var(--muted);">Loading event hours...</p>
+    </div>
+
+</div>
+
+
+<script>
+    {% if volunteer_id %}
+    const volunteerId = {{ volunteer_id }};
+    {% else %}
+    const volunteerId = null;
+    {% endif %}
+
+    async function loadHours() {
+
+        const eventsList = document.getElementById("eventsList");
+        const totalHoursBox = document.getElementById("totalHoursBox");
+
+        if (!volunteerId) {
+            eventsList.innerHTML = "<p>Session not found.</p>";
+            return;
+        }
+
+        // Get all approved shift requests for this volunteer
+        const res = await fetch(`/api/shift-requests/?volunteer=${volunteerId}`);
+        const requests = await res.json();
+
+        // Filter for approved requests only
+        const approvedShifts = requests.filter(req => req.status === 'approved');
+
+        if (approvedShifts.length === 0) {
+            eventsList.innerHTML = "<p>No hours have been logged yet.</p>";
+            totalHoursBox.textContent = "0.00 hours";
+            return;
+        }
+
+        let totalHours = 0;
+        eventsList.innerHTML = "";
+
+        approvedShifts.forEach(request => {
+            // Calculate hours from shift start and end times
+            const start = request.shift_start.split(':');
+            const end = request.shift_end.split(':');
+            
+            const startMinutes = parseInt(start[0]) * 60 + parseInt(start[1]);
+            const endMinutes = parseInt(end[0]) * 60 + parseInt(end[1]);
+            
+            const durationMinutes = endMinutes - startMinutes;
+            const hours = durationMinutes / 60;
+
+            totalHours += hours;
+
+            const card = document.createElement("div");
+            card.className = "event-card";
+
+            const shiftDate = new Date(request.shift_date).toLocaleDateString('en-US', {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+
+            card.innerHTML = `
+                <p><strong>Event:</strong> ${request.event_name}</p>
+                <p><strong>Date:</strong> ${shiftDate}</p>
+                <p><strong>Shift Time:</strong> ${request.shift_start} - ${request.shift_end}</p>
+                <p><strong>Hours Worked:</strong> ${hours.toFixed(2)}</p>
+            `;
+
+            eventsList.appendChild(card);
+        });
+
+        totalHoursBox.textContent = `${totalHours.toFixed(2)} hours`;
+    }
+
+    loadHours();
+
+</script>
+
+</body>
+</html>

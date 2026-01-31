@@ -1,0 +1,136 @@
+<!-- File: signups/templates/signups/welcome.html
+     Purpose:
+       Main landing page for the application.
+       Uses a mint-green palette and provides clear navigation
+       to volunteer or coordinator signup/signin.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>VolunteerHub – Welcome</title>
+
+    <style>
+        :root {
+            --bg: #E9FFF5;
+            --primary: #6CC9A8;
+            --primary-dark: #54B491;
+            --card: #FFFFFF;
+            --text: #244C3A;
+            --muted: #4F6F61;
+            --shadow: rgba(0, 0, 0, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            padding: 60px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 780px;
+            background: var(--card);
+            padding: 40px;
+            border-radius: 22px;
+            box-shadow: 0 8px 20px var(--shadow);
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 38px;
+            color: var(--primary-dark);
+            font-weight: 800;
+        }
+
+        p {
+            color: var(--muted);
+            font-size: 18px;
+            margin-top: 10px;
+            margin-bottom: 35px;
+            line-height: 1.5;
+        }
+
+        .option-box {
+            display: flex;
+            justify-content: center;
+            gap: 26px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            width: 260px;
+            background: var(--bg);
+            padding: 26px;
+            border-radius: 18px;
+            box-shadow: 0 6px 16px var(--shadow);
+            text-align: center;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 12px;
+        }
+
+        .btn {
+            display: block;
+            background: var(--primary);
+            color: white;
+            padding: 12px 14px;
+            border-radius: 12px;
+            text-decoration: none;
+            margin-top: 10px;
+            font-weight: 600;
+            box-shadow: 0 4px 10px var(--shadow);
+            transition: background 0.2s ease;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Welcome to VolunteerHub</h1>
+    <p>
+        Connecting students and coordinators in a collaborative volunteer ecosystem.
+        Choose your role below to get started.
+    </p>
+
+    <div class="option-box">
+
+        <!-- Volunteer card -->
+        <div class="card">
+            <div class="card-title">Volunteer</div>
+            <a class="btn" href="/volunteer/signin/">Sign In</a>
+            <a class="btn" href="/volunteer/signup/">Create Account</a>
+        </div>
+
+        <!-- Coordinator card -->
+        <div class="card">
+            <div class="card-title">Coordinator</div>
+            <a class="btn" href="/coordinator/signin/">Sign In</a>
+            <a class="btn" href="/coordinator/signup/">Create Account</a>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!-- File: signups/templates/volunteer/volunteer_signup.html
+     Purpose:
+       Volunteer account creation page with password support.
+       Uses axolotl blush pink UI consistent with volunteer pages.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Volunteer Signup</title>
+
+    <style>
+        :root {
+            --bg: #FFEFF3;
+            --primary: #E46B8C;
+            --primary-dark: #C15575;
+            --card: #ffffff;
+            --text: #44393D;
+            --shadow: rgba(228, 107, 140, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px 0;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+        }
+
+        .box {
+            width: 95%;
+            max-width: 500px;
+            background: var(--card);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 8px 18px var(--shadow);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: var(--primary-dark);
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-top: 16px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 6px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+        }
+
+        .submit-btn {
+            margin-top: 26px;
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        .submit-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .footer {
+            margin-top: 14px;
+            text-align: center;
+        }
+
+        .footer a {
+            color: var(--primary-dark);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .error {
+            color: #b50000;
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="box">
+
+    <h1>Create Volunteer Account</h1>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label>Full Name</label>
+        <input type="text" name="name" required>
+
+        <label>Email</label>
+        <input type="email" name="email" required>
+
+        <label>Password</label>
+        <input type="password" name="password" required>
+
+        <label>Confirm Password</label>
+        <input type="password" name="password_confirm" required>
+
+        <button class="submit-btn" type="submit">Create Account</button>
+    </form>
+
+    <div class="footer">
+        Already registered?
+        <a href="/volunteer/signin/">Sign in</a>
+    </div>
+
+</div>
+
+</body>
+</html>

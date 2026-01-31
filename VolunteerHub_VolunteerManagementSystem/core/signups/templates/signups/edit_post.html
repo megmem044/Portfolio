@@ -1,0 +1,199 @@
+<!-- File: signups/templates/edit_post.html
+     Purpose:
+       This page lets the user edit an existing announcement post.
+       It loads the current post data from the API.
+       When the post is updated, a simple confirmation message appears.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Post</title>
+
+    <style>
+        :root{
+            --bg:#FFEFF3;
+            --primary:#E46B8C;
+            --primary-dark:#C15575;
+            --card:#ffffff;
+            --muted:#555;
+            --shadow:rgba(0,0,0,0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 32px;
+            background: var(--card);
+            border-radius: 18px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-top: 18px;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        textarea {
+            height: 160px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 24px;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .msg {
+            padding: 12px;
+            background: #e8ffd9;
+            border: 1px solid #b4e8a3;
+            color: #3f7a2a;
+            border-radius: 10px;
+            margin-top: 18px;
+            display: none;
+        }
+
+        .hint {
+            text-align: center;
+            color: var(--muted);
+            margin-top: 16px;
+        }
+    </style>
+
+    <script>
+        // Gets the post id from the URL
+        function getPostId() {
+            const parts = window.location.pathname.split("/");
+            return parts[parts.length - 2];
+        }
+
+        // Loads current post data into the form fields
+        async function loadPost() {
+            const id = getPostId();
+
+            try {
+                const res = await fetch("/api/posts/" + id + "/");
+                if (!res.ok) {
+                    alert("Could not load post.");
+                    return;
+                }
+
+                const p = await res.json();
+
+                document.getElementById("title").value = p.title;
+                document.getElementById("content").value = p.content;
+                document.getElementById("author").value = p.author;
+
+            } catch (err) {
+                alert("Error loading post.");
+            }
+        }
+
+        // Sends updated post data to the API
+        async function updatePost() {
+            const id = getPostId();
+
+            const title = document.getElementById("title").value.trim();
+            const content = document.getElementById("content").value.trim();
+            const author = document.getElementById("author").value.trim();
+
+            if (title === "" || content === "") {
+                alert("Title and content are required.");
+                return;
+            }
+
+            try {
+                const res = await fetch("/api/posts/" + id + "/", {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        content: content,
+                        author: author || "Anonymous"
+                    }),
+                });
+
+                if (!res.ok) {
+                    alert("Could not update post.");
+                    return;
+                }
+
+                // Show confirmation message
+                document.getElementById("successMsg").style.display = "block";
+
+            } catch (err) {
+                alert("Error updating post.");
+            }
+        }
+
+        window.onload = loadPost;
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Edit Post</h1>
+
+        <label for="title">Title</label>
+        <input id="title" type="text">
+
+        <label for="content">Content</label>
+        <textarea id="content"></textarea>
+
+        <label for="author">Author</label>
+        <input id="author" type="text">
+
+        <button class="btn" onclick="updatePost()">Update Post</button>
+
+        <div id="successMsg" class="msg">
+            Post updated successfully.
+        </div>
+
+        <p class="hint">Changes are saved in the system when you update.</p>
+    </div>
+</body>
+</html>

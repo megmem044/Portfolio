@@ -1,0 +1,178 @@
+<!-- File: signups/templates/create_post.html
+     Purpose:
+       This page lets StressedSally create a new announcement post.
+       The form sends data to the API in the background.
+       After creating a post, the user returns to the posts list page.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Post</title>
+
+    <style>
+        :root{
+            --bg:#FFEFF3;
+            --primary:#E46B8C;
+            --primary-dark:#C15575;
+            --card:#ffffff;
+            --muted:#555;
+            --shadow:rgba(0,0,0,0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 32px;
+            background: var(--card);
+            border-radius: 18px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-top: 18px;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        textarea {
+            height: 160px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 24px;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .hint {
+            color: var(--muted);
+            text-align: center;
+            margin-top: 18px;
+        }
+    </style>
+
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    cookie = cookie.trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // This sends the post data to the API
+        async function submitPost() {
+            const title = document.getElementById("title").value.trim();
+            const content = document.getElementById("content").value.trim();
+            const author = document.getElementById("author").value.trim();
+            const imageInput = document.getElementById("image");
+            const imageFile = imageInput.files[0];
+
+            if (title === "" || content === "") {
+                alert("Title and content are required.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("title", title);
+            formData.append("content", content);
+            formData.append("author", author || "Anonymous");
+            if (imageFile) {
+                formData.append("image", imageFile);
+            }
+
+            const csrftoken = getCookie('csrftoken');
+            try {
+                const res = await fetch("/api/posts/", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": csrftoken
+                    },
+                    body: formData
+                });
+
+                if (!res.ok) {
+                    alert("Could not create post.");
+                    return;
+                }
+
+                // After saving the post, go back to the posts list
+                window.location.href = "/posts/";
+
+            } catch (err) {
+                alert("Error creating post.");
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Create New Post</h1>
+
+        <label for="title">Title</label>
+        <input id="title" type="text" placeholder="Post title">
+
+        <label for="content">Content</label>
+        <textarea id="content" placeholder="Write the announcement here"></textarea>
+
+        <label for="author">Author (optional)</label>
+        <input id="author" type="text" placeholder="Your name">
+
+        <label for="image">Image (optional)</label>
+        <input id="image" type="file" accept="image/*">
+
+        <button class="btn" onclick="submitPost()">Submit Post</button>
+
+        <p class="hint">Your post will appear in the announcement list after saving.</p>
+    </div>
+</body>
+</html>

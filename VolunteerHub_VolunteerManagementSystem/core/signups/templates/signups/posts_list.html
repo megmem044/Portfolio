@@ -1,0 +1,606 @@
+<!-- File: signups/templates/posts_list.html
+     Purpose:
+       This page shows announcement posts for StressedSally.
+       Data comes from the posts API so backend pages stay hidden.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Announcements</title>
+
+    <style>
+        :root {
+            --bg:#FFEFF3;
+            --primary:#E46B8C;
+            --primary-dark:#C15575;
+            --card:#ffffff;
+            --muted:#555;
+            --shadow:rgba(0,0,0,0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            padding: 32px;
+            background: var(--card);
+            border-radius: 18px;
+            box-shadow: 0 6px 20px var(--shadow);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            margin-bottom: 20px;
+        }
+
+        .top-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .btn {
+            padding: 10px 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 180px;
+            padding: 9px 11px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        .post-card {
+            background: #fff7f9;
+            padding: 18px;
+            margin-bottom: 18px;
+            border-left: 6px solid var(--primary);
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .post-title {
+            margin: 0;
+            color: var(--primary-dark);
+            font-size: 18px;
+        }
+
+        .post-meta {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .collapse-label {
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .post-body {
+            margin-top: 10px;
+            font-size: 15px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+        }
+
+        .post-footer {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .reaction-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .reaction-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 4px 9px;
+            font-size: 13px;
+            cursor: pointer;
+            background: #ffe4ee;
+        }
+
+        .reaction-btn:hover {
+            background: #ffd0e1;
+        }
+
+        .small-btn {
+            border: none;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 13px;
+            cursor: pointer;
+            background: #f3d5e1;
+        }
+
+        .small-btn:hover {
+            background: #e9bed2;
+        }
+
+        .small-btn.delete {
+            background: #f3b6c2;
+        }
+
+        .small-btn.delete:hover {
+            background: #e39ba9;
+        }
+
+        .hint {
+            text-align: center;
+            color: var(--muted);
+            margin-top: 20px;
+        }
+
+        /* Modal overlay for edit form */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.35);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-card {
+            width: 100%;
+            max-width: 640px;
+            max-height: 80vh;
+            background: linear-gradient(135deg, #fff3f7, #ffe0eb);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px var(--shadow);
+            padding: 24px 26px;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .modal-title {
+            font-size: 19px;
+            margin: 0;
+            color: var(--primary-dark);
+        }
+
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--muted);
+        }
+
+        .modal-close-btn:hover {
+            color: var(--primary-dark);
+        }
+
+        .modal-form label {
+            display: block;
+            margin-top: 14px;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .modal-form input,
+        .modal-form textarea {
+            width: 100%;
+            padding: 9px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        .modal-form textarea {
+            height: 140px;
+            resize: vertical;
+        }
+
+        .modal-actions {
+            margin-top: 18px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+    </style>
+
+    <script>
+        // Simple in memory store for all posts that come from the API
+        let allPosts = [];
+
+        // Simple in memory store for reactions per post id
+        // Example shape: { 1: { like: 2, heart: 0, smile: 1 }, 2: {...} }
+        const reactions = {};
+
+        // Current post id for the edit modal
+        let editingPostId = null;
+
+        // This loads posts from the API then renders them
+        async function loadPosts() {
+            const list = document.getElementById("postsList");
+            list.innerHTML = "<p class=\"hint\">Loading posts...</p>";
+
+            try {
+                const res = await fetch("/api/posts/");
+                if (!res.ok) {
+                    list.innerHTML = "<p class=\"hint\">Could not load posts.</p>";
+                    return;
+                }
+
+                const posts = await res.json();
+                allPosts = posts;
+                renderPosts(allPosts);
+
+            } catch (err) {
+                list.innerHTML = "<p class=\"hint\">Error loading posts.</p>";
+            }
+        }
+
+        // This renders a given list of posts into cards
+        function renderPosts(posts) {
+            const list = document.getElementById("postsList");
+            list.innerHTML = "";
+
+            if (!posts || posts.length === 0) {
+                list.innerHTML = "<p class=\"hint\">There are no announcements yet.</p>";
+                return;
+            }
+
+            posts.forEach(function(p) {
+                if (!reactions[p.id]) {
+                    reactions[p.id] = { like: 0, heart: 0, smile: 0 };
+                }
+
+                const card = document.createElement("div");
+                card.className = "post-card";
+                card.setAttribute("data-post-id", p.id);
+
+                const createdText = p.created_at
+                    ? new Date(p.created_at).toLocaleString()
+                    : "Unknown time";
+
+                card.innerHTML = ""
+                    + "<div class=\"post-header\" onclick=\"togglePostBody(" + p.id + ")\">"
+                    +   "<div>"
+                    +     "<h2 class=\"post-title\">" + escapeHtml(p.title || "Untitled") + "</h2>"
+                    +     "<p class=\"post-meta\">By " + escapeHtml(p.author || "Anonymous")
+                    +       " on " + createdText + "</p>"
+                    +   "</div>"
+                    +   "<span class=\"collapse-label\" id=\"collapseLabel-" + p.id + "\">Tap to collapse or expand</span>"
+                    + "</div>"
+                    + "<div class=\"post-body\" id=\"postBody-" + p.id + "\">"
+                    +   escapeHtml(p.content || "") 
+                    + "</div>"
+                    + "<div class=\"post-footer\">"
+                    +   "<div class=\"reaction-row\">"
+                    +     "<button type=\"button\" class=\"reaction-btn\" data-post-id=\"" + p.id + "\" data-reaction=\"like\">👍 <span id=\"likeCount-" + p.id + "\">" + reactions[p.id].like + "</span></button>"
+                    +     "<button type=\"button\" class=\"reaction-btn\" data-post-id=\"" + p.id + "\" data-reaction=\"heart\">❤️ <span id=\"heartCount-" + p.id + "\">" + reactions[p.id].heart + "</span></button>"
+                    +     "<button type=\"button\" class=\"reaction-btn\" data-post-id=\"" + p.id + "\" data-reaction=\"smile\">🙂 <span id=\"smileCount-" + p.id + "\">" + reactions[p.id].smile + "</span></button>"
+                    +   "</div>"
+                    +   "<div>"
+                    +     "<button type=\"button\" class=\"small-btn\" onclick=\"openEditModal(" + p.id + ")\">Edit</button>"
+                    +     "<button type=\"button\" class=\"small-btn delete\" onclick=\"deletePost(" + p.id + ")\">Delete</button>"
+                    +   "</div>"
+                    + "</div>";
+
+                list.appendChild(card);
+            });
+        }
+
+        // This toggles collapse for a single post body
+        function togglePostBody(postId) {
+            const body = document.getElementById("postBody-" + postId);
+            const label = document.getElementById("collapseLabel-" + postId);
+
+            if (!body) {
+                return;
+            }
+
+            if (body.style.display === "none") {
+                body.style.display = "block";
+                if (label) {
+                    label.textContent = "Tap to collapse or expand";
+                }
+            } else {
+                body.style.display = "none";
+                if (label) {
+                    label.textContent = "Tap to collapse or expand";
+                }
+            }
+        }
+
+        // This updates reactions in memory and on the card
+        function handleReactionClick(event) {
+            const target = event.target;
+
+            const btn = target.closest(".reaction-btn");
+            if (!btn) {
+                return;
+            }
+
+            const postId = parseInt(btn.getAttribute("data-post-id"), 10);
+            const type = btn.getAttribute("data-reaction");
+
+            if (!reactions[postId] || !reactions[postId][type]) {
+                reactions[postId] = reactions[postId] || { like: 0, heart: 0, smile: 0 };
+            }
+
+            reactions[postId][type] += 1;
+
+            const spanId =
+                (type === "like" ? "likeCount-" :
+                 type === "heart" ? "heartCount-" :
+                 "smileCount-")
+                + postId;
+
+            const countSpan = document.getElementById(spanId);
+            if (countSpan) {
+                countSpan.textContent = reactions[postId][type];
+            }
+        }
+
+        // This opens the edit modal and fills it with the post data
+        function openEditModal(postId) {
+            const post = allPosts.find(function(p) { return p.id === postId; });
+            if (!post) {
+                return;
+            }
+
+            editingPostId = postId;
+
+            document.getElementById("editTitle").value = post.title || "";
+            document.getElementById("editContent").value = post.content || "";
+            document.getElementById("editAuthor").value = post.author || "";
+
+            document.getElementById("editModal").style.display = "flex";
+        }
+
+        // This closes the edit modal
+        function closeEditModal() {
+            document.getElementById("editModal").style.display = "none";
+            editingPostId = null;
+        }
+
+        // This sends updated post data to the API
+        async function savePostEdits() {
+            if (!editingPostId) {
+                return;
+            }
+
+            const newTitle = document.getElementById("editTitle").value.trim();
+            const newContent = document.getElementById("editContent").value.trim();
+            const newAuthor = document.getElementById("editAuthor").value.trim();
+
+            if (newTitle === "" || newContent === "") {
+                alert("Title and content are required.");
+                return;
+            }
+
+            try {
+                const res = await fetch("/api/posts/" + editingPostId + "/", {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        title: newTitle,
+                        content: newContent,
+                        author: newAuthor || "Anonymous",
+                    }),
+                });
+
+                if (!res.ok) {
+                    alert("Could not update post.");
+                    return;
+                }
+
+                const updated = await res.json();
+
+                const index = allPosts.findIndex(function(p) { return p.id === editingPostId; });
+                if (index !== -1) {
+                    allPosts[index] = updated;
+                }
+
+                renderPosts(allPosts);
+                closeEditModal();
+
+            } catch (err) {
+                alert("Error updating post.");
+            }
+        }
+
+        // Helper function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    cookie = cookie.trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // This removes a post via the API then refreshes the list
+        async function deletePost(postId) {
+            const sure = confirm("Delete this post This cannot be undone.");
+            if (!sure) {
+                return;
+            }
+
+            const csrftoken = getCookie('csrftoken');
+            try {
+                const res = await fetch("/api/posts/" + postId + "/", {
+                    method: "DELETE",
+                    headers: {
+                        "X-CSRFToken": csrftoken
+                    }
+                });
+
+                if (!res.ok && res.status !== 204) {
+                    alert("Could not delete post.");
+                    return;
+                }
+
+                allPosts = allPosts.filter(function(p) { return p.id !== postId; });
+                renderPosts(allPosts);
+
+            } catch (err) {
+                alert("Error deleting post.");
+            }
+        }
+
+        // This filters posts by title, content or author
+        function handleSearchChange() {
+            const term = document.getElementById("searchInput").value.trim().toLowerCase();
+
+            if (term === "") {
+                renderPosts(allPosts);
+                return;
+            }
+
+            const filtered = allPosts.filter(function(p) {
+                const title = (p.title || "").toLowerCase();
+                const content = (p.content || "").toLowerCase();
+                const author = (p.author || "").toLowerCase();
+
+                return title.indexOf(term) !== -1 ||
+                       content.indexOf(term) !== -1 ||
+                       author.indexOf(term) !== -1;
+            });
+
+            renderPosts(filtered);
+        }
+
+        // Simple escape helper to avoid accidental html injection
+        function escapeHtml(text) {
+            if (text === null || text === undefined) {
+                return "";
+            }
+            return String(text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        // Initial wiring for search input and reaction clicks
+        window.onload = function() {
+            loadPosts();
+
+            const searchInput = document.getElementById("searchInput");
+            searchInput.addEventListener("input", handleSearchChange);
+
+            const postsList = document.getElementById("postsList");
+            postsList.addEventListener("click", handleReactionClick);
+        };
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Announcements</h1>
+
+        <div class="top-bar">
+            <input
+                id="searchInput"
+                class="search-input"
+                type="text"
+                placeholder="Search by title, content, or author">
+            <a class="btn" href="/create-post/">Create New Post</a>
+        </div>
+
+        <div id="postsList"></div>
+    </div>
+
+    <!-- Edit modal for posts so user stays on this page -->
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Post</h2>
+                <button
+                    type="button"
+                    class="modal-close-btn"
+                    onclick="closeEditModal()">X</button>
+            </div>
+
+            <div class="modal-form">
+                <label for="editTitle">Title</label>
+                <input id="editTitle" type="text">
+
+                <label for="editContent">Content</label>
+                <textarea id="editContent"></textarea>
+
+                <label for="editAuthor">Author</label>
+                <input id="editAuthor" type="text">
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn" onclick="savePostEdits()">Save</button>
+                <button type="button" class="small-btn" onclick="closeEditModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

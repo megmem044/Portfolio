@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Ratings & Feedback</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Premium Blue Coordinator Theme */
+            --primary: #4A90E2;
+            --primary-dark: #2E5C8A;
+            --primary-light: #E8F1FF;
+            --accent-pink: #FF7DB1;
+            --accent-pink-light: #FFE5F0;
+            --bg: #F5F8FC;
+            --card: #ffffff;
+            --text: #1F3A4D;
+            --text-muted: #6B7C8F;
+            --border: #D7E7F7;
+            --shadow-sm: 0 2px 8px rgba(74, 144, 226, 0.08);
+            --shadow-md: 0 6px 20px rgba(74, 144, 226, 0.15);
+            --shadow-lg: 0 12px 32px rgba(74, 144, 226, 0.2);
+            --success: #2d7a42;
+            --warning: #E8A900;
+        }
+
+        * {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: var(--primary);
+            padding: 20px 40px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0;
+        }
+
+        .header-title i {
+            font-size: 24px;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            color: var(--primary);
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+            color: white;
+            transform: translateX(-4px);
+        }
+
+        /* Main Container */
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Event Info Bar */
+        .event-info {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            gap: 32px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+        }
+
+        .info-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        /* Rating Summary Card */
+        .rating-summary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 32px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 32px;
+            align-items: center;
+        }
+
+        .rating-summary.empty {
+            display: none;
+        }
+
+        .summary-card {
+            text-align: center;
+        }
+
+        .summary-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .summary-value {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .summary-stars {
+            font-size: 24px;
+            letter-spacing: 6px;
+        }
+
+        .rating-count-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid var(--primary-light);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--accent-pink));
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Filter Section */
+        .filter-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            padding: 16px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .filter-btn {
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Ratings List */
+        .ratings-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .rating-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rating-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, var(--accent-pink), var(--primary));
+        }
+
+        .rating-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .rating-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .volunteer-info {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .volunteer-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 4px;
+        }
+
+        .rating-date {
+            font-size: 13px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .rating-date i {
+            color: var(--primary);
+        }
+
+        .stars-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stars-display {
+            font-size: 20px;
+            letter-spacing: 4px;
+            color: var(--accent-pink);
+        }
+
+        .rating-number {
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 14px;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .rating-comment {
+            background: var(--primary-light);
+            padding: 16px;
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.6;
+            border-left: 3px solid var(--primary);
+        }
+
+        .rating-comment.empty {
+            color: var(--text-muted);
+            font-style: italic;
+            opacity: 0.7;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: none;
+            text-align: center;
+            padding: 80px 40px;
+            background: white;
+            border-radius: 16px;
+            border: 2px dashed var(--border);
+        }
+
+        .empty-state.show {
+            display: block;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            color: var(--primary-light);
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        /* Export Section */
+        .export-section {
+            display: flex;
+            justify-content: center;
+            margin-top: 24px;
+        }
+
+        .export-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .export-btn i {
+            font-size: 16px;
+        }
+
+        /* Loading State */
+        .loading-message {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--primary-light);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 16px 20px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-title {
+                font-size: 18px;
+            }
+
+            .page-container {
+                padding: 20px;
+            }
+
+            .event-info {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .rating-summary {
+                grid-template-columns: 1fr;
+                gap: 24px;
+                padding: 24px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .rating-header {
+                flex-direction: column;
+            }
+
+            .filter-container {
+                flex-direction: column;
+            }
+
+            .filter-btn {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- Header -->
+<div class="header">
+    <h1 class="header-title">
+        Event Ratings & Feedback
+    </h1>
+    <a href="/coordinator/dashboard/" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
+
+<!-- Main Container -->
+<div class="page-container">
+    <!-- Event Info Bar -->
+    <div class="event-info">
+        <div class="info-item">
+            <div class="info-label">Event</div>
+            <div class="info-value" id="eventName">Loading...</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Date</div>
+            <div class="info-value" id="eventDate">Loading...</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Total Ratings</div>
+            <div class="info-value" id="totalRatings">0</div>
+        </div>
+    </div>
+
+    <!-- Rating Summary -->
+    <div class="rating-summary empty" id="ratingsSummary">
+        <div class="summary-card">
+            <div class="summary-label">Average Rating</div>
+            <div class="summary-value" id="avgRating">0</div>
+            <div class="rating-count-badge"><span id="totalRatingsSmall">0</span> Reviews</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">Rating Distribution</div>
+            <div class="summary-stars" id="avgStars">★★★★★</div>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid" id="ratingStats"></div>
+
+    <!-- Filter Buttons -->
+    <div class="filter-container">
+        <button class="filter-btn active" onclick="filterRatings('all', event)">
+            <i class="fas fa-list"></i> All Ratings
+        </button>
+        <button class="filter-btn" onclick="filterRatings(5, event)">
+            <i class="fas fa-star"></i> 5 Stars
+        </button>
+        <button class="filter-btn" onclick="filterRatings(4, event)">
+            <i class="fas fa-star"></i> 4 Stars
+        </button>
+        <button class="filter-btn" onclick="filterRatings(3, event)">
+            <i class="fas fa-star"></i> 3 Stars
+        </button>
+        <button class="filter-btn" onclick="filterRatings(2, event)">
+            <i class="fas fa-star"></i> 2 Stars
+        </button>
+        <button class="filter-btn" onclick="filterRatings(1, event)">
+            <i class="fas fa-star"></i> 1 Star
+        </button>
+    </div>
+
+    <!-- Ratings List -->
+    <div class="ratings-container" id="ratingsList">
+        <div class="loading-message">
+            <span class="loading-spinner"></span>
+            Loading ratings...
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" id="emptyState">
+        <i class="fas fa-inbox"></i>
+        <h3>No Ratings Yet</h3>
+        <p>Ratings will appear here once volunteers submit feedback for this event.</p>
+    </div>
+
+    <!-- Export Section -->
+    <div class="export-section" id="exportSection" style="display: none;">
+        <button class="export-btn" onclick="downloadRatings()">
+            <i class="fas fa-download"></i> Download as CSV
+        </button>
+    </div>
+</div>
+
+<script>
+    // Extract event ID from URL path
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const eventIdIndex = pathParts.indexOf('events');
+    const eventId = eventIdIndex !== -1 ? parseInt(pathParts[eventIdIndex + 1]) : null;
+
+    if (!eventId) {
+        console.error('Could not determine event ID from URL');
+        document.getElementById('emptyState').classList.add('show');
+    }
+
+    let allRatings = [];
+
+    async function loadRatings() {
+        try {
+            // Load event details
+            const eventRes = await fetch(`/api/events/${eventId}/`);
+            if (eventRes.ok) {
+                const event = await eventRes.json();
+                document.getElementById('eventName').textContent = event.name;
+                document.getElementById('eventDate').textContent = new Date(event.start_datetime).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            }
+
+            // Load all ratings for this event
+            const ratingsRes = await fetch(`/api/event-ratings/?event=${eventId}`);
+            if (!ratingsRes.ok) {
+                showNoRatings();
+                return;
+            }
+
+            allRatings = await ratingsRes.json();
+            console.log(`Loaded ${allRatings.length} ratings for event ${eventId}`);
+            
+            if (allRatings.length === 0) {
+                showNoRatings();
+                return;
+            }
+
+            // Update total count
+            document.getElementById('totalRatings').textContent = allRatings.length;
+            document.getElementById('totalRatingsSmall').textContent = allRatings.length;
+
+            // Calculate statistics
+            const avgRating = (allRatings.reduce((sum, r) => sum + r.rating, 0) / allRatings.length).toFixed(1);
+            document.getElementById('avgRating').textContent = avgRating;
+            displayAverageStars(parseFloat(avgRating));
+
+            // Show summary section
+            document.getElementById('ratingsSummary').classList.remove('empty');
+
+            // Build rating distribution
+            const ratingCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+            allRatings.forEach(r => {
+                if (ratingCounts.hasOwnProperty(r.rating)) {
+                    ratingCounts[r.rating]++;
+                }
+            });
+
+            // Display rating stats
+            let statsHTML = '';
+            for (let i = 5; i >= 1; i--) {
+                const percent = Math.round((ratingCounts[i] / allRatings.length) * 100);
+                statsHTML += `
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i class="fas fa-star"></i> ${i} Star${i > 1 ? 's' : ''}
+                        </div>
+                        <div class="stat-value">${ratingCounts[i]}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">${percent}%</div>
+                    </div>
+                `;
+            }
+            document.getElementById('ratingStats').innerHTML = statsHTML;
+
+            // Display ratings
+            displayRatings(allRatings);
+
+            // Show export button
+            document.getElementById('exportSection').style.display = 'flex';
+
+        } catch (error) {
+            console.error('Error loading ratings:', error);
+            showNoRatings();
+        }
+    }
+
+    function displayRatings(ratings) {
+        const container = document.getElementById('ratingsList');
+        if (ratings.length === 0) {
+            showNoRatings();
+            return;
+        }
+
+        let html = '';
+        ratings.forEach(rating => {
+            const date = new Date(rating.created_at).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+
+            const time = new Date(rating.created_at).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+
+            const stars = '★'.repeat(rating.rating) + '☆'.repeat(5 - rating.rating);
+
+            html += `
+                <div class="rating-card" data-rating="${rating.rating}">
+                    <div class="rating-header">
+                        <div class="volunteer-info">
+                            <div class="volunteer-name">${rating.volunteer_name}</div>
+                            <div class="rating-date">
+                                <i class="fas fa-calendar"></i> ${date} at ${time}
+                            </div>
+                        </div>
+                        <div class="stars-container">
+                            <div class="stars-display">${stars}</div>
+                            <div class="rating-number">${rating.rating}.0</div>
+                        </div>
+                    </div>
+                    <div class="rating-comment ${rating.comment ? '' : 'empty'}">
+                        ${rating.comment || 'No additional comment provided'}
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    function showNoRatings() {
+        document.getElementById('ratingsList').style.display = 'none';
+        document.getElementById('ratingStats').innerHTML = '';
+        document.getElementById('ratingsSummary').classList.add('empty');
+        document.getElementById('exportSection').style.display = 'none';
+        document.getElementById('emptyState').classList.add('show');
+    }
+
+    function displayAverageStars(avg) {
+        const fullStars = Math.round(avg);
+        const starsContainer = document.getElementById('avgStars');
+        starsContainer.textContent = '★'.repeat(fullStars) + '☆'.repeat(5 - fullStars);
+    }
+
+    function filterRatings(starCount, event) {
+        const cards = document.querySelectorAll('.rating-card');
+        const buttons = document.querySelectorAll('.filter-btn');
+
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.target.closest('.filter-btn').classList.add('active');
+
+        cards.forEach(card => {
+            if (starCount === 'all') {
+                card.style.display = '';
+            } else {
+                const rating = parseInt(card.dataset.rating);
+                card.style.display = rating === starCount ? '' : 'none';
+            }
+        });
+    }
+
+    function downloadRatings() {
+        const eventName = document.getElementById('eventName').textContent;
+        const ratings = [];
+
+        allRatings.forEach(r => {
+            ratings.push({
+                volunteer: r.volunteer_name,
+                rating: r.rating,
+                comment: r.comment || 'No comment',
+                date: new Date(r.created_at).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                })
+            });
+        });
+
+        // Create CSV
+        let csv = 'Volunteer,Rating,Comment,Date\n';
+        ratings.forEach(r => {
+            const comment = r.comment.includes(',') ? `"${r.comment}"` : r.comment;
+            csv += `${r.volunteer},${r.rating},${comment},${r.date}\n`;
+        });
+
+        // Download
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${eventName}_ratings.csv`;
+        a.click();
+    }
+
+    // Load ratings on page load
+    document.addEventListener('DOMContentLoaded', loadRatings);
+</script>
+
+</body>
+</html>

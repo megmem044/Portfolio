@@ -1,0 +1,407 @@
+<!-- File: signups/templates/volunteer_list.html
+     Purpose:
+       This page shows all volunteers for PlannerPaco.
+       Data is loaded in the background with the API.
+       Users stay on the front end for the entire flow.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Volunteers</title>
+
+    <style>
+        :root{
+            --bg:#FFEFF3;
+            --primary:#E46B8C;
+            --primary-dark:#C15575;
+            --accent:#F6B26B;
+            --card:#ffffff;
+            --muted:#555;
+            --shadow:rgba(0,0,0,0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            padding: 32px;
+            background: var(--card);
+            border-radius: 18px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            margin-bottom: 25px;
+        }
+
+        .vol-card {
+            background: #fff7f9;
+            padding: 18px;
+            margin-bottom: 18px;
+            border-left: 6px solid var(--primary);
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .vol-card h3 {
+            margin: 0 0 6px;
+            color: var(--primary-dark);
+        }
+
+        .btn {
+            padding: 8px 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-block;
+            margin-top: 10px;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .hint {
+            text-align: center;
+            color: var(--muted);
+            margin-top: 20px;
+        }
+
+        /* Modal overlay covers the whole screen behind the summary card */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.35);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        /* Modal card uses a soft blush gradient and stays centered */
+        .modal-card {
+            width: 100%;
+            max-width: 720px;
+            max-height: 80vh;
+            background: linear-gradient(135deg, #fff3f7, #ffe0eb);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px var(--shadow);
+            padding: 24px 26px;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            margin: 0;
+            color: var(--primary-dark);
+        }
+
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--muted);
+        }
+
+        .modal-close-btn:hover {
+            color: var(--primary-dark);
+        }
+
+        .modal-section {
+            margin-bottom: 18px;
+            padding: 14px;
+            background: rgba(255,255,255,0.85);
+            border-radius: 14px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+
+        .modal-section h3 {
+            margin-top: 0;
+            color: var(--primary-dark);
+        }
+
+        .summary-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .summary-pill {
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #ffe4ee;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .profile-box {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .profile-picture {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #ffd1e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--primary-dark);
+            flex-shrink: 0;
+        }
+
+        .timeline-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            background: #ffffff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .empty-text {
+            font-size: 14px;
+            color: var(--muted);
+        }
+    </style>
+
+    <script>
+        // This function loads all volunteers from the API
+        // Data is added as cards so the backend stays hidden
+        async function loadVolunteers() {
+            const container = document.getElementById("volunteerList");
+            container.innerHTML = "<p class=\"hint\">Loading volunteers...</p>";
+
+            try {
+                const res = await fetch("/api/volunteers/");
+                if (!res.ok) {
+                    container.innerHTML = "<p class=\"hint\">Could not load volunteers.</p>";
+                    return;
+                }
+
+                const volunteers = await res.json();
+                container.innerHTML = "";
+
+                volunteers.forEach(v => {
+                    const card = document.createElement("div");
+                    card.className = "vol-card";
+
+                    card.innerHTML = `
+                        <h3>${v.name}</h3>
+                        <p><strong>Email:</strong> ${v.email}</p>
+                        <p><strong>Phone:</strong> ${v.phone}</p>
+
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button class="btn" onclick="openSummary(${v.id})">
+                                View Summary
+                            </button>
+                            <button class="btn" onclick="window.location.href='/volunteer-profile/${v.id}/'" 
+                                    style="background: var(--accent); color: white;">
+                                View Profile
+                            </button>
+                        </div>
+                    `;
+
+                    container.appendChild(card);
+                });
+
+            } catch (err) {
+                container.innerHTML = "<p class=\"hint\">Error loading volunteers.</p>";
+            }
+        }
+
+        // This function opens the modal and fills it with data from the summary endpoint
+        async function openSummary(id) {
+            const overlay = document.getElementById("summaryModal");
+            const nameEl = document.getElementById("summaryName");
+            const emailEl = document.getElementById("summaryEmail");
+            const phoneEl = document.getElementById("summaryPhone");
+            const statusEl = document.getElementById("summaryStatus");
+            const hoursEl = document.getElementById("summaryHours");
+            const rolesContainer = document.getElementById("summaryRoles");
+            const certsContainer = document.getElementById("summaryCerts");
+            const initialsEl = document.getElementById("summaryInitials");
+            const profileImg = document.getElementById("summaryProfileImg");
+
+            nameEl.textContent = "Loading...";
+            emailEl.textContent = "";
+            phoneEl.textContent = "";
+            statusEl.textContent = "";
+            hoursEl.textContent = "";
+            rolesContainer.innerHTML = "";
+            certsContainer.innerHTML = "";
+            initialsEl.textContent = "";
+            profileImg.style.display = "none";
+
+            overlay.style.display = "flex";
+
+            try {
+                const res = await fetch("/api/volunteers/" + id + "/summary/");
+                if (!res.ok) {
+                    nameEl.textContent = "Could not load summary";
+                    return;
+                }
+
+                const data = await res.json();
+                const v = data.volunteer;
+
+                nameEl.textContent = v.name || "Volunteer";
+                emailEl.textContent = "Email: " + (v.email || "Not set");
+                phoneEl.textContent = "Phone: " + (v.phone || "Not set");
+                statusEl.textContent = "Active: " + (v.active ? "Yes" : "No");
+
+                let totalHours = 0;
+                data.enrollments.forEach(e => {
+                    const val = parseFloat(e.hours_worked);
+                    if (!Number.isNaN(val)) {
+                        totalHours += val;
+                    }
+                });
+                hoursEl.textContent = totalHours.toFixed(2) + " hours";
+
+                if (v.name) {
+                    const parts = v.name.trim().split(" ");
+                    const initials = parts
+                        .filter(p => p.length > 0)
+                        .slice(0, 2)
+                        .map(p => p[0].toUpperCase())
+                        .join("");
+                    initialsEl.textContent = initials || "V";
+                } else {
+                    initialsEl.textContent = "V";
+                }
+
+                if (v.profile_image) {
+                    profileImg.src = v.profile_image;
+                    profileImg.style.display = "block";
+                }
+
+                rolesContainer.innerHTML = "";
+                if (data.enrollments.length === 0) {
+                    rolesContainer.innerHTML = "<p class=\"empty-text\">No roles recorded.</p>";
+                } else {
+                    data.enrollments.forEach(e => {
+                        const item = document.createElement("div");
+                        item.className = "timeline-item";
+                        item.innerHTML = `
+                            <p><strong>Role:</strong> ${e.role.title}</p>
+                            <p><strong>Date:</strong> ${e.role.date}</p>
+                            <p><strong>Location:</strong> ${e.role.location}</p>
+                            <p><strong>Hours worked:</strong> ${e.hours_worked}</p>
+                        `;
+                        rolesContainer.appendChild(item);
+                    });
+                }
+
+                certsContainer.innerHTML = "";
+                if (data.certificates.length === 0) {
+                    certsContainer.innerHTML = "<p class=\"empty-text\">No certificates uploaded.</p>";
+                } else {
+                    data.certificates.forEach(c => {
+                        const item = document.createElement("div");
+                        item.className = "timeline-item";
+                        item.innerHTML = `
+                            <p><strong>${c.title || "Certificate"}</strong></p>
+                            <p>Status: ${c.status}</p>
+                            <p>Uploaded: ${c.uploaded_at}</p>
+                        `;
+                        certsContainer.appendChild(item);
+                    });
+                }
+
+            } catch (err) {
+                nameEl.textContent = "Error loading summary";
+            }
+        }
+
+        // This function hides the modal
+        function closeSummaryModal() {
+            const overlay = document.getElementById("summaryModal");
+            overlay.style.display = "none";
+        }
+
+        window.onload = loadVolunteers;
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Volunteers</h1>
+        <div id="volunteerList"></div>
+    </div>
+
+    <!-- Summary modal sits at the bottom so it is easy to find -->
+    <div id="summaryModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 class="modal-title" id="summaryName">Volunteer Summary</h2>
+                <button class="modal-close-btn" type="button" onclick="closeSummaryModal()">X</button>
+            </div>
+
+            <div class="modal-section">
+                <div class="profile-box">
+                    <div class="profile-picture">
+                        <span id="summaryInitials">V</span>
+                    </div>
+                    <img id="summaryProfileImg" class="profile-picture" style="display:none;" alt="Profile picture">
+                    <div>
+                        <p id="summaryEmail"></p>
+                        <p id="summaryPhone"></p>
+                    </div>
+                </div>
+
+                <div class="summary-row">
+                    <span class="summary-pill" id="summaryStatus"></span>
+                    <span class="summary-pill" id="summaryHours"></span>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h3>Roles</h3>
+                <div id="summaryRoles"></div>
+            </div>
+
+            <div class="modal-section">
+                <h3>Certificates</h3>
+                <div id="summaryCerts"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

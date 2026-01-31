@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Opportunities</title>
+    {% include 'session_timeout.html' %}
+    <style>
+        :root {
+            --bg: #FFEFF3;
+            --primary: #E46B8C;
+            --primary-dark: #C15575;
+            --card: #ffffff;
+            --muted: #6F6A7A;
+            --shadow: rgba(228, 107, 140, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 36px;
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px;
+            background: var(--card);
+            border-radius: 20px;
+            box-shadow: 0 6px 18px var(--shadow);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #f7d3e2;
+            padding-bottom: 16px;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--primary-dark);
+            font-size: 24px;
+        }
+
+        .back-btn {
+            background: var(--primary);
+            color: white;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 4px 10px var(--shadow);
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .events-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .event-item {
+            background: #f9f9f9;
+            border: 1px solid #f0f0f0;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .event-item:hover {
+            background: #f5f5f5;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .event-item.active {
+            background: #fff0f7;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .event-item h3 {
+            margin: 0 0 8px 0;
+            color: var(--primary-dark);
+            font-size: 16px;
+        }
+
+        .event-item .date {
+            color: var(--muted);
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .event-detail {
+            display: none;
+            margin-top: 28px;
+            padding: 24px;
+            background: #f9f9f9;
+            border: 1px solid #f0f0f0;
+            border-radius: 12px;
+        }
+
+        .event-detail.active {
+            display: block;
+        }
+
+        .event-detail h2 {
+            color: var(--primary-dark);
+            margin-top: 0;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 12px;
+            gap: 16px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: var(--primary-dark);
+            min-width: 120px;
+        }
+
+        .detail-value {
+            color: var(--muted);
+        }
+
+        .cert-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .cert-badge {
+            background: var(--primary);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .apply-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.25s ease;
+        }
+
+        .apply-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .apply-btn.applied {
+            background: #d4edda;
+            color: #155724;
+            cursor: default;
+        }
+
+        .cert-upload-section {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .cert-upload-section h4 {
+            margin: 0 0 16px 0;
+            color: var(--primary-dark);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .cert-items {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .cert-item {
+            background: white;
+            border: 1px solid #f0f0f0;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .cert-item-name {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .cert-item-status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            border: none;
+        }
+
+        .cert-item-status.submitted {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .cert-item-status.approved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .cert-item-status.rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .cert-item-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: background 0.25s ease;
+        }
+
+        .upload-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .loading {
+            text-align: center;
+            color: var(--muted);
+            padding: 40px 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--muted);
+            padding: 40px 20px;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .two-column.single-event {
+            grid-template-columns: 1fr;
+        }
+
+        .events-list.hidden {
+            display: none;
+        }
+
+        #eventsList {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        #eventsPanel.hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1 id="pageTitle">Browse Opportunities</h1>
+        <a href="/volunteer/home/" class="back-btn">← Back</a>
+    </div>
+
+    <div class="two-column">
+        <div id="eventsPanel">
+            <div id="eventsList" class="events-list">
+                <div class="loading">Loading events...</div>
+            </div>
+        </div>
+
+        <div id="detailPanel">
+            <div class="empty-state">Select an event to view details</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let allEvents = [];
+    let currentVolunteer = null;
+    let appliedEventIds = new Set();
+
+    async function loadEvents() {
+        try {
+            const res = await fetch('/api/events/?status=published');
+            if (!res.ok) throw new Error('Failed to load events');
+            
+            allEvents = await res.json();
+            
+            // Get current volunteer
+            const volRes = await fetch('/api/volunteers/current/');
+            if (volRes.ok) {
+                currentVolunteer = await volRes.json();
+                
+                // Get applied events
+                const reqRes = await fetch(`/api/volunteer-requests/?volunteer=${currentVolunteer.id}`);
+                if (reqRes.ok) {
+                    const requests = await reqRes.json();
+                    appliedEventIds = new Set(requests.map(r => r.event));
+                }
+            }
+            
+            displayEventsList();
+            
+            // Check if this is a view-only mode (single event display)
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewOnlyEventId = urlParams.get('event');
+            
+            if (viewOnlyEventId) {
+                // Single event view mode - hide events list
+                document.getElementById('eventsList').classList.add('hidden');
+                document.querySelector('.two-column').classList.add('single-event');
+                showEventDetail(parseInt(viewOnlyEventId));
+            } else {
+                // Hash-based navigation
+                const eventId = window.location.hash.substring(7); // Remove '#event-'
+                if (eventId) {
+                    showEventDetail(parseInt(eventId));
+                }
+            }
+        } catch (error) {
+            console.error('Error loading events:', error);
+            document.getElementById('eventsList').innerHTML = '<div class="empty-state">Failed to load events</div>';
+        }
+    }
+
+    function displayEventsList() {
+        if (allEvents.length === 0) {
+            document.getElementById('eventsList').innerHTML = '<div class="empty-state">No events available</div>';
+            return;
+        }
+
+        const sorted = [...allEvents].sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime));
+        
+        document.getElementById('eventsList').innerHTML = sorted.map(event => `
+            <div class="event-item ${getEventId() === event.id ? 'active' : ''}" id="event-item-${event.id}" onclick="showEventDetail(${event.id})">
+                <h3>${event.name}</h3>
+                <p class="date">
+                    ${new Date(event.start_datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} •
+                    ${new Date(event.start_datetime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                </p>
+            </div>
+        `).join('');
+    }
+
+    function getEventId() {
+        const hash = window.location.hash;
+        return hash.startsWith('#event-') ? parseInt(hash.substring(7)) : null;
+    }
+
+    function showEventDetail(eventId) {
+        const event = allEvents.find(e => e.id === eventId);
+        if (!event) return;
+
+        window.location.hash = `event-${eventId}`;
+
+        // Update page title with event name
+        document.getElementById('pageTitle').textContent = event.name;
+
+        // Update active state
+        document.querySelectorAll('.event-item').forEach(item => item.classList.remove('active'));
+        const activeItem = document.getElementById(`event-item-${eventId}`);
+        if (activeItem) activeItem.classList.add('active');
+
+        // In single event view mode, hide the events list
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('event')) {
+            document.getElementById('eventsPanel').classList.add('hidden');
+            document.querySelector('.two-column').classList.add('single-event');
+        }
+
+        // Build detail view
+        const startDate = new Date(event.start_datetime);
+        const endDate = new Date(event.end_datetime);
+        const certs = [];
+        if (event.requires_first_aid) certs.push('First Aid');
+        if (event.requires_food_safety) certs.push('Food Safety');
+
+        const isApplied = appliedEventIds.has(eventId);
+        const applyButtonHTML = isApplied 
+            ? '<button class="apply-btn applied" disabled>✓ Applied</button>'
+            : `<button class="apply-btn" onclick="applyToEvent(${eventId})">Apply</button>`;
+
+        // Build cert upload section if event requires certificates and volunteer has applied
+        let certUploadHTML = '';
+        if (isApplied && certs.length > 0) {
+            certUploadHTML = `
+                <div class="cert-upload-section">
+                    <h4>Upload Certificates</h4>
+                    <div class="cert-items" id="certItems-${eventId}">
+                        <div class="loading" style="padding: 20px;">Loading certificate status...</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        const detailHTML = `
+            <div class="detail-row">
+                <div class="detail-label">Start:</div>
+                <div class="detail-value">${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">End:</div>
+                <div class="detail-value">${endDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Location:</div>
+                <div class="detail-value">${event.location}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Coordinator:</div>
+                <div class="detail-value">${event.coordinator_name || 'Unknown'}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Max Volunteers:</div>
+                <div class="detail-value">${event.max_volunteers}</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Status:</div>
+                <div class="detail-value">${event.status}</div>
+            </div>
+            ${certs.length > 0 ? `
+                <div class="detail-row">
+                    <div class="detail-label">Requirements:</div>
+                    <div class="cert-badges">
+                        ${certs.map(c => `<span class="cert-badge">${c}</span>`).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            <div class="action-buttons">
+                ${applyButtonHTML}
+            </div>
+            ${certUploadHTML}
+        `;
+
+        document.getElementById('detailPanel').innerHTML = detailHTML;
+
+        // Load certificate statuses if applicable
+        if (isApplied && certs.length > 0) {
+            loadCertificateStatus(eventId);
+        }
+    }
+
+    async function loadCertificateStatus(eventId) {
+        try {
+            // Fetch certificates for THIS specific event only
+            const res = await fetch(`/api/certificates/?user=${currentVolunteer.id}&event=${eventId}`);
+            if (!res.ok) throw new Error('Failed to load certificates');
+
+            const certificatesData = await res.json();
+            const certificates = Array.isArray(certificatesData) ? certificatesData : (certificatesData.results || []);
+            const event = allEvents.find(e => e.id === eventId);
+            
+            // Filter for relevant certificates based on event requirements
+            const relevantCerts = [];
+            if (event.requires_first_aid) {
+                const cert = certificates.find(c => 
+                    c.title && c.title.toLowerCase().includes('first aid') && c.file
+                );
+                relevantCerts.push({ title: 'First Aid', cert: cert });
+            }
+            if (event.requires_food_safety) {
+                const cert = certificates.find(c => 
+                    c.title && c.title.toLowerCase().includes('food safety') && c.file
+                );
+                relevantCerts.push({ title: 'Food Safety', cert: cert });
+            }
+
+            const certContainer = document.getElementById(`certItems-${eventId}`);
+            if (!certContainer) return;
+
+            const certHTML = relevantCerts.map(item => {
+                const cert = item.cert;
+                const hasFile = cert && cert.file;
+                const status = cert ? cert.status.toLowerCase() : 'not_uploaded';
+                const statusText = cert ? (cert.status.charAt(0).toUpperCase() + cert.status.slice(1).toLowerCase()) : 'Not Uploaded';
+                
+                let statusClass = '';
+                if (status === 'pending') statusClass = 'submitted';
+                else if (status === 'approved') statusClass = 'approved';
+                else if (status === 'rejected') statusClass = 'rejected';
+
+                return `
+                    <div class="cert-item">
+                        <div>
+                            <div class="cert-item-name">${item.title}</div>
+                            ${cert ? `<span class="cert-item-status ${statusClass}">${statusText}</span>` : ''}
+                        </div>
+                        <div class="cert-item-actions">
+                            <div class="file-input-wrapper">
+                                <input type="file" id="file-${eventId}-${item.title}" accept=".pdf,.jpg,.jpeg" onchange="uploadCertificate(event, '${item.title}', ${currentVolunteer.id})">
+                                <button class="upload-btn" onclick="document.getElementById('file-${eventId}-${item.title}').click()">Upload</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            certContainer.innerHTML = certHTML;
+        } catch (error) {
+            console.error('Error loading certificate status:', error);
+            const certContainer = document.getElementById(`certItems-${eventId}`);
+            if (certContainer) certContainer.innerHTML = '<div class="cert-item"><div class="cert-item-name">Failed to load certificate status</div></div>';
+        }
+    }
+
+    async function uploadCertificate(event, certTitle, volunteerId) {
+        try {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const currentHash = window.location.hash;
+            const eventId = parseInt(currentHash.substring(7));
+
+            const formData = new FormData();
+            formData.append('user', volunteerId);
+            formData.append('event', eventId);
+            formData.append('title', certTitle);
+            formData.append('file', file);
+
+            const csrfToken = getCookie('csrftoken');
+            const res = await fetch('/api/certificates/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken || ''
+                },
+                body: formData
+            });
+
+            if (res.ok) {
+                loadCertificateStatus(eventId);
+                alert('Certificate uploaded successfully! Awaiting coordinator approval.');
+            } else {
+                const errorData = await res.json();
+                alert('Failed to upload certificate: ' + (errorData.file ? errorData.file[0] : 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error uploading certificate:', error);
+            alert('Failed to upload certificate');
+        }
+    }
+
+    async function applyToEvent(eventId) {
+        try {
+            if (!currentVolunteer) {
+                alert('Please log in to apply');
+                return;
+            }
+
+            const csrfToken = getCookie('csrftoken');
+            const res = await fetch('/api/volunteer-requests/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken || ''
+                },
+                body: JSON.stringify({
+                    event: eventId,
+                    volunteer: currentVolunteer.id
+                })
+            });
+
+            if (res.status === 201 || res.status === 200) {
+                appliedEventIds.add(eventId);
+                showEventDetail(eventId);
+                alert('Successfully applied to event!');
+            } else if (res.status === 409) {
+                alert('You have already applied to this event');
+            } else {
+                alert('Failed to apply to event');
+            }
+        } catch (error) {
+            console.error('Error applying:', error);
+            alert('Failed to apply to event');
+        }
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    window.addEventListener('hashchange', () => {
+        const eventId = getEventId();
+        if (eventId) showEventDetail(eventId);
+    });
+
+    loadEvents();
+</script>
+</body>
+</html>
+
