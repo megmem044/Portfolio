@@ -1,0 +1,175 @@
+<!-- File: core/signups/templates/signups/volunteerSignin.html -->
+<!-- Purpose:
+     Volunteer login page styled with the axolotl pink theme.
+     Layout matches volunteerSignup.html and retains consistent branding.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Volunteer Sign In</title>
+
+    <style>
+        :root {
+            /* Axolotl pink volunteer palette */
+            --bg: #FFEFF3;
+            --primary: #E46B8C;
+            --primary-dark: #C15575;
+            --card: #ffffff;
+            --text: #44393D;
+            --muted: #6F6A7A;
+            --shadow: rgba(228, 107, 140, 0.18);
+        }
+
+        * {
+            font-family: Inter, system-ui, Arial, sans-serif;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+        }
+
+        /* Header bar matches volunteerSignup.html */
+        .header {
+            width: 100%;
+            background: var(--card);
+            padding: 18px 36px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 12px var(--shadow);
+        }
+
+        .header-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 18px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-dark);
+        }
+
+        /* Main container */
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: var(--card);
+            margin: 70px auto;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px var(--shadow);
+            text-align: center;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--primary-dark);
+            font-size: 1.7rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 14px;
+            border: 1.5px solid #ddd;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: border-color 0.2s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px var(--shadow);
+            transition: background 0.2s ease;
+        }
+
+        button:hover {
+            background: var(--primary-dark);
+        }
+
+        p.error {
+            color: #cc0000;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+
+        .note {
+            margin-top: 20px;
+            color: var(--muted);
+        }
+
+        .note a {
+            color: var(--primary-dark);
+            text-decoration: none;
+        }
+
+        .note a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <h2 class="header-title">Volunteer Sign In</h2>
+
+    <div class="nav-menu">
+        <a class="nav-link" href="/">Home</a>
+        <a class="nav-link" href="/volunteer/signup/">Create Account</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <h2>Welcome Back</h2>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <input type="email" name="email" placeholder="Enter your email" required>
+            <input type="password" name="password" placeholder="Enter your password" required>
+        <button type="submit">Sign In</button>
+    </form>
+
+    <p class="note">
+        No account yet?
+        <a href="/volunteer/signup/">Sign up here</a>
+    </p>
+
+</div>
+
+</body>
+</html>

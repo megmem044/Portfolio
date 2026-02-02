@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Coordinator Profile</title>
+    <style>
+        :root {
+            --bg: #F0F8FF;
+            --primary: #4A90E2;
+            --primary-dark: #2E5C8A;
+            --card: #FFFFFF;
+            --text: #1F3A4D;
+            --muted: #6B7C8F;
+            --shadow: rgba(74, 144, 226, 0.15);
+            --success: #27AE60;
+            --danger: #E74C3C;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 28px;
+            font-size: 22px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            color: var(--primary);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.25s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+            color: white;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: var(--card);
+            padding: 32px;
+            border-radius: 20px;
+            box-shadow: 0 6px 18px var(--shadow);
+        }
+
+        h1 {
+            margin-top: 0;
+            text-align: center;
+            color: var(--primary-dark);
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        input, select, textarea {
+            padding: 12px;
+            border: 2px solid #E0E6ED;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.25s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--muted);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5A6B7F;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .alert-success {
+            background: #D4EDDA;
+            color: #155724;
+            border: 1px solid #C3E6CB;
+        }
+
+        .alert-error {
+            background: #F8D7DA;
+            color: #721C24;
+            border: 1px solid #F5C6CB;
+        }
+
+        .loading {
+            text-align: center;
+            color: var(--muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 style="margin: 0; color: white; flex: 1;">Coordinator Profile</h1>
+        <a class="back-btn" href="/coordinator/dashboard/">← Back</a>
+    </div>
+
+    <div class="container">
+        <h1>Manage Your Profile</h1>
+        
+        <div id="alertContainer"></div>
+        
+        <div id="loadingMessage" class="loading">Loading profile...</div>
+
+        <form id="profileForm" style="display: none;">
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone</label>
+                <input type="tel" id="phone" name="phone">
+            </div>
+
+            <div class="form-group">
+                <label for="address">Address</label>
+                <input type="text" id="address" name="address">
+            </div>
+
+            <div class="form-group">
+                <label for="organization">Organization</label>
+                <input type="text" id="organization" name="organization">
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="/coordinator/dashboard/" class="btn btn-secondary" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let coordinatorId = null;
+
+        async function loadProfile() {
+            try {
+                // Get the current logged-in coordinator
+                const res = await fetch('/api/coordinators/current/');
+                if (!res.ok) {
+                    if (res.status === 401) {
+                        throw new Error('Not logged in. Please log in first.');
+                    }
+                    throw new Error('Failed to load profile');
+                }
+
+                const currentCoordinator = await res.json();
+
+                if (!currentCoordinator || !currentCoordinator.id) {
+                    throw new Error('Could not identify current coordinator');
+                }
+
+                coordinatorId = currentCoordinator.id;
+
+                // Populate form
+                document.getElementById('name').value = currentCoordinator.name || '';
+                document.getElementById('email').value = currentCoordinator.email || '';
+                document.getElementById('phone').value = currentCoordinator.phone || '';
+                document.getElementById('address').value = currentCoordinator.address || '';
+                document.getElementById('organization').value = currentCoordinator.organization || '';
+
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('profileForm').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                showAlert('Error loading profile: ' + error.message, 'error');
+                document.getElementById('loadingMessage').style.display = 'none';
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alertDiv);
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                organization: document.getElementById('organization').value,
+            };
+
+            try {
+                const res = await fetch(`/api/coordinators/${coordinatorId}/`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.detail || 'Failed to save profile');
+                }
+
+                showAlert('Profile updated successfully!', 'success');
+                setTimeout(() => {
+                    window.location.href = '/coordinator/dashboard/';
+                }, 1500);
+            } catch (error) {
+                console.error('Error saving profile:', error);
+                showAlert('Error saving profile: ' + error.message, 'error');
+            }
+        });
+
+        function getCSRFToken() {
+            const name = 'csrftoken';
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Load profile on page load
+        document.addEventListener('DOMContentLoaded', loadProfile);
+    </script>
+</body>
+</html>

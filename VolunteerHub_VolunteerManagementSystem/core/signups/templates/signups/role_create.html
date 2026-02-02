@@ -1,0 +1,255 @@
+<!-- File: signups/templates/role_create.html -->
+<!-- Purpose:
+     Frontend form for PlannerPaco to create new event roles.
+     Shares the same cherry blossom background and header style
+     as the volunteer directory for a cohesive interface.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Event Role</title>
+  <style>
+    :root {
+      --bg: #FFF3F7;
+      --primary: #E46B8C;
+      --primary-dark: #C15575;
+      --text: #2E2A2B;
+      --card-shadow: rgba(228, 107, 140, 0.25);
+      --banner-bg: linear-gradient(to right, #f7f7f7, #fce5ec);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: Inter, system-ui, Arial, sans-serif;
+    }
+
+    body {
+      /* same soft cherry blossom SVG pattern as volunteer page */
+      background-color: var(--bg);
+      background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' fill='none'>\
+<circle cx='6' cy='6' r='1.5' fill='%23E46B8C' fill-opacity='0.25'/>\
+<circle cx='20' cy='10' r='1.2' fill='%23E46B8C' fill-opacity='0.2'/>\
+<circle cx='14' cy='22' r='1' fill='%23E46B8C' fill-opacity='0.18'/>\
+<circle cx='25' cy='4' r='1' fill='%23E46B8C' fill-opacity='0.25'/>\
+</svg>");
+      background-repeat: repeat;
+      background-size: 40px 40px;
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* soft header banner */
+    .banner {
+      background: var(--banner-bg);
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(228,107,140,0.15);
+      border-bottom: 1px solid #ddd;
+    }
+
+    .banner h1 {
+      color: var(--primary-dark);
+      font-size: 32px;
+      letter-spacing: 1px;
+      font-weight: 700;
+      text-shadow: 0 1px 3px rgba(255,255,255,0.7);
+      margin: 0;
+    }
+
+    .back-btn {
+      position: absolute;
+      right: 24px;
+      top: 24px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .back-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 32px;
+      border-radius: 20px;
+      box-shadow: 0 4px 10px var(--card-shadow);
+    }
+
+    label {
+      display: block;
+      margin-top: 18px;
+      font-weight: 600;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      margin-top: 6px;
+      font-size: 15px;
+    }
+
+    button[type="submit"] {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      margin-top: 20px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      display: block;
+      width: 100%;
+    }
+
+    button[type="submit"]:hover {
+      background: var(--primary-dark);
+    }
+
+    .msg {
+      margin-top: 16px;
+      text-align: center;
+      font-weight: 600;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="banner">
+    <h1>Create New Role</h1>
+    <button class="back-btn" onclick="window.location.href='/api/volunteers-page/'">
+      ← Back to Directory
+    </button>
+  </div>
+
+  <div class="container">
+    <form id="roleForm">
+      <label>Title</label>
+      <input type="text" id="title" required>
+
+      <label>Description</label>
+      <textarea id="description" required></textarea>
+
+      <label>Location</label>
+      <input type="text" id="location" required>
+
+      <label>Date</label>
+      <input type="date" id="date" required>
+
+      <label>Capacity</label>
+      <input type="number" id="capacity" min="1" required>
+
+      <button type="submit">Create Role</button>
+    </form>
+
+    <hr style="margin: 32px 0;">
+    <form method="GET" action="/api/roles/" id="filterForm">
+      <label>Language Level:</label>
+      <select name="language_level" id="filterLanguage">
+        <option value="beginner">Beginner</option>
+        <option value="intermediate">Intermediate</option>
+        <option value="advanced">Advanced</option>
+      </select>
+      <label>Task Complexity:</label>
+      <select name="task_complexity" id="filterComplexity">
+        <option value="simple">Simple</option>
+        <option value="moderate">Moderate</option>
+        <option value="complex">Complex</option>
+      </select>
+      <button type="submit">Filter Roles</button>
+    </form>
+
+    <div id="filteredRoles" style="margin-top:24px;"></div>
+
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <script>
+    document.getElementById('roleForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        location: document.getElementById('location').value,
+        date: document.getElementById('date').value,
+        capacity: document.getElementById('capacity').value
+      };
+
+      const res = await fetch('/api/roles/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const msg = document.getElementById('msg');
+      if (res.ok) {
+        msg.textContent = 'Role created successfully!';
+        msg.style.color = '#4caf50';
+        e.target.reset();
+      } else {
+        msg.textContent = 'Error creating role.';
+        msg.style.color = '#e25c5c';
+      }
+    });
+
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+          cookie = cookie.trim();
+          if (cookie.startsWith(name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    document.getElementById('filterForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const language = document.getElementById('filterLanguage').value;
+      const complexity = document.getElementById('filterComplexity').value;
+      const res = await fetch(`/api/roles/?language_level=${language}&task_complexity=${complexity}`);
+      const container = document.getElementById('filteredRoles');
+      if (res.ok) {
+        const roles = await res.json();
+        if (roles.length === 0) {
+          container.innerHTML = '<p>No roles found for selected filters.</p>';
+        } else {
+          container.innerHTML = roles.map(role => `
+            <div style="background:#f9f9f9;padding:12px;border-radius:10px;margin-bottom:10px;">
+              <strong>${role.title}</strong> <br>
+              <span>${role.location} | ${role.date}</span><br>
+              <span>Language: ${role.language_level}, Complexity: ${role.task_complexity}</span>
+            </div>
+          `).join('');
+        }
+      } else {
+        container.innerHTML = '<p style="color:#e25c5c;">Error fetching roles.</p>';
+      }
+    });
+  </script>
+</body>
+</html>

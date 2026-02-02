@@ -1,0 +1,169 @@
+<!-- File: volunteerSignup.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Volunteer Signup</title>
+  <style>
+    :root {
+      --bg: #FFF3F7;
+      --primary: #E46B8C;
+      --primary-dark: #C15575;
+      --accent: #F6B26B;
+      --accent-dark: #D79456;
+      --text: #2E2A2B;
+      --muted: #666666;
+      --card-shadow: rgba(228, 107, 140, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: Inter, system-ui, Arial, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 40px 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 4px 12px var(--card-shadow);
+      padding: 32px;
+    }
+
+    h1, h2 {
+      color: var(--primary-dark);
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin-top: 18px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 15px;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 4px var(--card-shadow);
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      margin-top: 24px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+    }
+
+    .summary {
+      margin-top: 36px;
+      background: #fff7fa;
+      padding: 20px;
+      border-radius: 16px;
+      border: 1px solid #f4d8e2;
+      box-shadow: inset 0 0 6px rgba(228, 107, 140, 0.1);
+    }
+
+    .summary p {
+      margin: 8px 0;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Student Volunteer Signup</h1>
+    <form id="signupForm">
+      <label>Full Name</label>
+      <input type="text" id="name" required>
+      <label>Email</label>
+      <input type="email" id="email" required>
+      <label>Password</label>
+      <input type="password" id="password" required>
+      <label>Phone</label>
+      <input type="text" id="phone">
+      <label>Address</label>
+      <input type="text" id="address">
+      <label>School</label>
+      <input type="text" id="school">
+      <button type="submit">Register as Student Volunteer</button>
+    </form>
+    <div class="msg" id="msg"></div>
+    
+    <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e1e5e9;">
+      <p style="color: var(--muted);">Representing a community organization? <a href="/coordinator-signup/" style="color: var(--primary); text-decoration: none; font-weight: 500;">Sign up as a Coordinator</a></p>
+    </div>
+  </div>
+  <script>
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+        phone: document.getElementById('phone').value,
+        address: document.getElementById('address').value,
+        school: document.getElementById('school').value
+      };
+      const res = await fetch('/api/volunteers/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(payload)
+      });
+      const msg = document.getElementById('msg');
+      if (res.ok) {
+        msg.textContent = 'Registration successful! Redirecting to sign in...';
+        msg.style.color = '#4caf50';
+        setTimeout(() => {
+          window.location.href = '/volunteer/signin/';
+        }, 1200);
+      } else {
+        msg.textContent = 'Error registering. Please try again.';
+        msg.style.color = '#e25c5c';
+      }
+    });
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+          cookie = cookie.trim();
+          if (cookie.startsWith(name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+  </script>
+</body>
+</html>

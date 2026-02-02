@@ -1,0 +1,524 @@
+<!-- File: signups/templates/coordinator/coordinator_event_schedule.html
+     Purpose:
+       Coordinator-facing scheduling page for a specific event.
+       Allows assigning shifts to approved volunteers, marking completion,
+       and managing task scheduling. Uses medium-cerulean theme.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Event Schedule</title>
+
+    <style>
+        :root {
+            /* Blue palette matching coordinator dashboard */
+            --bg: #F0F8FF;
+            --primary: #4A90E2;
+            --primary-dark: #2E5C8A;
+            --card: #ffffff;
+            --text: #1F3A4D;
+            --muted: #6B7C8F;
+            --shadow: rgba(74, 144, 226, 0.15);
+            --success: #3fae4e;
+            --danger: #d9534f;
+        }
+
+        * {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            padding-bottom: 50px;
+        }
+
+        .header {
+            background: var(--primary);
+            padding: 20px 30px;
+            font-size: 22px;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            color: var(--primary);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.25s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+            color: white;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 1100px;
+            margin: 40px auto;
+        }
+
+        .section {
+            background: var(--card);
+            padding: 28px;
+            border-radius: 18px;
+            margin-bottom: 26px;
+            box-shadow: 0 6px 18px var(--shadow);
+        }
+
+        .section-title {
+            font-size: 22px;
+            color: var(--primary-dark);
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 16px;
+        }
+
+        .input-row div {
+            flex: 1;
+        }
+
+        label {
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        select,
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1.4px solid #cdd8e4;
+            border-radius: 10px;
+            margin-top: 6px;
+            background: #f8fbff;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-weight: 600;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            box-shadow: 0 4px 10px var(--shadow);
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .shift-card {
+            background: #f6faff;
+            padding: 18px;
+            border-radius: 14px;
+            margin-bottom: 14px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+        }
+
+        .shift-header {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+        }
+
+        .shift-row {
+            margin: 4px 0;
+            color: var(--muted);
+        }
+
+        .action-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .done-btn {
+            background: var(--success);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .delete-btn {
+            background: var(--danger);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .done-btn:hover { background: #2f8d3e; }
+        .delete-btn:hover { background: #b43f3b; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 12px;
+            border: none !important;
+        }
+
+        .status-badge.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-badge.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <div class="header-title">Event Schedule</div>
+</div>
+
+<div class="container">
+
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+        <a class="btn back-btn" href="/coordinator/dashboard/">← Back</a>
+    </div>
+
+    <!-- Assign Shift Section -->
+    <div class="section">
+        <h2 class="section-title">Assign Shifts</h2>
+
+        <div class="input-row">
+            <div>
+                <label>Volunteer</label>
+                <select id="volunteerSelect"></select>
+            </div>
+            <div>
+                <label>Date</label>
+                <input type="date" id="shiftDate">
+            </div>
+            <div>
+                <label>Start Time</label>
+                <input type="time" id="shiftStart">
+            </div>
+            <div>
+                <label>End Time</label>
+                <input type="time" id="shiftEnd">
+            </div>
+        </div>
+
+        <label>Task / Notes</label>
+        <input id="taskField" type="text" placeholder="Task description">
+
+        <button class="btn" style="margin-top:18px;" onclick="assignShift()">Add Shift</button>
+    </div>
+
+
+    <!-- Scheduled Shifts -->
+    <div class="section">
+        <h2 class="section-title">Scheduled Shifts</h2>
+        <div id="shiftList"></div>
+    </div>
+
+</div>
+
+<script>
+    // Extract event ID from path like /coordinator/events/8/schedule/
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    const eventId = pathParts[pathParts.length - 2]; // Second to last is the event ID
+
+    async function loadEventDetails() {
+        try {
+            const res = await fetch(`/api/events/${eventId}/`);
+            if (!res.ok) {
+                console.error(`Failed to load event: HTTP ${res.status}`);
+                return;
+            }
+            const event = await res.json();
+            
+            // Pre-fill the date and time fields from event details
+            const startDateTime = new Date(event.start_datetime);
+            const endDateTime = new Date(event.end_datetime);
+            
+            // Format date as yyyy-mm-dd
+            const dateString = startDateTime.toISOString().split('T')[0];
+            const startTimeString = startDateTime.toTimeString().slice(0, 5);
+            const endTimeString = endDateTime.toTimeString().slice(0, 5);
+            
+            // Set the form fields using correct IDs
+            document.getElementById('shiftDate').value = dateString;
+            document.getElementById('shiftStart').value = startTimeString;
+            document.getElementById('shiftEnd').value = endTimeString;
+        } catch (error) {
+            console.error('Error loading event details:', error);
+        }
+    }
+
+    async function loadVolunteers() {
+        try {
+            const res = await fetch(`/api/events/${eventId}/volunteers/`);
+            if (!res.ok) {
+                console.error(`Failed to load volunteers: HTTP ${res.status}`);
+                return;
+            }
+            const vols = await res.json();
+            const select = document.getElementById("volunteerSelect");
+            select.innerHTML = "";
+
+            if (vols.length === 0) {
+                const opt = document.createElement("option");
+                opt.value = "";
+                opt.textContent = "No approved volunteers";
+                select.appendChild(opt);
+                return;
+            }
+
+            vols.forEach(v => {
+                const opt = document.createElement("option");
+                opt.value = v.id;
+                opt.textContent = `${v.name} (${v.email})`;
+                select.appendChild(opt);
+            });
+        } catch (error) {
+            console.error('Error loading volunteers:', error);
+        }
+    }
+
+    async function loadShifts() {
+        const res = await fetch(`/api/events/${eventId}/shifts/`);
+        const shifts = await res.json();
+
+        const box = document.getElementById("shiftList");
+        box.innerHTML = "";
+
+        if (shifts.length === 0) {
+            box.innerHTML = "<p>No shifts assigned yet.</p>";
+            return;
+        }
+
+        shifts.forEach(s => {
+            const div = document.createElement("div");
+            div.className = "shift-card";
+            
+            // Format time consistently as HH:MM
+            const formatTime = (timeStr) => {
+                // Handle HH:MM:SS format and convert to HH:MM
+                if (timeStr && timeStr.includes(':')) {
+                    return timeStr.split(':').slice(0, 2).join(':');
+                }
+                return timeStr;
+            };
+            
+            const startTime = formatTime(s.start_time);
+            const endTime = formatTime(s.end_time);
+            
+            // Only show hours worked if completed
+            const hoursWorkedDisplay = s.completed ? 
+                `<div class="shift-row"><strong>Hours Worked:</strong> ${s.hours_worked} hours</div>` : '';
+            
+            const statusBadge = s.completed ? 
+                `<span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 4px; font-weight: 600; font-size: 12px; border: none;">Completed</span>` :
+                `<span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 4px; font-weight: 600; font-size: 12px; border: none;">Pending</span>`;
+            
+
+
+            div.innerHTML = `
+                <div class="shift-header">${s.volunteer_names}</div>
+                <div class="shift-row"><strong>Date:</strong> ${s.shift_date}</div>
+                <div class="shift-row"><strong>Time:</strong> ${startTime} - ${endTime}</div>
+                <div class="shift-row"><strong>Task:</strong> ${s.description || 'No description'}</div>
+                <div class="shift-row"><strong>Status:</strong> ${statusBadge}</div>
+                ${hoursWorkedDisplay}
+
+                <div class="action-row">
+                    <button class="done-btn" onclick="markDone(${s.id})">Mark Completed</button>
+                    <button class="delete-btn" onclick="deleteShift(${s.id})">Delete</button>
+                </div>
+            `;
+
+            box.appendChild(div);
+        });
+    }
+
+    async function assignShift() {
+        try {
+            const volunteer = document.getElementById("volunteerSelect").value;
+            const date = document.getElementById("shiftDate").value;
+            const start = document.getElementById("shiftStart").value;
+            const end = document.getElementById("shiftEnd").value;
+            const task = document.getElementById("taskField").value;
+
+            // Validate required fields
+            if (!volunteer || !date || !start || !end) {
+                alert("Please fill in all required fields: Volunteer, Date, Start Time, and End Time");
+                return;
+            }
+
+            // Step 1: Create the EventShift (the shift itself)
+            const shiftResponse = await fetch(`/api/event-shifts/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({
+                    event: eventId,
+                    shift_date: date,
+                    start_time: start,
+                    end_time: end,
+                    description: task,
+                    volunteers_needed: 1
+                })
+            });
+
+            if (!shiftResponse.ok) {
+                const errorData = await shiftResponse.json();
+                console.error('Error creating shift:', errorData);
+                alert(`Failed to create shift: ${JSON.stringify(errorData)}`);
+                return;
+            }
+
+            const shift = await shiftResponse.json();
+
+            // Step 2: Create ShiftRequest to assign volunteer to the shift
+            const assignResponse = await fetch(`/api/shift-requests/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({
+                    volunteer: volunteer,
+                    shift: shift.id,
+                    status: "assigned"
+                })
+            });
+
+            if (!assignResponse.ok) {
+                const errorData = await assignResponse.json();
+                console.error('Error assigning volunteer to shift:', errorData);
+                alert(`Shift created but failed to assign volunteer: ${JSON.stringify(errorData)}`);
+                return;
+            }
+
+            alert("Shift created and volunteer assigned successfully!");
+            
+            // Clear form fields
+            document.getElementById("shiftDate").value = "";
+            document.getElementById("shiftStart").value = "";
+            document.getElementById("shiftEnd").value = "";
+            document.getElementById("taskField").value = "";
+            
+            // Reload shifts
+            loadShifts();
+        } catch (error) {
+            console.error('Error assigning shift:', error);
+            alert('Failed to assign shift: ' + error.message);
+        }
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    async function markDone(id) {
+        try {
+            const res = await fetch(`/api/event-shifts/${id}/complete/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                }
+            });
+            
+            if (!res.ok) {
+                const errorData = await res.json();
+                alert(`Failed to mark shift as completed: ${JSON.stringify(errorData)}`);
+                return;
+            }
+            
+            const data = await res.json();
+            alert(data.message);
+            loadShifts();
+        } catch (error) {
+            console.error('Error marking shift as done:', error);
+            alert('Failed to mark shift as completed: ' + error.message);
+        }
+    }
+
+    async function deleteShift(id) {
+        if (!confirm("Are you sure you want to delete this shift?")) {
+            return;
+        }
+        
+        try {
+            const res = await fetch(`/api/event-shifts/${id}/remove/`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                }
+            });
+            
+            if (!res.ok) {
+                const errorData = await res.json();
+                alert(`Failed to delete shift: ${JSON.stringify(errorData)}`);
+                return;
+            }
+            
+            alert("Shift deleted successfully");
+            loadShifts();
+        } catch (error) {
+            console.error('Error deleting shift:', error);
+            alert('Failed to delete shift: ' + error.message);
+        }
+    }
+
+    loadEventDetails();
+    loadVolunteers();
+    loadShifts();
+</script>
+
+</body>
+</html>

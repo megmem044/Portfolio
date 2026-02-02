@@ -1,0 +1,85 @@
+<!-- File: templates/contactInfo.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Volunteer Contact Info</title>
+  <style>
+    :root {
+      --bg: #FFF3F7;
+      --primary: #E46B8C;
+      --text: #2E2A2B;
+      --muted: #777;
+      --card: #FFFFFF;
+      --shadow: rgba(0, 0, 0, 0.1);
+    }
+    * { box-sizing: border-box; font-family: Inter, system-ui, Arial, sans-serif; }
+    body { background: var(--bg); margin: 0; color: var(--text); padding: 20px; }
+    h1 { color: var(--primary); text-align: center; margin-bottom: 24px; }
+    .info-card { background: var(--card); box-shadow: 0 2px 8px var(--shadow);
+      border-radius: 10px; padding: 20px; max-width: 700px; margin: 0 auto; }
+    .info-section { margin-bottom: 16px; }
+    .info-label { font-weight: 600; color: var(--muted); }
+    .file-link { display: inline-block; margin-top: 6px; color: var(--primary); text-decoration: none; }
+    .file-link:hover { text-decoration: underline; }
+    .divider { border: none; border-top: 1px solid #ddd; margin: 16px 0; }
+  </style>
+</head>
+<body>
+  <h1>Volunteer Contact and Document Info</h1>
+
+  <div class="info-card" id="contact-info">
+    <div class="info-section">
+      <div class="info-label">Name:</div>
+      <div id="volunteer-name">Loading...</div>
+    </div>
+    <div class="info-section">
+      <div class="info-label">Email:</div>
+      <div id="volunteer-email">Loading...</div>
+    </div>
+    <div class="info-section">
+      <div class="info-label">Phone:</div>
+      <div id="volunteer-phone">Loading...</div>
+    </div>
+    <hr class="divider">
+    <div class="info-section">
+      <div class="info-label">Uploaded Documents:</div>
+      <div id="volunteer-docs">Loading...</div>
+    </div>
+  </div>
+
+  <script>
+    // Runs when the page opens
+    document.addEventListener("DOMContentLoaded", () => {
+      const volunteerId = 1; // Replace with a real ID later
+
+      fetch(`/api/volunteers/${volunteerId}/`)
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById("volunteer-name").textContent = data.name || "N/A";
+          document.getElementById("volunteer-email").textContent = data.email || "N/A";
+          document.getElementById("volunteer-phone").textContent = data.phone || "N/A";
+
+          const docContainer = document.getElementById("volunteer-docs");
+          if (data.documents && data.documents.length > 0) {
+            docContainer.innerHTML = "";
+            data.documents.forEach(file => {
+              const link = document.createElement("a");
+              link.href = file.url;
+              link.textContent = file.name;
+              link.classList.add("file-link");
+              docContainer.appendChild(link);
+              docContainer.appendChild(document.createElement("br"));
+            });
+          } else {
+            docContainer.textContent = "No documents uploaded";
+          }
+        })
+        .catch(error => {
+          console.error("Failed to load volunteer info", error);
+          document.getElementById("contact-info").innerHTML = "<p>Failed to load volunteer info.</p>";
+        });
+    });
+  </script>
+</body>
+</html>

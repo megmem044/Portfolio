@@ -1,0 +1,249 @@
+<!-- File: signups/templates/coordinator/coordinator_event_create.html
+     Updated to match the new Event model:
+       - start_datetime
+       - end_datetime
+       - max_volunteers
+       - description
+       - notes
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Event</title>
+
+    <style>
+        :root {
+            /* Blue palette matching coordinator dashboard */
+            --bg: #F0F8FF;
+            --primary: #4A90E2;
+            --primary-dark: #2E5C8A;
+            --card: #FFFFFF;
+            --text: #1F3A4D;
+            --muted: #6B7C8F;
+            --shadow: rgba(74, 144, 226, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 28px;
+            font-size: 22px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            color: var(--primary);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.25s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+            color: white;
+        }
+
+        .container {
+            max-width: 750px;
+            margin: 40px auto;
+            background: var(--card);
+            padding: 32px;
+            border-radius: 20px;
+            box-shadow: 0 6px 18px var(--shadow);
+        }
+
+        h1 {
+            margin-top: 0;
+            text-align: center;
+            color: var(--primary-dark);
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            margin-top: 18px;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        input,
+        textarea,
+        .datetime-input {
+            width: 100%;
+            padding: 12px;
+            border: 1.5px solid #d7e7f7;
+            border-radius: 12px;
+            font-size: 15px;
+            margin-top: 6px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 14px 18px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 28px;
+            transition: background 0.25s ease;
+            width: 100%;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .back-link {
+            margin-top: 18px;
+            text-align: center;
+        }
+
+        .back-link a {
+            color: var(--muted);
+            text-decoration: none;
+        }
+
+        .back-link a:hover {
+            color: var(--primary-dark);
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <div class="header-title">Create New Event</div>
+</div>
+
+<div class="container">
+
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+        <a class="btn back-btn" href="/coordinator/events/">← Back</a>
+    </div>
+
+    <h1>Create New Event</h1>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <!-- Event Name -->
+        <label>Event Name</label>
+        <input type="text" name="name" required>
+
+        <!-- Start Date & Time -->
+        <label>Start Date</label>
+        <input type="date" name="start_date" id="start_date" required style="width: 100%; padding: 12px;">
+        <label>Start Time (HH:MM, e.g., 14:30)</label>
+        <input type="text" name="start_time" placeholder="HH:MM" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" required style="width: 100%; padding: 12px;">
+
+        <!-- End Date & Time -->
+        <label>End Date</label>
+        <input type="date" name="end_date" id="end_date" required style="width: 100%; padding: 12px;">
+        <label>End Time (HH:MM, e.g., 14:30)</label>
+        <input type="text" name="end_time" placeholder="HH:MM" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" required style="width: 100%; padding: 12px;">
+
+        <!-- Location -->
+        <label>Location</label>
+        <input type="text" name="location" required>
+
+        <!-- Max Volunteers -->
+        <label>Maximum Number of Volunteers</label>
+        <input type="number" name="max_volunteers" min="1" required>
+
+        <!-- Description -->
+        <label>Description</label>
+        <textarea name="description" placeholder="High-level overview of the event"></textarea>
+
+        <!-- Notes -->
+        <label>Notes</label>
+        <textarea name="notes" placeholder="Additional instructions or internal notes"></textarea>
+
+        <label style="margin-top: 24px; display: flex; align-items: center; font-weight: 600; color: var(--primary-dark);">
+            <input type="checkbox" name="requires_first_aid" style="width: auto; margin-right: 8px; margin-top: 0;">
+            Requires First Aid Certificate
+        </label>
+
+        <label style="display: flex; align-items: center; font-weight: 600; color: var(--primary-dark);">
+            <input type="checkbox" name="requires_food_safety" style="width: auto; margin-right: 8px; margin-top: 0;">
+            Requires Food Safety & Regulations Certificate
+        </label>
+
+        <button type="submit" class="btn">Create Event</button>
+    </form>
+
+    <div class="back-link">
+        <a href="/coordinator/events/">Return to Event List</a>
+    </div>
+
+</div>
+
+<script>
+    // Limit date selection to next 4 weeks
+    document.addEventListener('DOMContentLoaded', () => {
+        const today = new Date();
+        const maxDate = new Date();
+        maxDate.setDate(today.getDate() + 28); // 4 weeks from today
+
+        const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+
+        if (startDateInput) {
+            startDateInput.min = formatDate(today);
+            startDateInput.max = formatDate(maxDate);
+        }
+
+        if (endDateInput) {
+            endDateInput.min = formatDate(today);
+            endDateInput.max = formatDate(maxDate);
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!-- File: volunteer/volunteer_certificate_upload.html
+     Purpose:
+       Volunteer-facing page for uploading certificates.
+       Uses the axolotl blush-pink theme consistent across all volunteer pages.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Certificates</title>
+
+    <style>
+        :root {
+            --bg: #FFEFF3;
+            --primary: #E46B8C;
+            --primary-dark: #C15575;
+            --card: #ffffff;
+            --muted: #6F6A7A;
+            --shadow: rgba(228, 107, 140, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .page-header {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            background: var(--primary);
+            color: white;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 4px 10px var(--shadow);
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            padding: 32px;
+            background: var(--card);
+            border-radius: 20px;
+            box-shadow: 0 6px 16px var(--shadow);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            margin-top: 0;
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            margin-top: 26px;
+            font-size: 20px;
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+
+        .group-box {
+            background: #fff6fa;
+            padding: 18px;
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-top: 12px;
+        }
+
+        label {
+            font-weight: 600;
+            color: var(--primary-dark);
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        input[type="text"],
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 14px;
+        }
+
+        .submit-btn {
+            margin-top: 6px;
+            background: var(--primary);
+            color: white;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 10px var(--shadow);
+            transition: background 0.2s ease;
+        }
+
+        .submit-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .message {
+            margin-top: 18px;
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        .message.success {
+            background: #e8fbe7;
+            color: #2f6e3a;
+        }
+
+        .message.error {
+            background: #fde7e7;
+            color: #9f3e3e;
+        }
+
+        /* Certificate list */
+        .cert-list {
+            margin-top: 28px;
+        }
+
+        .cert-item {
+            margin-bottom: 16px;
+            padding: 16px;
+            border-radius: 14px;
+            background: #ffffff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+        }
+
+        .cert-item strong {
+            color: var(--primary-dark);
+        }
+
+        .status {
+            font-weight: 600;
+        }
+
+        .status.pending { color: #b69a9a; }
+        .status.verified { color: #4fae51; }
+        .status.rejected { color: #cf4c4c; }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>Upload Certificates</h1>
+
+    <div class="section-title">Upload a New Certificate</div>
+    <div class="group-box">
+        <label for="certTitle">Certificate Title</label>
+        <input type="text" id="certTitle" placeholder="Example: First Aid Training">
+
+        <label for="certFile">Select File</label>
+        <input type="file" id="certFile" accept=".pdf,.png,.jpg,.jpeg">
+
+        <button class="submit-btn" onclick="uploadCertificate()">Upload</button>
+    </div>
+
+    <div id="message" class="message"></div>
+
+    <div class="section-title">Your Certificates</div>
+    <div class="cert-list" id="certList"></div>
+
+</div>
+
+<script>
+
+    function getCookie(name) {
+        let value = null;
+        const cookies = document.cookie.split(";");
+
+        for (let c of cookies) {
+            c = c.trim();
+            if (c.startsWith(name + "=")) {
+                value = decodeURIComponent(c.substring(name.length + 1));
+                break;
+            }
+        }
+        return value;
+    }
+
+    const csrftoken = getCookie("csrftoken");
+    const msg = document.getElementById("message");
+    const certList = document.getElementById("certList");
+
+    const volunteerId = localStorage.getItem("volunteer_id");
+
+
+    async function loadCertificates() {
+        certList.innerHTML = "";
+
+        if (!volunteerId) {
+            certList.innerHTML = "<p>No volunteer session found.</p>";
+            return;
+        }
+
+        const res = await fetch(`/api/volunteers/${volunteerId}/summary/`);
+        const data = await res.json();
+
+        if (data.certificates.length === 0) {
+            certList.innerHTML = "<p>No certificates uploaded yet.</p>";
+            return;
+        }
+
+        data.certificates.forEach(cert => {
+            const div = document.createElement("div");
+            div.className = "cert-item";
+
+            div.innerHTML = `
+                <strong>${cert.title}</strong>
+                <p>Status:
+                    <span class="status ${cert.status.toLowerCase()}">
+                        ${cert.status}
+                    </span>
+                </p>
+                ${cert.file ? `<a href="${cert.file}" target="_blank">View File</a>` : ""}
+            `;
+
+            certList.appendChild(div);
+        });
+    }
+
+
+    async function uploadCertificate() {
+        msg.style.display = "none";
+
+        if (!volunteerId) {
+            msg.className = "message error";
+            msg.textContent = "Volunteer session not found.";
+            msg.style.display = "block";
+            return;
+        }
+
+        const title = document.getElementById("certTitle").value;
+        const fileField = document.getElementById("certFile").files[0];
+
+        if (!title || !fileField) {
+            msg.className = "message error";
+            msg.textContent = "Please provide both a title and a file.";
+            msg.style.display = "block";
+            return;
+        }
+
+        const fd = new FormData();
+        fd.append("user", volunteerId);
+        fd.append("title", title);
+        fd.append("file", fileField);
+
+        const res = await fetch("/api/certificates/", {
+            method: "POST",
+            headers: { "X-CSRFToken": csrftoken },
+            body: fd
+        });
+
+        if (res.ok) {
+            msg.className = "message success";
+            msg.textContent = "Certificate uploaded successfully.";
+            msg.style.display = "block";
+            loadCertificates();
+        } else {
+            msg.className = "message error";
+            msg.textContent = "Failed to upload certificate.";
+            msg.style.display = "block";
+        }
+    }
+
+
+    loadCertificates();
+
+</script>
+
+</body>
+</html>

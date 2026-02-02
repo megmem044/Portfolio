@@ -1,0 +1,596 @@
+<!-- File: signups/templates/coordinator/coordinator_shift_assignment.html
+     Purpose:
+       Coordinator-facing shift assignment page.
+       Allows selecting an event, viewing approved volunteers, assigning them to shifts,
+       and tracking the assignment schedule.
+       Uses the medium-cerulean theme consistent with coordinator UI.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Shift Assignment</title>
+
+    <style>
+        :root {
+            /* Blue palette matching coordinator dashboard */
+            --bg: #F0F8FF;
+            --primary: #4A90E2;
+            --primary-dark: #2E5C8A;
+            --card: #FFFFFF;
+            --text: #1F3A4D;
+            --muted: #6B7C8F;
+            --shadow: rgba(74, 144, 226, 0.15);
+            --grid-border: #d0e8f8;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 28px;
+            font-size: 22px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            color: var(--primary);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.25s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+            color: white;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px 20px;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 32px;
+            background: var(--card);
+            border-radius: 20px;
+            box-shadow: 0 10px 22px var(--shadow);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: var(--primary-dark);
+            text-align: center;
+        }
+
+        .section-title {
+            font-size: 20px;
+            margin-top: 28px;
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+            font-size: 15px;
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .volunteer-list, .schedule-box {
+            flex: 1;
+            background: var(--card);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 6px 16px var(--shadow);
+        }
+
+        .volunteer-card {
+            padding: 14px;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            background: #f7fbff;
+            border: 1px solid var(--grid-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .volunteer-name {
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .assign-btn, .unassign-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .assign-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .unassign-btn {
+            background: #d9534f;
+        }
+
+        .unassign-btn:hover {
+            background: #c9302c;
+        }
+
+        .schedule-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        .schedule-grid th, .schedule-grid td {
+            border: 1px solid var(--grid-border);
+            padding: 14px;
+            text-align: left;
+        }
+
+        .schedule-grid th {
+            background: #eaf3ff;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .slot {
+            min-height: 50px;
+            vertical-align: top;
+        }
+
+        .slot-entry {
+            padding: 6px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .slot-name {
+            font-weight: 500;
+        }
+
+        .empty {
+            margin-top: 12px;
+            text-align: center;
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        .message.success {
+            background: #e7fbe9;
+            color: #2d7a3b;
+        }
+
+        .message.error {
+            background: #fde2e2;
+            color: #9d3b3b;
+        }
+
+        .shift-selector {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .shift-btn {
+            padding: 6px 10px;
+            border: 1px solid var(--grid-border);
+            background: #f7fbff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .shift-btn:hover {
+            background: #eaf3ff;
+        }
+
+        .shift-btn.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+<div class="header">
+    <div class="header-title">Shift Assignment</div>
+</div>
+<div class="container">
+
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+        <a class="btn back-btn" href="/coordinator/events/">← Back</a>
+    </div>
+
+    <h1>Shift Assignment</h1>
+
+    <!-- Event Selector -->
+    <div class="section-title">Select Event</div>
+    <select id="eventSelect" onchange="loadEventData()"></select>
+    <div id="eventDetails" style="margin-top:10px; color:#666; font-size:0.95rem;"></div>
+
+    <div class="flex-row">
+
+        <!-- Approved Volunteers -->
+        <div class="volunteer-list">
+            <div class="section-title">Approved Volunteers</div>
+            <div id="volunteerList"></div>
+        </div>
+
+        <!-- Schedule -->
+        <div class="schedule-box">
+            <div class="section-title">Shift Schedule</div>
+            <table class="schedule-grid">
+                <thead>
+                    <tr>
+                        <th style="width:120px;">Shift</th>
+                        <th>Assigned Volunteers</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Morning</strong><br><small>8:00 AM – 12:00 PM</small></td>
+                        <td class="slot" id="slot-morning"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Afternoon</strong><br><small>12:00 PM – 5:00 PM</small></td>
+                        <td class="slot" id="slot-afternoon"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Evening</strong><br><small>5:00 PM – 9:00 PM</small></td>
+                        <td class="slot" id="slot-evening"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <div id="message" class="message"></div>
+</div>
+
+<script>
+    const csrf = getCookie("csrftoken");
+    let currentEventId = null;
+    let assignedVolunteers = {}; // Track assignments: volunteerId -> shift
+
+    function getCookie(name) {
+        let value = null;
+        const parts = document.cookie.split(";");
+        for (let c of parts) {
+            c = c.trim();
+            if (c.startsWith(name + "=")) {
+                value = decodeURIComponent(c.substring(name.length + 1));
+                break;
+            }
+        }
+        return value;
+    }
+
+    async function loadEvents() {
+        const eventSelect = document.getElementById("eventSelect");
+        try {
+            const res = await fetch("/api/events/");
+            if (!res.ok) return;
+            const events = await res.json();
+
+            events.forEach(ev => {
+                const opt = document.createElement("option");
+                opt.value = ev.id;
+                const startDate = ev.start_datetime ? new Date(ev.start_datetime).toLocaleDateString() : "N/A";
+                opt.textContent = `${ev.name} — ${startDate}`;
+                eventSelect.appendChild(opt);
+            });
+
+            if (events.length > 0) {
+                currentEventId = events[0].id;
+                loadEventData();
+            }
+        } catch (err) {
+            console.error("Error loading events", err);
+        }
+    }
+
+    async function loadEventData() {
+        currentEventId = document.getElementById("eventSelect").value;
+        assignedVolunteers = {};
+
+        // Load event details
+        try {
+            const evRes = await fetch(`/api/events/${currentEventId}/`);
+            if (evRes.ok) {
+                const ev = evRes.json();
+                console.log("Event:", ev);
+            }
+        } catch (e) {
+            console.error("Error fetching event details", e);
+        }
+
+        // Load volunteers and schedule
+        await loadVolunteers();
+        await loadSchedule();
+    }
+
+    async function loadVolunteers() {
+        try {
+            const res = await fetch("/api/requests/");
+            if (!res.ok) return;
+            const requests = await res.json();
+
+            // Filter for this event and approved status
+            const approved = requests.filter(r => r.event == currentEventId && r.status === "approved");
+
+            const list = document.getElementById("volunteerList");
+            list.innerHTML = "";
+
+            if (approved.length === 0) {
+                list.innerHTML = "<p class='empty'>No approved volunteers for this event.</p>";
+                return;
+            }
+
+            approved.forEach(req => {
+                const card = document.createElement("div");
+                card.className = "volunteer-card";
+
+                const name = document.createElement("span");
+                name.className = "volunteer-name";
+                name.textContent = req.volunteer_name || `Volunteer ${req.volunteer}`;
+
+                const btn = document.createElement("button");
+                btn.className = "assign-btn";
+                btn.textContent = "Assign";
+                btn.onclick = () => showShiftOptions(req.volunteer, req.volunteer_name || `Volunteer ${req.volunteer}`);
+
+                card.appendChild(name);
+                card.appendChild(btn);
+                list.appendChild(card);
+            });
+        } catch (err) {
+            console.error("Error loading volunteers", err);
+        }
+    }
+
+    function showShiftOptions(volunteerId, volunteerName) {
+        const shift = prompt(`Assign ${volunteerName} to shift:\n1. Morning (8:00 AM - 12:00 PM)\n2. Afternoon (12:00 PM - 5:00 PM)\n3. Evening (5:00 PM - 9:00 PM)\n\nEnter: morning, afternoon, or evening`);
+        
+        if (!shift) return;
+        const normalizedShift = shift.trim().toLowerCase();
+        
+        if (!["morning", "afternoon", "evening"].includes(normalizedShift)) {
+            showMessage("Invalid shift. Use: morning, afternoon, or evening", "error");
+            return;
+        }
+
+        assignShift(volunteerId, volunteerName, normalizedShift);
+    }
+
+    async function assignShift(volunteerId, volunteerName, shift) {
+        try {
+            // First, fetch the event to get its details (name, location, date)
+            const evRes = await fetch(`/api/events/${currentEventId}/`);
+            if (!evRes.ok) {
+                showMessage("Failed to fetch event details", "error");
+                return;
+            }
+            const event = await evRes.json();
+
+            // Fetch roles and find one matching the event's date/location, or create a default
+            const rolesRes = await fetch("/api/roles/");
+            let roleId = null;
+            
+            if (rolesRes.ok) {
+                const roles = await rolesRes.json();
+                // Try to find a role for this event (match by date and location if available)
+                const matchingRole = roles.find(r => 
+                    r.date === event.start_datetime?.split('T')[0] && 
+                    r.location === event.location
+                );
+                if (matchingRole) {
+                    roleId = matchingRole.id;
+                }
+            }
+
+            // If no matching role, create a generic one for this event
+            if (!roleId) {
+                const eventDate = event.start_datetime ? event.start_datetime.split('T')[0] : new Date().toISOString().split('T')[0];
+                const createRoleRes = await fetch("/api/roles/", {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrf
+                    },
+                    body: JSON.stringify({
+                        title: event.name,
+                        date: eventDate,
+                        location: event.location || "TBD",
+                        language_level: "beginner",
+                        task_complexity: "simple"
+                    })
+                });
+
+                if (createRoleRes.ok) {
+                    const newRole = await createRoleRes.json();
+                    roleId = newRole.id;
+                } else {
+                    showMessage("Failed to create role for event", "error");
+                    return;
+                }
+            }
+
+            // Now assign the volunteer with the role and shift
+            const payload = {
+                volunteer: volunteerId,
+                role: roleId,
+                shift: shift,
+                status: "upcoming"
+            };
+
+            const res = await fetch("/api/enrollments/", {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrf
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                assignedVolunteers[volunteerId] = shift;
+                showMessage(`${volunteerName} assigned to ${shift} shift`, "success");
+                await loadSchedule();
+                await loadVolunteers();
+            } else {
+                const text = await res.text();
+                showMessage(`Failed to assign: ${text}`, "error");
+            }
+        } catch (err) {
+            console.error("Error assigning shift", err);
+            showMessage("Error assigning shift", "error");
+        }
+    }
+
+    async function loadSchedule() {
+        try {
+            const res = await fetch("/api/enrollments/");
+            if (!res.ok) return;
+            const enrollments = await res.json();
+
+            // Filter for this event (using role ID as proxy)
+            const scheduled = enrollments.filter(e => e.role == currentEventId);
+
+            const slots = {
+                morning: document.getElementById("slot-morning"),
+                afternoon: document.getElementById("slot-afternoon"),
+                evening: document.getElementById("slot-evening")
+            };
+
+            Object.values(slots).forEach(s => s.innerHTML = "");
+
+            if (scheduled.length === 0) {
+                Object.values(slots).forEach(s => {
+                    s.innerHTML = "<p class='empty'>No assignments</p>";
+                });
+                return;
+            }
+
+            // Group by shift
+            const byShift = { morning: [], afternoon: [], evening: [] };
+            scheduled.forEach(e => {
+                if (e.shift && byShift[e.shift]) {
+                    byShift[e.shift].push(e);
+                }
+            });
+
+            Object.entries(byShift).forEach(([shift, entries]) => {
+                const slot = slots[shift];
+                if (entries.length === 0) {
+                    slot.innerHTML = "<p class='empty'>No assignments</p>";
+                } else {
+                    entries.forEach(e => {
+                        const div = document.createElement("div");
+                        div.className = "slot-entry";
+                        div.innerHTML = `
+                            <span class="slot-name">${e.volunteer_name || `Volunteer ${e.volunteer}`}</span>
+                            <button class="unassign-btn" onclick="unassignShift(${e.id})">Remove</button>
+                        `;
+                        slot.appendChild(div);
+                    });
+                }
+            });
+        } catch (err) {
+            console.error("Error loading schedule", err);
+        }
+    }
+
+    async function unassignShift(enrollmentId) {
+        if (!confirm("Remove this assignment?")) return;
+
+        try {
+            const res = await fetch(`/api/enrollments/${enrollmentId}/`, {
+                method: "DELETE",
+                headers: { "X-CSRFToken": csrf }
+            });
+
+            if (res.ok) {
+                showMessage("Assignment removed", "success");
+                await loadSchedule();
+                await loadVolunteers();
+            } else {
+                showMessage("Failed to remove assignment", "error");
+            }
+        } catch (err) {
+            console.error("Error removing assignment", err);
+            showMessage("Error removing assignment", "error");
+        }
+    }
+
+    function showMessage(text, type) {
+        const msg = document.getElementById("message");
+        msg.className = `message ${type}`;
+        msg.textContent = text;
+        msg.style.display = "block";
+        setTimeout(() => { msg.style.display = "none"; }, 3000);
+    }
+
+    loadEvents();
+</script>
+
+</body>
+</html>

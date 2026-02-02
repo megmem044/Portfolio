@@ -1,0 +1,513 @@
+<!-- File: signups/templates/coordinator/coordinator_event_edit.html
+     Updated to match the new Event model:
+       - start_datetime
+       - end_datetime
+       - max_volunteers
+       - description
+       - notes
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Event</title>
+
+    <style>
+        :root {
+            /* Blue palette matching coordinator dashboard */
+            --bg: #F0F8FF;
+            --primary: #4A90E2;
+            --primary-dark: #2E5C8A;
+            --card: #FFFFFF;
+            --text: #1F3A4D;
+            --muted: #6B7C8F;
+            --shadow: rgba(74, 144, 226, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 28px;
+            font-size: 22px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            color: var(--primary);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.25s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+            color: white;
+        }
+
+        .container {
+            max-width: 750px;
+            margin: 40px auto;
+            background: var(--card);
+            padding: 32px;
+            border-radius: 20px;
+            box-shadow: 0 6px 18px var(--shadow);
+        }
+
+        h1 {
+            margin-top: 0;
+            text-align: center;
+            color: var(--primary-dark);
+            margin-bottom: 24px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            display: block;
+            margin-top: 0;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 6px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 12px;
+            border: 1.5px solid #d7e7f7;
+            border-radius: 12px;
+            font-size: 15px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .time-inputs {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .time-inputs .form-group {
+            flex: 1;
+            margin: 0;
+        }
+
+        .time-inputs label {
+            display: none;
+        }
+
+        label {
+            display: block;
+            margin-top: 18px;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1.5px solid #d7e7f7;
+            border-radius: 12px;
+            font-size: 15px;
+            margin-top: 6px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 14px 18px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 28px;
+            transition: background 0.25s ease;
+            width: 100%;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .back-link {
+            margin-top: 18px;
+            text-align: center;
+        }
+
+        .back-link a {
+            color: var(--muted);
+            text-decoration: none;
+        }
+
+        .back-link a:hover {
+            color: var(--primary-dark);
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <div class="header-title">Edit Event</div>
+    <a class="back-btn" href="/coordinator/dashboard/">← Back</a>
+</div>
+
+<div class="container">
+
+    <form id="editForm">
+        {% csrf_token %}
+
+        <div class="form-grid">
+            <!-- Event Name -->
+            <div class="form-group full-width">
+                <label for="name">Name</label>
+                <input type="text" id="name" required>
+            </div>
+
+            <!-- Start Date -->
+            <div class="form-group">
+                <label for="start_date">Start Date</label>
+                <input type="date" id="start_date" required>
+            </div>
+
+            <!-- Start Time -->
+            <div class="form-group">
+                <label>Start Time</label>
+                <div class="time-inputs">
+                    <div class="form-group">
+                        <label for="start_hour">HH</label>
+                        <select id="start_hour" required>
+                            <option value="">HH</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="start_minute">MM</label>
+                        <select id="start_minute" required>
+                            <option value="">MM</option>
+                            <option value="00">00</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="45">45</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- End Date -->
+            <div class="form-group">
+                <label for="end_date">End Date</label>
+                <input type="date" id="end_date" required>
+            </div>
+
+            <!-- End Time -->
+            <div class="form-group">
+                <label>End Time</label>
+                <div class="time-inputs">
+                    <div class="form-group">
+                        <label for="end_hour">HH</label>
+                        <select id="end_hour" required>
+                            <option value="">HH</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="end_minute">MM</label>
+                        <select id="end_minute" required>
+                            <option value="">MM</option>
+                            <option value="00">00</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="45">45</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location -->
+            <div class="form-group">
+                <label for="location">Location</label>
+                <input type="text" id="location" required>
+            </div>
+
+            <!-- Max Volunteers -->
+            <div class="form-group">
+                <label for="max_volunteers">Max Volunteers</label>
+                <input type="number" id="max_volunteers" min="1" required>
+            </div>
+
+            <!-- Cultural Interests -->
+            <div class="form-group">
+                <label>Cultural Interests</label>
+                <div class="checkbox-group" id="culturalInterestsContainer">
+                    <!-- Checkboxes will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- English Proficiency Level -->
+            <div class="form-group">
+                <label for="english_level">English Proficiency Level</label>
+                <select id="english_level">
+                    <option value="">Select level</option>
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                </select>
+            </div>
+
+            <!-- Notes -->
+            <div class="form-group full-width">
+                <label for="notes">Notes</label>
+                <textarea id="notes"></textarea>
+            </div>
+
+            <!-- Certificates -->
+            <div class="form-group full-width">
+                <label style="margin-top: 0; margin-bottom: 12px;">Certificates Needed</label>
+                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; margin-top: 0; font-weight: 400; min-width: 120px;">
+                        <input type="checkbox" id="requires_first_aid" style="width: auto; margin-right: 8px; margin-top: 0;">
+                        First Aid
+                    </label>
+
+                    <label style="display: flex; align-items: center; margin-top: 0; font-weight: 400; min-width: 120px;">
+                        <input type="checkbox" id="requires_food_safety" style="width: auto; margin-right: 8px; margin-top: 0;">
+                        Food Safety
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn">Save Changes</button>
+    </form>
+
+    <div class="back-link">
+        <a href="/coordinator/dashboard/">Return to Dashboard</a>
+    </div>
+
+</div>
+
+<script>
+    // Extract event_id from URL path /coordinator/events/<event_id>/edit/
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    const eventId = pathParts[pathParts.indexOf("events") + 1];
+
+    // Initialize hour dropdowns
+    function initializeHourDropdowns() {
+        const startHourSelect = document.getElementById("start_hour");
+        const endHourSelect = document.getElementById("end_hour");
+        
+        for (let i = 0; i < 24; i++) {
+            const value = String(i).padStart(2, '0');
+            const option1 = document.createElement('option');
+            option1.value = value;
+            option1.textContent = value;
+            startHourSelect.appendChild(option1);
+            
+            const option2 = document.createElement('option');
+            option2.value = value;
+            option2.textContent = value;
+            endHourSelect.appendChild(option2);
+        }
+    }
+
+    // Load cultural categories
+    async function loadCulturalCategories() {
+        try {
+            const res = await fetch('/api/interests/');
+            const interests = await res.json();
+            const container = document.getElementById('culturalInterestsContainer');
+            container.innerHTML = ''; // Clear existing
+            
+            interests.forEach(interest => {
+                const checkboxItem = document.createElement('div');
+                checkboxItem.className = 'checkbox-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = 'interest_' + interest.id;
+                checkbox.className = 'cultural-interest-checkbox';
+                checkbox.value = interest.id;
+                
+                const label = document.createElement('label');
+                label.htmlFor = 'interest_' + interest.id;
+                label.textContent = interest.name;
+                
+                checkboxItem.appendChild(checkbox);
+                checkboxItem.appendChild(label);
+                container.appendChild(checkboxItem);
+            });
+        } catch (error) {
+            console.error('Error loading cultural categories:', error);
+        }
+    }
+
+    // Load event data into form
+    async function loadEvent() {
+        console.log('loadEvent called with eventId:', eventId);
+        try {
+            const res = await fetch(`/api/events/${eventId}/`);
+            console.log('API response status:', res.status);
+            
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error('Error response:', errorText);
+                alert(`Unable to load event. Status: ${res.status}. Response: ${errorText}`);
+                return;
+            }
+
+            const ev = await res.json();
+            console.log('Event data loaded:', ev);
+
+            document.getElementById("name").value = ev.name;
+        
+        // Parse start_datetime into separate date and time
+        if (ev.start_datetime) {
+            const startDateTime = new Date(ev.start_datetime);
+            const startDateStr = startDateTime.toISOString().split('T')[0];
+            const startHour = String(startDateTime.getHours()).padStart(2, '0');
+            const startMinute = String(startDateTime.getMinutes()).padStart(2, '0');
+            document.getElementById("start_date").value = startDateStr;
+            document.getElementById("start_hour").value = startHour;
+            document.getElementById("start_minute").value = startMinute;
+        }
+        
+        // Parse end_datetime into separate date and time
+        if (ev.end_datetime) {
+            const endDateTime = new Date(ev.end_datetime);
+            const endDateStr = endDateTime.toISOString().split('T')[0];
+            const endHour = String(endDateTime.getHours()).padStart(2, '0');
+            const endMinute = String(endDateTime.getMinutes()).padStart(2, '0');
+            document.getElementById("end_date").value = endDateStr;
+            document.getElementById("end_hour").value = endHour;
+            document.getElementById("end_minute").value = endMinute;
+        }
+        
+        document.getElementById("location").value = ev.location;
+        document.getElementById("max_volunteers").value = ev.max_volunteers;
+        document.getElementById("notes").value = ev.notes || "";
+        document.getElementById("requires_first_aid").checked = ev.requires_first_aid || false;
+        document.getElementById("requires_food_safety").checked = ev.requires_food_safety || false;
+        
+        // Set cultural interests (checkboxes)
+        if (ev.cultural_interests && ev.cultural_interests.length > 0) {
+            ev.cultural_interests.forEach(interestId => {
+                const checkbox = document.getElementById('interest_' + interestId);
+                if (checkbox) checkbox.checked = true;
+            });
+        }
+        } catch (error) {
+            console.error('Error loading event:', error);
+            alert('Error loading event: ' + error.message);
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeHourDropdowns();
+        loadCulturalCategories();
+        loadEvent();
+    });
+
+    // Submit updated event
+    document.getElementById("editForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        // Combine date and time into datetime strings
+        const startDateStr = document.getElementById("start_date").value;
+        const startHour = document.getElementById("start_hour").value;
+        const startMinute = document.getElementById("start_minute").value;
+        const start_datetime = `${startDateStr}T${startHour}:${startMinute}:00`;
+        
+        const endDateStr = document.getElementById("end_date").value;
+        const endHour = document.getElementById("end_hour").value;
+        const endMinute = document.getElementById("end_minute").value;
+        const end_datetime = `${endDateStr}T${endHour}:${endMinute}:00`;
+
+        const payload = {
+            name: document.getElementById("name").value,
+            start_datetime: start_datetime,
+            end_datetime: end_datetime,
+            location: document.getElementById("location").value,
+            max_volunteers: document.getElementById("max_volunteers").value,
+            notes: document.getElementById("notes").value,
+            requires_first_aid: document.getElementById("requires_first_aid").checked,
+            requires_food_safety: document.getElementById("requires_food_safety").checked,
+            cultural_interests: Array.from(document.querySelectorAll('.cultural-interest-checkbox:checked')).map(cb => parseInt(cb.value)),
+        };
+
+        const csrf = document.querySelector("[name=csrfmiddlewaretoken]").value;
+
+        const res = await fetch(`/api/events/${eventId}/`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrf
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            alert("Event updated successfully.");
+            window.location.href = "/coordinator/dashboard/";
+        } else {
+            alert("Error updating event.");
+        }
+    });
+</script>
+
+</body>
+</html>

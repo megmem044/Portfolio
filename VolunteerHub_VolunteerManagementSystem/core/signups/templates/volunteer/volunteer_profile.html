@@ -1,0 +1,700 @@
+<!-- File: volunteer/volunteer_profile.html
+     Purpose:
+     Volunteer-facing personal profile page.
+     Allows editing personal details, uploading a profile picture,
+     managing preferences, certificates, volunteer photos, and viewing assigned shifts.
+     Uses axolotl-theme styling consistent with all volunteer pages.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Volunteer Profile</title>
+    {% include 'session_timeout.html' %}
+
+    <style>
+        :root {
+            --bg: #FFEFF3;
+            --primary: #E46B8C;
+            --primary-dark: #C15575;
+            --card: #ffffff;
+            --muted: #6F6A7A;
+            --shadow: rgba(228, 107, 140, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 36px;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            font-size: 15px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 880px;
+            padding: 32px;
+            background: var(--card);
+            border-radius: 20px;
+            box-shadow: 0 6px 18px var(--shadow);
+        }
+
+        h1 {
+            margin-top: 0;
+            text-align: center;
+            color: var(--primary-dark);
+            font-size: 22px;
+        }
+
+        .section-title {
+            margin-top: 24px;
+            font-size: 17px;
+            color: var(--primary-dark);
+            font-weight: 700;
+        }
+
+        .group {
+            background: #fff6fa;
+            padding: 16px;
+            border-radius: 16px;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        label {
+            font-weight: 600;
+            color: var(--primary-dark);
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 9px 10px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            margin-top: 6px;
+            margin-bottom: 12px;
+            font-size: 15px;
+        }
+
+        .submit-btn {
+            background: var(--primary);
+            color: white;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 6px;
+            box-shadow: 0 4px 10px var(--shadow);
+        }
+
+        .submit-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .item {
+            background: #ffffff;
+            padding: 14px;
+            border-radius: 14px;
+            margin-top: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .profile-picture-box {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 14px;
+        }
+        
+        .profile-picture-preview {
+            width: 85px;
+            height: 85px;
+            border-radius: 50%;
+            background: #ffdbe9;
+            object-fit: cover;
+            display: none;
+        }
+
+        /* Cultural interests list (checkboxes on left) */
+        .interest-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .interest-list li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 6px;
+            border-bottom: 1px solid #f4e9ef;
+        }
+
+        .interest-list li:last-child {
+            border-bottom: none;
+        }
+
+        .interest-list input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+        }
+
+        .shift-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .shift-list li {
+            padding: 10px 8px;
+            border-bottom: 1px solid #f4e9ef;
+        }
+
+        .shift-empty {
+            color: #666;
+            padding: 8px 6px;
+        }
+
+        /* edit area hidden by default; shown when editing */
+        #editArea { display: none; }
+
+        /* Header with back button */
+        .page-header {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-btn {
+            background: var(--primary);
+            color: white;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            order: 2;
+        }
+
+        .page-header h1 {
+            order: 1;
+            margin: 0;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        h1 {
+            text-align: center;
+            margin: 0;
+        }
+
+        /* Summary styling aligned to coordinator detail view */
+        .summary-box {
+            background: #fff6fa;
+            padding: 18px;
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .info-row {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            margin-bottom: 12px;
+            align-items: start;
+        }
+
+        .info-label {
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        .info-value {
+            color: #5f4a55;
+        }
+
+        .info-value.empty {
+            color: #a69aa2;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="page-header">
+        <a href="/volunteer/home/" class="back-btn">← Back</a>
+        <h1 id="profileHeading">Your Profile</h1>
+    </div>
+
+    <!-- Personal Information -->
+    <!-- PROFILE SUMMARY (read-only after save) -->
+    <div id="profileSummary" style="display:none; margin-bottom:18px;">
+        <div class="section-title">Profile Summary</div>
+        <div id="summaryList" class="group"></div>
+        <div style="margin-top:12px;">
+            <button class="submit-btn" onclick="showEditForm()">Edit Profile</button>
+        </div>
+    </div>
+
+    <!-- EDIT FORM -->
+    <div id="editArea">
+    <div class="section-title">Personal Information</div>
+    <div class="group">
+        <label>Profile Picture</label>
+        <div class="profile-picture-box">
+            <img id="profilePreview" class="profile-picture-preview" alt="Profile picture">
+            <input type="file" id="profileImage" accept="image/*">
+        </div>
+
+        <label>Name</label>
+        <input id="name" type="text">
+
+        <label>Email</label>
+        <input id="email" type="email" disabled>
+
+        <label>Phone</label>
+        <input id="phone" type="text">
+
+        <label>Address</label>
+        <input id="address" type="text">
+
+        <label>School / University</label>
+        <input id="school" type="text">
+
+        <button id="saveProfileBtn" class="submit-btn" onclick="saveProfile()">Save Changes</button>
+        <button id="cancelEditBtn" class="submit-btn" style="display:none; margin-left:8px; background:#ccc; color:#111;" onclick="showSummary()">Cancel</button>
+    </div>
+
+    <!-- Preferences Section -->
+    <div class="section-title">Preferences</div>
+    <div class="group">
+        <label>English Level</label>
+        <select id="english_level" disabled>
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+        </select>
+
+        <label style="margin-top:8px;">Cultural Interests</label>
+        <div id="interestContainer" style="margin-top:8px;"></div>
+
+        <div style="display:flex; gap:10px; margin-top:12px;">
+            <button id="editPrefBtn" class="submit-btn" onclick="enableInterestEdit()">Edit Preferences</button>
+            <button id="savePrefBtn" class="submit-btn" style="display:none;" onclick="savePreferences()">Save Preferences</button>
+        </div>
+    </div>
+    </div>
+
+    <!-- (Certificates, event photos, assigned shifts and total hours removed from summary view per request) -->
+
+</div>
+
+<script>
+    // Check who is logged in
+    console.log('=== SESSION / AUTH CHECK ===');
+    console.log('Current user from template:', "{{ request.user.username|default:'NOT_LOGGED_IN' }}");
+    console.log('Current user email from template:', "{{ request.user.email|default:'NO_EMAIL' }}");
+    console.log('Is authenticated:', "{{ request.user.is_authenticated|lower }}");
+    console.log('volunteer_id from template:', "{{ volunteer_id|default:'NOT_PROVIDED' }}");
+    console.log('=== END SESSION CHECK ===');
+    
+    // volunteer_id is passed into template context by the view
+    const volunteerId = "{{ volunteer_id|default:'' }}";
+
+    async function loadVolunteerProfile() {
+        try {
+            let data;
+            let res;
+
+            // Always try current endpoint first
+            console.log('BEFORE FETCH: About to call /api/volunteers/current/');
+            res = await fetch(`/api/volunteers/current/`);
+            console.log('AFTER FETCH: Got response, status:', res.status);
+            console.log('Response object:', res);
+            
+            if (res.ok) {
+                console.log('Response is OK (2xx), parsing JSON...');
+                const rawText = await res.text();
+                console.log('RAW RESPONSE TEXT:', rawText);
+                try {
+                    data = JSON.parse(rawText);
+                    console.log('Successfully parsed JSON. Data keys:', Object.keys(data));
+                    console.log('Successfully loaded current volunteer:', JSON.stringify(data, null, 2));
+                } catch(jsonErr) {
+                    console.error('FAILED to parse JSON:', jsonErr);
+                    console.error('Raw text was:', rawText);
+                    return;
+                }
+            } else {
+                // Fallback to volunteer_id if provided
+                console.log('Response NOT OK. Status:', res.status);
+                const errorText = await res.text();
+                console.log('Error response text:', errorText);
+                
+                if (volunteerId) {
+                    console.log('Trying fallback with volunteerId:', volunteerId);
+                    res = await fetch(`/api/volunteers/${volunteerId}/`);
+                    if (!res.ok) {
+                        console.error('Failed to load volunteer with ID:', res.status, res.statusText);
+                        const errorText = await res.text();
+                        console.error('Error response:', errorText);
+                        return;
+                    }
+                    data = await res.json();
+                    console.log('Loaded volunteer by ID:', JSON.stringify(data, null, 2));
+                } else {
+                    console.error('No volunteer_id and current endpoint failed:', res.status, errorText);
+                    return;
+                }
+            }
+
+            if (!data) {
+                console.error('No data received from API');
+                return;
+            }
+
+            console.log('About to populate form with data');
+
+            // Set heading to volunteer name
+            const heading = document.getElementById('profileHeading');
+            if (data.name && heading) {
+                heading.textContent = data.name;
+                console.log('Set heading to:', data.name);
+            }
+
+            // Populate fields (if present) - check each one
+            const nameEl = document.getElementById('name');
+            const emailEl = document.getElementById('email');
+            const phoneEl = document.getElementById('phone');
+            const addressEl = document.getElementById('address');
+            const schoolEl = document.getElementById('school');
+            const englishEl = document.getElementById('english_level');
+            const preview = document.getElementById('profilePreview');
+
+            console.log('Form elements found:', {nameEl: !!nameEl, emailEl: !!emailEl, phoneEl: !!phoneEl, addressEl: !!addressEl, schoolEl: !!schoolEl, englishEl: !!englishEl});
+
+            console.log('DATA OBJECT CONTENTS:');
+            console.log('  data.name =', data.name);
+            console.log('  data.email =', data.email);
+            console.log('  data.phone =', data.phone);
+            console.log('  data.address =', data.address);
+            console.log('  data.school =', data.school);
+            console.log('  data.english_level =', data.english_level);
+
+            if (nameEl) {
+                nameEl.value = data.name || '';
+                console.log('Set name: element.value is now:', nameEl.value, '(data.name was:', data.name, ')');
+            } else {
+                console.error('NAME ELEMENT NOT FOUND!');
+            }
+            if (emailEl) {
+                emailEl.value = data.email || '';
+                console.log('Set email: element.value is now:', emailEl.value, '(data.email was:', data.email, ')');
+            } else {
+                console.error('EMAIL ELEMENT NOT FOUND!');
+            }
+            if (phoneEl) {
+                phoneEl.value = data.phone || '';
+                console.log('Set phone: element.value is now:', phoneEl.value, '(data.phone was:', data.phone, ')');
+            } else {
+                console.error('PHONE ELEMENT NOT FOUND!');
+            }
+            if (addressEl) {
+                addressEl.value = data.address || '';
+                console.log('Set address: element.value is now:', addressEl.value, '(data.address was:', data.address, ')');
+            } else {
+                console.error('ADDRESS ELEMENT NOT FOUND!');
+            }
+            if (schoolEl) {
+                schoolEl.value = data.school || '';
+                console.log('Set school: element.value is now:', schoolEl.value, '(data.school was:', data.school, ')');
+            } else {
+                console.error('SCHOOL ELEMENT NOT FOUND!');
+            }
+            if (englishEl && data.english_level) {
+                englishEl.value = data.english_level;
+                console.log('Set english level: element.value is now:', englishEl.value, '(data.english_level was:', data.english_level, ')');
+            } else {
+                if (!englishEl) console.error('ENGLISH_LEVEL ELEMENT NOT FOUND!');
+                if (!data.english_level) console.error('NO ENGLISH_LEVEL IN DATA!');
+            }
+
+            // Profile picture
+            if (preview && data.profile_image) {
+                preview.src = data.profile_image;
+                preview.style.display = 'block';
+                console.log('Set profile image');
+            }
+
+            console.log('About to load interest list with IDs:', (data.cultural_interests || []).map(i => typeof i === 'object' ? i.id : i));
+            await loadInterestList((data.cultural_interests || []).map(i => typeof i === 'object' ? i.id : i));
+            console.log('Interest list loading complete');
+
+        } catch (err) {
+            console.error('Exception in loadVolunteerProfile:', err);
+            console.error('Stack trace:', err.stack);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        console.log('DOMContentLoaded event fired');
+        try {
+            await loadVolunteerProfile();
+            console.log('loadVolunteerProfile complete, calling showSummary');
+            // show the summary view by default after loading data
+            showSummary();
+            console.log('showSummary complete');
+        } catch (error) {
+            console.error('ERROR in DOMContentLoaded:', error);
+            console.error('Error stack:', error.stack);
+            alert('ERROR: ' + error.message);
+        }
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Show the summary panel (read-only) and hide editing UI
+    function showSummary() {
+        console.log('showSummary called');
+        // populate summary list from current form values
+        const summary = document.getElementById('summaryList');
+        console.log('summaryList element:', summary);
+        if (!summary) {
+            console.error('summaryList element not found!');
+            return;
+        }
+
+        console.log('Getting form field values...');
+        const nameValue = document.getElementById('name').value;
+        const emailValue = document.getElementById('email').value;
+        const phoneValue = document.getElementById('phone').value;
+        console.log('Form values - name:', nameValue, 'email:', emailValue, 'phone:', phoneValue);
+
+        const englishRaw = document.getElementById('english_level').value;
+        const englishMap = { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' };
+        const fields = [
+            {label: 'Name', value: document.getElementById('name').value},
+            {label: 'Email', value: document.getElementById('email').value},
+            {label: 'Phone', value: document.getElementById('phone').value},
+            {label: 'Address', value: document.getElementById('address').value},
+            {label: 'School', value: document.getElementById('school').value},
+            {label: 'English Level', value: englishMap[englishRaw] || englishRaw},
+        ];
+
+        // cultural interests
+        const interests = [];
+        document.querySelectorAll('#interestContainer input[type="checkbox"]').forEach(cb => {
+            if (cb.checked) interests.push(cb.nextSibling && cb.nextSibling.textContent ? cb.nextSibling.textContent.trim() : cb.value);
+        });
+
+        // build coordinator-style summary box
+        const rows = fields.map(f => {
+            const empty = !f.value;
+            const value = empty ? '— empty —' : f.value;
+            const cls = empty ? 'info-value empty' : 'info-value';
+            return `<div class="info-row"><div class="info-label">${f.label}:</div><div class="${cls}">${value}</div></div>`;
+        });
+        const interestValue = interests.length ? interests.join(', ') : '— none —';
+        const interestClass = interests.length ? 'info-value' : 'info-value empty';
+        rows.push(`<div class="info-row"><div class="info-label">Cultural Interests:</div><div class="${interestClass}">${interestValue}</div></div>`);
+
+        summary.innerHTML = `<div class="summary-box">${rows.join('')}</div>`;
+
+        document.getElementById('profileSummary').style.display = 'block';
+        // hide the edit area entirely when showing summary
+        const editArea = document.getElementById('editArea'); if (editArea) editArea.style.display = 'none';
+        // hide edit buttons form-level
+        const saveProfileBtn = document.getElementById('saveProfileBtn'); if (saveProfileBtn) saveProfileBtn.style.display = 'none';
+        const cancel = document.getElementById('cancelEditBtn'); if (cancel) cancel.style.display = 'none';
+        const savePrefBtn = document.getElementById('savePrefBtn'); if (savePrefBtn) savePrefBtn.style.display = 'none';
+        const editPrefBtn = document.getElementById('editPrefBtn'); if (editPrefBtn) editPrefBtn.style.display = 'inline-block';
+
+        // lock preference inputs when back in summary mode
+        document.querySelectorAll('#interestContainer input[type="checkbox"]').forEach(cb => cb.disabled = true);
+        const englishEl = document.getElementById('english_level'); if (englishEl) englishEl.disabled = true;
+    }
+
+    function showEditForm() {
+        document.getElementById('profileSummary').style.display = 'none';
+        // show the edit area when editing
+        const editArea = document.getElementById('editArea'); if (editArea) editArea.style.display = 'block';
+        const saveProfileBtn = document.getElementById('saveProfileBtn'); if (saveProfileBtn) saveProfileBtn.style.display = 'inline-block';
+        const cancel = document.getElementById('cancelEditBtn'); if (cancel) cancel.style.display = 'inline-block';
+        const savePrefBtn = document.getElementById('savePrefBtn'); if (savePrefBtn) savePrefBtn.style.display = 'inline-block';
+        const editPrefBtn = document.getElementById('editPrefBtn'); if (editPrefBtn) editPrefBtn.style.display = 'none';
+
+        // enable preferences immediately when entering edit mode
+        if (typeof enableInterestEdit === 'function') enableInterestEdit();
+    }
+
+    function showEditAndFocus(field) {
+        showEditForm();
+        // map field names to element ids
+        const map = {name: 'name', email: 'email', phone: 'phone', address: 'address', school: 'school', 'english level': 'english_level'};
+        const el = document.getElementById(map[field]);
+        if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+
+    function enableInterestEdit() {
+        // If the interest list hasn't been rendered yet, load it first
+        const ensureAndEnable = async () => {
+            let checkboxes = Array.from(document.querySelectorAll('#interestContainer input[type="checkbox"]'));
+            if (!checkboxes.length) {
+                await loadInterestList();
+                checkboxes = Array.from(document.querySelectorAll('#interestContainer input[type="checkbox"]'));
+            }
+            checkboxes.forEach(cb => cb.disabled = false);
+            if (checkboxes.length) {
+                // focus the first checkbox so the user sees the change
+                checkboxes[0].focus();
+            }
+        };
+
+        ensureAndEnable();
+
+        const englishEl = document.getElementById('english_level'); if (englishEl) englishEl.disabled = false;
+
+        const saveBtn = document.getElementById('savePrefBtn'); if (saveBtn) saveBtn.style.display = 'inline-block';
+        const editPrefBtn = document.getElementById('editPrefBtn'); if (editPrefBtn) editPrefBtn.style.display = 'none';
+
+        // Scroll interest area into view so the change is visible
+        const container = document.getElementById('interestContainer'); if (container) container.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+
+    async function saveProfile() {
+        if (!volunteerId) { alert('No volunteer id'); return; }
+        const payload = {
+            name: document.getElementById('name').value,
+            phone: document.getElementById('phone').value,
+        };
+        const addressEl = document.getElementById('address'); if (addressEl) payload.address = addressEl.value;
+        const schoolEl = document.getElementById('school'); if (schoolEl) payload.school = schoolEl.value;
+
+        try {
+            const res = await fetch(`/api/volunteers/${volunteerId}/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                alert('Failed to save profile: ' + res.status + '\n' + text);
+                return;
+            }
+            await loadVolunteerProfile();
+            showSummary();
+        } catch (err) {
+            console.error('Error saving profile', err);
+            alert('Error saving profile');
+        }
+    }
+
+    async function savePreferences() {
+        if (!volunteerId) { alert('No volunteer id'); return; }
+        const english = document.getElementById('english_level').value;
+        const selected = [];
+        document.querySelectorAll('#interestContainer input[type="checkbox"]').forEach(cb => { if (cb.checked) selected.push(parseInt(cb.value)); });
+
+        const payload = { english_level: english, cultural_interests: selected };
+
+        try {
+            const res = await fetch(`/api/volunteers/${volunteerId}/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                alert('Failed to save preferences: ' + res.status + '\n' + text);
+                return;
+            }
+            // disable inputs again and show summary
+            document.querySelectorAll('#interestContainer input[type="checkbox"]').forEach(cb => cb.disabled = true);
+            const englishEl = document.getElementById('english_level'); if (englishEl) englishEl.disabled = true;
+            await loadVolunteerProfile();
+            showSummary();
+        } catch (err) {
+            console.error('Error saving preferences', err);
+            alert('Error saving preferences');
+        }
+    }
+
+    // Loads interest list and optionally marks selected ids
+    async function loadInterestList(selectedIds=[]) {
+        const interestContainer = document.getElementById('interestContainer');
+        if (!interestContainer) return;
+        interestContainer.innerHTML = '';
+        try {
+            const allRes = await fetch('/api/interests/');
+            if (!allRes.ok) return;
+            const all = await allRes.json();
+
+            // create a vertical list with checkboxes on the left
+            const ul = document.createElement('ul');
+            ul.className = 'interest-list';
+
+            all.forEach(interest => {
+                const id = interest.id;
+                const li = document.createElement('li');
+
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.value = id;
+                cb.disabled = true; // read-only by default
+                if (selectedIds.includes(id)) cb.checked = true;
+
+                const span = document.createElement('span');
+                span.textContent = interest.name;
+
+                li.appendChild(cb);
+                li.appendChild(span);
+                ul.appendChild(li);
+            });
+
+            interestContainer.appendChild(ul);
+        } catch (err) {
+            console.error('Failed loading interests', err);
+        }
+    }
+
+    // (Interest creation removed — only the predefined interests are displayed)
+</script>
+
+</body>
+</html>
