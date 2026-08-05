@@ -49,7 +49,7 @@ As a data analyst, I want to select suitable data sources so that the platform c
 ## PB-003 — Designing the MVP Relational Data Model
 
 **Priority:** Must Have  
-**Status:** Not Started
+**Status:** Completed
 
 ### User Story
 
@@ -66,3 +66,27 @@ As a data engineer, I want to design a relational data model so that fleet, vehi
 - Separating operational fleet data from external market data where appropriate
 - Creating a readable entity-relationship diagram
 - Documenting the design without creating physical SQL tables
+
+## PB-004 — Designing the Physical SQL Schema
+
+**Priority:** Must Have
+**Status:** Not Started
+
+### User Story
+
+As a data engineer, I want to translate the approved relational data model into a physical SQL schema so that the platform has consistent and enforceable table structures.
+
+### Acceptance Criteria
+
+- Creating one SQL table definition for every approved entity
+- Selecting Microsoft Fabric Warehouse-compatible data types
+- Defining primary-key constraints
+- Defining foreign-key relationships where supported
+- Defining required and optional columns
+- Adding appropriate uniqueness constraints
+- Adding validation constraints where supported
+- Following consistent table and column naming conventions
+- Creating tables in the correct dependency order
+- Documenting any Microsoft Fabric Warehouse limitations
+- Keeping schema creation separate from data loading
+- Validating the SQL script without loading project data

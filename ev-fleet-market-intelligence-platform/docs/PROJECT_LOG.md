@@ -31,4 +31,29 @@ Creating the conceptual relational data model for the MVP.
 
 ---
 
+## Session 002 — 2026-08-04
+
+### Files Changed
+
+- `docs/DATA_MODEL.md` — Defining entities, attributes, primary keys, foreign keys, relationships, cardinalities, market-data separation, and the entity-relationship diagram.
+- `docs/PRODUCT_BACKLOG.md` — Adding and completing PB-003.
+- `docs/PROJECT_LOG.md` — Recording the completed relational-modelling work.
+
+### Steps Implemented
+
+- Identifying the required relational entities.
+- Defining primary keys and attributes.
+- Adding the Charging Port entity.
+- Defining foreign keys and entity relationships.
+- Recording relationship cardinalities.
+- Separating operational data from external market data.
+- Creating the entity-relationship diagram.
+- Completing PB-003.
+
+### Goal for Next Session
+
+Designing the physical SQL database schema.
+
+---
+
 ---
