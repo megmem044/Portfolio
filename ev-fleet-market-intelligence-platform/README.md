@@ -1,105 +1,159 @@
 # EV Fleet and Market Intelligence Platform
 
-## What Is This Project?
+A portfolio data platform for analyzing electric-vehicle fleet operations, charging behaviour, operating costs, vehicle performance, and Canadian EV market trends.
 
-This project is a data and reporting platform for electric vehicle (EV) fleets.
+The project is designed around a Microsoft Fabric and Power BI target architecture. It currently includes the documented MVP requirements, selected data sources, an 11-entity relational model, a Fabric Warehouse schema, and an automated SQLite-based validation workflow.
 
-An EV fleet is a group of electric vehicles owned or operated by a business, government agency, delivery company, or transportation provider.
+## Project Goals
 
-The platform will bring together information about:
+EV fleet data is commonly distributed across vehicle, trip, charging, telemetry, cost, and market systems. This project brings those domains into a consistent analytical model so users can answer questions such as:
 
-- Electric vehicles
-- Vehicle trips and usage
-- Battery and charging activity
-- Operating costs
-- Vehicle performance
-- EV market trends
-
-It will turn this data into reports and dashboards that are easy to understand.
-
-## Why Is This Project Needed?
-
-EV fleet data often comes from different systems and files. For example, trip data may be stored in one place, charging data in another, and vehicle information somewhere else.
-
-This makes it difficult for decision-makers to answer questions such as:
-
-- How are the vehicles being used?
-- How much energy is being consumed?
-- How long does charging take?
+- How intensively are fleet vehicles being used?
+- How much energy do trips and charging sessions consume?
+- Which vehicles, chargers, or locations show performance issues?
 - What does it cost to operate the fleet?
-- Are any vehicles or chargers having problems?
-- How is the wider EV market changing?
+- How do fleet results compare across vehicles, locations, and periods?
+- How is the broader EV market changing?
 
-This project will organize the data in one place so that it can be checked, analyzed, and presented clearly.
+## Intended Users
 
-## Who Is This Project For?
+- Fleet managers monitoring vehicles and charging operations
+- Operations teams investigating performance and data-quality issues
+- Business leaders tracking cost and operational results
+- Product teams studying vehicle and user behaviour
+- Data analysts and engineers building reporting workflows
 
-The platform is intended for people such as:
+## MVP Architecture
 
-- Fleet managers who monitor vehicles and charging
-- Operations teams who investigate performance problems
-- Business leaders who track costs and results
-- Product teams who study user and vehicle behaviour
-- Data analysts who create reports and insights
+```text
+Public and synthetic data
+          |
+          v
+Python ingestion and validation
+          |
+          v
+Microsoft Fabric / OneLake
+          |
+          v
+Fabric Warehouse relational model
+          |
+          v
+Power BI semantic model and dashboards
+```
 
-## What Value Will It Provide?
+The local SQLite workflow validates the relational design while Microsoft Fabric capacity is unavailable. It is a development-time substitute for structural testing, not the intended production platform.
 
-The platform will help users:
+## Data Model
 
-- Understand how the EV fleet is performing
-- Monitor vehicle usage and charging activity
-- Identify unusual events or data-quality problems
-- Compare vehicles, locations, and time periods
-- Understand operating costs
-- follow important EV market trends
-- Make decisions using reliable data
+The MVP schema contains 11 related entities covering:
 
-## What Will the First Version Include?
+- Fleet operators and fleets
+- Vehicle models and individual vehicles
+- Trips
+- Charging locations, ports, and sessions
+- Vehicle telemetry
+- Operating costs
+- EV market observations
 
-The first version, or Minimum Viable Product (MVP), will include:
+The model separates internal fleet operations from external market data while retaining the keys required for fleet, vehicle, location, and time-based analysis. See [docs/DATA_MODEL.md](docs/DATA_MODEL.md) for entity definitions, relationships, cardinalities, and the entity-relationship diagram.
 
-- A database for vehicles, trips, charging sessions, and market data
-- Python processes that collect, clean, and validate data
-- Microsoft Fabric and OneLake for storing and managing data
-- Power BI dashboards for reporting and analysis
-- Measures for fleet operations, charging, costs, products, markets, and IoT data
-- Tests and documentation explaining how the platform works
+## Repository Structure
 
-## What Will Not Be Included Initially?
+```text
+.
+|-- docs/
+|   |-- DATA_MODEL.md
+|   |-- DATA_REQUIREMENTS.md
+|   |-- DATA_SOURCES.md
+|   |-- LOCAL_SCHEMA_VALIDATION.md
+|   |-- PRODUCT_BACKLOG.md
+|   `-- PROJECT_LOG.md
+|-- scripts/
+|   `-- validate_local_schema.py
+|-- sql/
+|   |-- 01_create_tables.sql
+|   `-- 02_create_local_validation_schema.sql
+|-- .gitignore
+`-- README.md
+```
 
-To keep the first version realistic and manageable, it will not include:
+## Getting Started
 
-- Connections to real production vehicles
-- Control of vehicles or charging stations
-- Live route optimization
-- Predictive maintenance
-- A public website or mobile application
-- A large-scale production deployment
+### Prerequisites
 
-These features could be considered later, but they are not part of the first version.
+- Python 3.10 or later
+- No third-party Python packages are required for local schema validation
 
-## How Will We Know the Project Is Successful?
+### Validate the Schema Locally
 
-The first version will be successful when:
+From the repository root, run:
 
-- Fleet and charging data can be stored in a clear structure
-- Data errors can be detected before reports are created
-- Users can view important results in Power BI
-- Reports can answer common fleet and market questions
-- The complete process from raw data to dashboard is documented and repeatable
+```powershell
+python scripts/validate_local_schema.py
+```
 
-## Project Assumptions
+A successful run reports:
 
-For the first version, we assume that:
+```text
+[PASS] Creating all expected tables
+[PASS] Accepting valid related records
+[PASS] Rejecting invalid records
+[PASS] Local schema validation completed for 11 tables
+```
 
-- The project will use public or synthetic data
-- No private customer or company data will be used
-- Data will initially be processed in scheduled batches
-- Microsoft Fabric and Power BI will be available
-- The project will be designed and developed as a portfolio project
+The validation runs against an in-memory SQLite database and does not create a permanent local database file.
+
+## SQL Implementations
+
+- [`sql/01_create_tables.sql`](sql/01_create_tables.sql) defines the physical schema for Microsoft Fabric Warehouse.
+- [`sql/02_create_local_validation_schema.sql`](sql/02_create_local_validation_schema.sql) provides an SQLite-compatible version with enforced relational and data-quality constraints.
+
+The local implementation verifies table creation, valid related records, foreign keys, uniqueness, reporting periods, VIN length, timestamp order, battery percentages, and non-negative costs. Fabric-specific execution still needs to be tested in an active Fabric capacity.
+
+## Documentation
+
+| Document | Purpose |
+|---|---|
+| [Data requirements](docs/DATA_REQUIREMENTS.md) | Defines MVP data domains, required fields, and business questions |
+| [Data sources](docs/DATA_SOURCES.md) | Records public sources, synthetic-data plans, formats, and attribution requirements |
+| [Data model](docs/DATA_MODEL.md) | Describes entities, keys, relationships, cardinalities, and the ER diagram |
+| [Local validation](docs/LOCAL_SCHEMA_VALIDATION.md) | Explains how to run validation and how SQLite differs from Fabric Warehouse |
+| [Product backlog](docs/PRODUCT_BACKLOG.md) | Tracks user stories, priorities, acceptance criteria, and status |
+| [Project log](docs/PROJECT_LOG.md) | Summarizes completed work sessions and next steps |
 
 ## Current Status
 
-The project is currently in the initialization stage.
+Completed:
 
-The product vision and the scope of the first version must be reviewed before the initial Agile product backlog is created.
+- MVP data requirements
+- Public and synthetic data-source strategy
+- Conceptual relational data model
+- Physical schema for 11 Fabric Warehouse tables
+- SQLite-compatible local schema
+- Automated positive and negative schema tests
+
+Current limitation:
+
+- Fabric-specific schema execution is blocked until Microsoft Fabric capacity is available.
+
+Next planned work:
+
+- Define the Python data-generation and validation pipeline requirements
+- Generate representative synthetic fleet-operational data
+- Build repeatable ingestion and data-quality checks
+- Load validated data into Fabric when capacity becomes available
+- Develop the Power BI semantic model and dashboards
+
+## MVP Boundaries
+
+The initial version uses public or synthetic data and scheduled batch processing. It does not include production vehicle connections, control of vehicles or charging stations, live route optimization, predictive maintenance, a public application, or a production-scale deployment.
+
+## Success Criteria
+
+The MVP will be considered successful when:
+
+- Fleet, charging, telemetry, cost, and market data can be stored consistently
+- Invalid data is detected before it reaches reporting layers
+- The pipeline from source data to the analytical model is repeatable
+- Power BI reports answer the documented fleet and market questions
+- Architecture, assumptions, validation, and operating steps are clearly documented
