@@ -70,7 +70,7 @@ As a data engineer, I want to design a relational data model so that fleet, vehi
 ## PB-004 — Designing the Physical SQL Schema
 
 **Priority:** Must Have
-**Status:** Not Started
+**Status:** Blocked — Fabric capacity unavailable
 
 ### User Story
 
@@ -90,3 +90,26 @@ As a data engineer, I want to translate the approved relational data model into 
 - Documenting any Microsoft Fabric Warehouse limitations
 - Keeping schema creation separate from data loading
 - Validating the SQL script without loading project data
+
+
+## PB-005 — Creating Local Schema Validation
+
+**Priority:** Must Have
+**Status:** Completed
+
+### User Story
+
+As a data engineer, I want to validate the relational schema locally so that table structures, keys, and relationships can be tested while Fabric capacity is unavailable.
+
+### Acceptance Criteria
+
+- Creating a SQLite-compatible version of the approved schema
+- Creating all 11 entity tables
+- Enabling foreign-key enforcement
+- Preserving required and optional columns
+- Preserving primary, foreign, and uniqueness constraints
+- Documenting differences between SQLite and Fabric Warehouse
+- Creating an automated Python validation script
+- Confirming that all tables are created successfully
+- Testing valid and invalid relationship records
+- Avoiding loading production or external project data

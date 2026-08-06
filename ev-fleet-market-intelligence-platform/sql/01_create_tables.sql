@@ -51,3 +51,287 @@ UNIQUE NONCLUSTERED
     model_name,
     model_year
 ) NOT ENFORCED;
+
+CREATE TABLE dbo.charging_location
+(
+    charging_location_id BIGINT        NOT NULL,
+    station_name         VARCHAR(200)  NOT NULL,
+    street_address       VARCHAR(250)  NULL,
+    city                 VARCHAR(100)  NOT NULL,
+    province             VARCHAR(100)  NOT NULL,
+    postal_code          VARCHAR(20)   NULL,
+    latitude             DECIMAL(9, 6) NOT NULL,
+    longitude            DECIMAL(9, 6) NOT NULL,
+    charging_network     VARCHAR(100)  NULL,
+    access_type          VARCHAR(50)   NULL,
+    station_status       VARCHAR(20)   NOT NULL
+);
+
+ALTER TABLE dbo.charging_location
+ADD CONSTRAINT pk_charging_location
+PRIMARY KEY NONCLUSTERED (charging_location_id) NOT ENFORCED;
+
+CREATE TABLE dbo.ev_market_registration
+(
+    market_registration_id   BIGINT       NOT NULL,
+    reference_year           INT          NOT NULL,
+    reference_quarter        INT          NOT NULL,
+    geography_level          VARCHAR(50)  NOT NULL,
+    geography_name           VARCHAR(150) NOT NULL,
+    province_or_territory    VARCHAR(100) NULL,
+    vehicle_type             VARCHAR(100) NOT NULL,
+    fuel_type                VARCHAR(100) NOT NULL,
+    registration_count       BIGINT       NOT NULL,
+    total_registration_count BIGINT       NOT NULL
+);
+
+ALTER TABLE dbo.ev_market_registration
+ADD CONSTRAINT pk_ev_market_registration
+PRIMARY KEY NONCLUSTERED (market_registration_id) NOT ENFORCED;
+
+ALTER TABLE dbo.ev_market_registration
+ADD CONSTRAINT uq_ev_market_registration
+UNIQUE NONCLUSTERED
+(
+    reference_year,
+    reference_quarter,
+    geography_level,
+    geography_name,
+    vehicle_type,
+    fuel_type
+) NOT ENFORCED;
+
+CREATE TABLE dbo.fleet
+(
+    fleet_id          BIGINT       NOT NULL,
+    fleet_operator_id BIGINT       NOT NULL,
+    fleet_name        VARCHAR(150) NOT NULL,
+    fleet_type        VARCHAR(100) NOT NULL,
+    city              VARCHAR(100) NOT NULL,
+    province          VARCHAR(100) NOT NULL,
+    operating_region  VARCHAR(150) NOT NULL,
+    fleet_status      VARCHAR(20)  NOT NULL
+);
+
+ALTER TABLE dbo.fleet
+ADD CONSTRAINT pk_fleet
+PRIMARY KEY NONCLUSTERED (fleet_id) NOT ENFORCED;
+
+ALTER TABLE dbo.fleet
+ADD CONSTRAINT uq_fleet_operator_name
+UNIQUE NONCLUSTERED
+(
+    fleet_operator_id,
+    fleet_name
+) NOT ENFORCED;
+
+ALTER TABLE dbo.fleet
+ADD CONSTRAINT fk_fleet_operator
+FOREIGN KEY (fleet_operator_id)
+REFERENCES dbo.fleet_operator (fleet_operator_id)
+NOT ENFORCED;
+
+CREATE TABLE dbo.charging_port
+(
+    charging_port_id    BIGINT        NOT NULL,
+    charging_location_id BIGINT       NOT NULL,
+    port_number          VARCHAR(50)   NOT NULL,
+    connector_type       VARCHAR(50)   NOT NULL,
+    charging_level       VARCHAR(50)   NOT NULL,
+    maximum_power_kw     DECIMAL(8, 2) NULL,
+    port_status          VARCHAR(20)   NOT NULL
+);
+
+ALTER TABLE dbo.charging_port
+ADD CONSTRAINT pk_charging_port
+PRIMARY KEY NONCLUSTERED (charging_port_id) NOT ENFORCED;
+
+ALTER TABLE dbo.charging_port
+ADD CONSTRAINT uq_charging_location_port
+UNIQUE NONCLUSTERED
+(
+    charging_location_id,
+    port_number
+) NOT ENFORCED;
+
+ALTER TABLE dbo.charging_port
+ADD CONSTRAINT fk_charging_port_location
+FOREIGN KEY (charging_location_id)
+REFERENCES dbo.charging_location (charging_location_id)
+NOT ENFORCED;
+
+CREATE TABLE dbo.vehicle
+(
+    vehicle_id           BIGINT        NOT NULL,
+    fleet_id             BIGINT        NOT NULL,
+    vehicle_model_id     BIGINT        NOT NULL,
+    fleet_vehicle_number VARCHAR(50)   NOT NULL,
+    vin                  VARCHAR(17)   NOT NULL,
+    licence_plate        VARCHAR(20)   NOT NULL,
+    acquisition_date     DATE          NOT NULL,
+    in_service_date      DATE          NOT NULL,
+    initial_odometer_km  DECIMAL(12,2) NOT NULL,
+    vehicle_status       VARCHAR(20)   NOT NULL
+);
+
+ALTER TABLE dbo.vehicle
+ADD CONSTRAINT pk_vehicle
+PRIMARY KEY NONCLUSTERED (vehicle_id) NOT ENFORCED;
+
+ALTER TABLE dbo.vehicle
+ADD CONSTRAINT uq_vehicle_vin
+UNIQUE NONCLUSTERED (vin) NOT ENFORCED;
+
+ALTER TABLE dbo.vehicle
+ADD CONSTRAINT uq_fleet_vehicle_number
+UNIQUE NONCLUSTERED
+(
+    fleet_id,
+    fleet_vehicle_number
+) NOT ENFORCED;
+
+ALTER TABLE dbo.vehicle
+ADD CONSTRAINT fk_vehicle_fleet
+FOREIGN KEY (fleet_id)
+REFERENCES dbo.fleet (fleet_id)
+NOT ENFORCED;
+
+ALTER TABLE dbo.vehicle
+ADD CONSTRAINT fk_vehicle_model
+FOREIGN KEY (vehicle_model_id)
+REFERENCES dbo.vehicle_model (vehicle_model_id)
+NOT ENFORCED;
+
+
+CREATE TABLE dbo.trip
+(
+    trip_id             BIGINT         NOT NULL,
+    vehicle_id          BIGINT         NOT NULL,
+    start_timestamp     DATETIME2(6)   NOT NULL,
+    end_timestamp       DATETIME2(6)   NOT NULL,
+    start_latitude      DECIMAL(9, 6)  NOT NULL,
+    start_longitude     DECIMAL(9, 6)  NOT NULL,
+    end_latitude        DECIMAL(9, 6)  NOT NULL,
+    end_longitude       DECIMAL(9, 6)  NOT NULL,
+    distance_km         DECIMAL(12, 2) NOT NULL,
+    energy_consumed_kwh DECIMAL(12, 3) NOT NULL,
+    average_speed_kmh   DECIMAL(8, 2)  NOT NULL,
+    trip_status         VARCHAR(20)    NOT NULL
+);
+
+ALTER TABLE dbo.trip
+ADD CONSTRAINT pk_trip
+PRIMARY KEY NONCLUSTERED (trip_id) NOT ENFORCED;
+
+ALTER TABLE dbo.trip
+ADD CONSTRAINT fk_trip_vehicle
+FOREIGN KEY (vehicle_id)
+REFERENCES dbo.vehicle (vehicle_id)
+NOT ENFORCED;
+
+
+CREATE TABLE dbo.charging_session
+(
+    charging_session_id        BIGINT         NOT NULL,
+    vehicle_id                 BIGINT         NOT NULL,
+    charging_port_id           BIGINT         NOT NULL,
+    start_timestamp            DATETIME2(6)   NOT NULL,
+    end_timestamp              DATETIME2(6)   NOT NULL,
+    starting_battery_percentage DECIMAL(5, 2) NOT NULL,
+    ending_battery_percentage   DECIMAL(5, 2) NOT NULL,
+    energy_delivered_kwh        DECIMAL(12, 3) NOT NULL,
+    price_per_kwh               DECIMAL(10, 4) NOT NULL,
+    additional_fee              DECIMAL(10, 2) NOT NULL,
+    charging_status             VARCHAR(20)    NOT NULL
+);
+
+ALTER TABLE dbo.charging_session
+ADD CONSTRAINT pk_charging_session
+PRIMARY KEY NONCLUSTERED (charging_session_id) NOT ENFORCED;
+
+ALTER TABLE dbo.charging_session
+ADD CONSTRAINT fk_charging_session_vehicle
+FOREIGN KEY (vehicle_id)
+REFERENCES dbo.vehicle (vehicle_id)
+NOT ENFORCED;
+
+ALTER TABLE dbo.charging_session
+ADD CONSTRAINT fk_charging_session_port
+FOREIGN KEY (charging_port_id)
+REFERENCES dbo.charging_port (charging_port_id)
+NOT ENFORCED;
+
+
+CREATE TABLE dbo.telemetry_reading
+(
+    telemetry_reading_id       BIGINT         NOT NULL,
+    vehicle_id                 BIGINT         NOT NULL,
+    trip_id                    BIGINT         NOT NULL,
+    reading_timestamp          DATETIME2(6)   NOT NULL,
+    latitude                   DECIMAL(9, 6)  NOT NULL,
+    longitude                  DECIMAL(9, 6)  NOT NULL,
+    speed_kmh                  DECIMAL(8, 2)  NOT NULL,
+    battery_percentage         DECIMAL(5, 2)  NOT NULL,
+    battery_temperature_celsius DECIMAL(6, 2) NOT NULL,
+    outside_temperature_celsius DECIMAL(6, 2) NOT NULL,
+    energy_consumption_rate_kw DECIMAL(10, 3) NOT NULL,
+    odometer_km                DECIMAL(12, 2) NOT NULL,
+    operating_status           VARCHAR(20)    NOT NULL
+);
+
+ALTER TABLE dbo.telemetry_reading
+ADD CONSTRAINT pk_telemetry_reading
+PRIMARY KEY NONCLUSTERED (telemetry_reading_id) NOT ENFORCED;
+
+ALTER TABLE dbo.telemetry_reading
+ADD CONSTRAINT uq_trip_reading_timestamp
+UNIQUE NONCLUSTERED
+(
+    trip_id,
+    reading_timestamp
+) NOT ENFORCED;
+
+ALTER TABLE dbo.telemetry_reading
+ADD CONSTRAINT fk_telemetry_vehicle
+FOREIGN KEY (vehicle_id)
+REFERENCES dbo.vehicle (vehicle_id)
+NOT ENFORCED;
+
+ALTER TABLE dbo.telemetry_reading
+ADD CONSTRAINT fk_telemetry_trip
+FOREIGN KEY (trip_id)
+REFERENCES dbo.trip (trip_id)
+NOT ENFORCED;
+
+
+CREATE TABLE dbo.operating_cost
+(
+    operating_cost_id   BIGINT         NOT NULL,
+    vehicle_id          BIGINT         NOT NULL,
+    charging_session_id BIGINT         NULL,
+    cost_date           DATE           NOT NULL,
+    cost_category       VARCHAR(50)    NOT NULL,
+    cost_description    VARCHAR(250)   NULL,
+    quantity            DECIMAL(12, 3) NULL,
+    unit_price          DECIMAL(12, 4) NULL,
+    total_cost          DECIMAL(12, 2) NOT NULL,
+    currency_code       VARCHAR(3)     NOT NULL,
+    service_provider    VARCHAR(150)   NULL,
+    invoice_reference   VARCHAR(100)   NULL
+);
+
+ALTER TABLE dbo.operating_cost
+ADD CONSTRAINT pk_operating_cost
+PRIMARY KEY NONCLUSTERED (operating_cost_id) NOT ENFORCED;
+
+ALTER TABLE dbo.operating_cost
+ADD CONSTRAINT fk_operating_cost_vehicle
+FOREIGN KEY (vehicle_id)
+REFERENCES dbo.vehicle (vehicle_id)
+NOT ENFORCED;
+
+ALTER TABLE dbo.operating_cost
+ADD CONSTRAINT fk_operating_cost_charging_session
+FOREIGN KEY (charging_session_id)
+REFERENCES dbo.charging_session (charging_session_id)
+NOT ENFORCED;

@@ -56,4 +56,31 @@ Designing the physical SQL database schema.
 
 ---
 
+## Session 003 — 2026-08-05
+
+### Files Changed
+
+- `docs/PRODUCT_BACKLOG.md` — Recording PB-004 as blocked and completing PB-005.
+- `docs/LOCAL_SCHEMA_VALIDATION.md` — Documenting local validation and differences from Fabric Warehouse.
+- `sql/01_create_tables.sql` — Completing the Microsoft Fabric Warehouse physical schema.
+- `sql/02_create_local_validation_schema.sql` — Creating the SQLite-compatible validation schema.
+- `scripts/validate_local_schema.py` — Automating local schema and constraint validation.
+- `.gitignore` — Excluding generated Python cache files.
+- `docs/PROJECT_LOG.md` — Recording the physical-schema and local-validation work.
+
+### Steps Implemented
+
+- Designing all 11 Fabric Warehouse tables.
+- Defining physical data types, nullability, keys, and constraints.
+- Recording Fabric capacity access as an external blocker.
+- Creating an enforced SQLite version of the relational schema.
+- Adding local data-quality constraints.
+- Automating valid and invalid record tests.
+- Validating all 11 tables and their relationships successfully.
+- Completing PB-005.
+
+### Goal for Next Session
+
+Defining the Python data-generation and validation pipeline requirements.
+
 ---
