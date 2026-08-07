@@ -5,7 +5,7 @@ from src.models import Decision, DimensionScore
 
 PUBLISH_THRESHOLD = 80
 REJECT_DIMENSION_THRESHOLD = 50
-PUBLISH_DIMENSION_MINIMUM = 60
+PUBLISH_DIMENSION_MINIMUM = 80
 
 
 def make_decision(

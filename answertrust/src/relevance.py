@@ -42,6 +42,17 @@ def evaluate_relevance(
 
     source_support = evaluate_source_support(reference, answer)
 
+    if source_support.score == 100:
+        return DimensionScore(
+            name="Relevance",
+            score=90,
+            explanation=(
+                "The answer exactly matches the supplied reference and "
+                "appears to address the question."
+            ),
+            concerns=[],
+        )
+
     if question_overlap >= 0.5:
         return DimensionScore(
             name="Relevance",
