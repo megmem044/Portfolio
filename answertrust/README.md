@@ -74,10 +74,15 @@ or copy questions or answers from Quora or another platform.
 
 ## Current status
 
-The repository scaffold and initial project definitions are being prepared.
-The evaluator, Streamlit pages, experiment dataset, and recorded metrics are
-not implemented yet. This section will be updated as verified milestones are
-completed.
+The deterministic evaluation pipeline and first Streamlit evaluation page are
+implemented. AnswerTrust currently validates input, scores all five quality
+dimensions, calculates a weighted overall score, and returns a `PUBLISH`,
+`REVIEW`, or `REJECT` recommendation with concerns and a recommended action.
+
+The automated suite currently covers validation, individual quality checks,
+score weighting, decision boundaries, evaluator integration, and Streamlit form
+interactions. SQLite history, the history and dashboard pages, labelled
+experiments, and the optional local transformer remain planned work.
 
 ## Project structure
 
@@ -85,8 +90,9 @@ The project separates the user interface, evaluation logic, saved data, and
 tests. This makes it easier to understand, test, and improve one part without
 unexpectedly changing another.
 
-The tree below shows the planned finished structure. Some files will be added
-as their development phase is completed.
+The tree below shows the planned finished structure. The evaluator files and
+main application are implemented; history, experiment, dashboard, and optional
+model files will be added in later phases.
 
 ```text
 answertrust/
@@ -171,8 +177,27 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-The run and test commands will be documented once the corresponding components
-have been implemented and verified.
+Confirm the environment and run the complete automated suite:
+
+```powershell
+python --version
+python -m pytest -q
+```
+
+Start the Streamlit application:
+
+```powershell
+python -m streamlit run app.py
+```
+
+If Streamlit cannot create its optional global onboarding folder, start it
+without onboarding or automatic browser launch:
+
+```powershell
+python -m streamlit run app.py --server.headless true --browser.gatherUsageStats false
+```
+
+Then open `http://localhost:8501` in a browser.
 
 ## Privacy and licensing
 
