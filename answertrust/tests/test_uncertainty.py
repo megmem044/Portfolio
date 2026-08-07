@@ -30,3 +30,13 @@ def test_cautious_language_handles_limited_evidence():
 
     assert result.score >= 80
     assert result.concerns == []
+
+
+def test_insufficient_information_phrase_handles_limited_evidence():
+    result = evaluate_uncertainty(
+        "The notice contains no vote totals.",
+        "The result cannot be determined from the supplied reference.",
+    )
+
+    assert result.score >= 80
+    assert result.concerns == []

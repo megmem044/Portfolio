@@ -1,6 +1,7 @@
 """Evaluate whether confidence matches the available evidence."""
 
 from src.models import DimensionScore
+from src.relevance import meaningful_words
 from src.source_support import evaluate_source_support
 
 
@@ -24,6 +25,13 @@ CAUTIOUS_TERMS = {
     "uncertain",
 }
 
+CAUTIOUS_PHRASES = {
+    "cannot be determined",
+    "does not provide enough",
+    "not available",
+    "not enough information",
+}
+
 
 def evaluate_uncertainty(
     reference: str,
@@ -31,11 +39,14 @@ def evaluate_uncertainty(
 ) -> DimensionScore:
     """Return a deterministic uncertainty-handling score."""
 
-    answer_words = set(answer.lower().split())
+    normalized_answer = answer.lower()
+    answer_words = meaningful_words(answer)
     source_support = evaluate_source_support(reference, answer)
 
     uses_absolute_language = bool(answer_words & ABSOLUTE_TERMS)
-    uses_cautious_language = bool(answer_words & CAUTIOUS_TERMS)
+    uses_cautious_language = bool(answer_words & CAUTIOUS_TERMS) or any(
+        phrase in normalized_answer for phrase in CAUTIOUS_PHRASES
+    )
 
     if source_support.score < 60 and uses_absolute_language:
         return DimensionScore(

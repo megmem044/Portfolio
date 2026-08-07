@@ -74,15 +74,19 @@ or copy questions or answers from Quora or another platform.
 
 ## Current status
 
-The deterministic evaluation pipeline and first Streamlit evaluation page are
-implemented. AnswerTrust currently validates input, scores all five quality
-dimensions, calculates a weighted overall score, and returns a `PUBLISH`,
-`REVIEW`, or `REJECT` recommendation with concerns and a recommended action.
+The deterministic evaluation pipeline, main Streamlit evaluation page, local
+SQLite history, Evaluation History page, labelled offline experiment, and
+Quality Dashboard are implemented. AnswerTrust currently validates input,
+scores all five quality dimensions, calculates a weighted overall score, and
+returns a `PUBLISH`, `REVIEW`, or `REJECT` recommendation with concerns and a
+recommended action. Valid evaluations are saved locally and can be reviewed or
+filtered by decision.
 
 The automated suite currently covers validation, individual quality checks,
-score weighting, decision boundaries, evaluator integration, and Streamlit form
-interactions. SQLite history, the history and dashboard pages, labelled
-experiments, and the optional local transformer remain planned work.
+score weighting, decision boundaries, evaluator integration, SQLite creation
+and queries, labelled offline experiments, dashboard summaries, and Streamlit
+interactions for all implemented pages. The optional local transformer remains
+planned work.
 
 ## Project structure
 
@@ -90,9 +94,9 @@ The project separates the user interface, evaluation logic, saved data, and
 tests. This makes it easier to understand, test, and improve one part without
 unexpectedly changing another.
 
-The tree below shows the planned finished structure. The evaluator files and
-main application are implemented; history, experiment, dashboard, and optional
-model files will be added in later phases.
+The tree below shows the planned finished structure. The evaluator, main
+application, database, and history page are implemented; experiment, dashboard,
+and optional model files will be added in later phases.
 
 ```text
 answertrust/
@@ -112,9 +116,8 @@ answertrust/
 |   `-- experiment_results.csv      # Measured evaluator and prompt results
 |
 |-- pages/                           # Pages a user opens in Streamlit
-|   |-- 1_Evaluate_Answer.py        # Submit and evaluate an answer
 |   |-- 2_Evaluation_History.py     # Review and filter earlier evaluations
-|   `-- 3_Quality_Dashboard.py      # View quality, safety, and speed summaries
+|   `-- 3_Quality_Dashboard.py      # Quality, safety, and speed summaries
 |
 |-- src/                             # Main evaluation and support code
 |   |-- __init__.py                 # Marks src as the AnswerTrust code package
@@ -137,11 +140,15 @@ answertrust/
     |-- test_validation.py          # Input validation examples
     |-- test_relevance.py           # Relevant and irrelevant answer examples
     |-- test_source_support.py      # Supported and unsupported claim examples
+    |-- test_completeness.py        # Complete and partial answer examples
     |-- test_clarity.py             # Length, repetition, and readability examples
     |-- test_uncertainty.py         # Confidence and insufficient-evidence cases
     |-- test_scoring.py             # Score calculation and boundary checks
     |-- test_decision_engine.py     # Publish, Review, and Reject rules
-    `-- test_database.py            # Saving, reading, and filtering history
+    |-- test_evaluator.py           # Complete evaluation pipeline checks
+    |-- test_database.py            # Saving, reading, and filtering history
+    |-- test_app.py                 # Main Streamlit page interactions
+    `-- test_history_page.py        # History page and filter interactions
 ```
 
 ### Folder guide
@@ -149,8 +156,9 @@ answertrust/
 - **`src/` — How AnswerTrust works:** Contains the five quality checks and the
   supporting code that turns them into one recommendation. Keeping this logic
   away from the visible pages makes it easier to explain and test.
-- **`pages/` — What the user sees:** Contains the three Streamlit pages for
-  evaluating an answer, reviewing history, and understanding quality trends.
+- **`pages/` — What the user sees:** Contains the implemented history page and
+  will later contain the quality dashboard. The main evaluation page is
+  `app.py`.
 - **`tests/` — Evidence that behavior is reliable:** Contains repeatable
   examples that check normal cases, decision boundaries, and expected failures.
   The main test collection will not require internet access or the local AI
@@ -198,6 +206,54 @@ python -m streamlit run app.py --server.headless true --browser.gatherUsageStats
 ```
 
 Then open `http://localhost:8501` in a browser.
+
+## Using evaluation history
+
+Submit a valid question, reference, and answer from the main page. After the
+evaluation completes, AnswerTrust saves the input, decision, scores, concerns,
+recommended action, and latency to `data/answertrust.db`.
+
+Open **Evaluation History** from the Streamlit sidebar to:
+
+- Review saved evaluations newest-first
+- Inspect the original question, reference, and answer
+- Review the overall and dimension scores
+- Filter records by `PUBLISH`, `REVIEW`, or `REJECT`
+
+The database is created automatically on first use. It is excluded by
+`.gitignore` and should not be committed. Empty or invalid submissions are not
+saved.
+
+## Offline experiment
+
+Run the repeatable labelled experiment from the project root:
+
+```powershell
+python -m src.experiments
+```
+
+The command evaluates 20 self-authored examples and writes per-example results
+to `results/experiment_results.csv`. The current measured results are:
+
+| Metric | Result |
+|---|---:|
+| Decision accuracy | 100% |
+| False-publish rate | 0% |
+| Unsupported-answer detection | 100% |
+| Review rate | 40% |
+| Labelled examples | 20 |
+
+These measurements describe only the small, self-authored dataset included in
+this repository. They do not establish general accuracy or production safety.
+The result CSV is generated locally and excluded from Git so reported values
+must be reproduced by running the command.
+
+## Quality dashboard
+
+Open **Quality Dashboard** from the Streamlit sidebar. It shows local evaluation
+counts, average score, average latency, decision distribution, common concerns,
+and the latest generated experiment metrics. If no result CSV exists, the page
+shows the command required to generate it.
 
 ## Privacy and licensing
 

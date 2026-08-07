@@ -21,12 +21,17 @@ def make_decision(
 
     relevance = scores_by_name["Relevance"]
     source_support = scores_by_name["Source support"]
+    uncertainty = scores_by_name["Uncertainty handling"]
 
-    # Serious relevance or support problems prevent publication.
-    if (
-        relevance < REJECT_DIMENSION_THRESHOLD
-        or source_support < REJECT_DIMENSION_THRESHOLD
-    ):
+    # Irrelevant answers are rejected regardless of cautious wording.
+    if relevance < REJECT_DIMENSION_THRESHOLD:
+        return Decision.REJECT
+
+    # Unsupported claims are rejected, while relevant answers that explicitly
+    # acknowledge insufficient evidence are routed to human review.
+    if source_support < REJECT_DIMENSION_THRESHOLD:
+        if uncertainty >= 80:
+            return Decision.REVIEW
         return Decision.REJECT
 
     # Publishing requires a strong overall result with no weak dimension.

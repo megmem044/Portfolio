@@ -40,17 +40,37 @@ def test_score_below_publish_threshold_is_reviewed():
 
 
 def test_low_source_support_is_rejected():
-    scores = complete_scores(source_support=40)
+    scores = complete_scores(source_support=40, uncertainty=55)
 
     decision = make_decision(85, scores)
 
     assert decision == Decision.REJECT
 
 
+def test_cautious_low_support_answer_is_reviewed():
+    scores = complete_scores(source_support=40, uncertainty=90)
+
+    decision = make_decision(70, scores)
+
+    assert decision == Decision.REVIEW
+
+
 def test_low_relevance_is_rejected():
     scores = complete_scores(relevance=40)
 
     decision = make_decision(85, scores)
+
+    assert decision == Decision.REJECT
+
+
+def test_irrelevant_cautious_answer_is_rejected():
+    scores = complete_scores(
+        relevance=40,
+        source_support=40,
+        uncertainty=90,
+    )
+
+    decision = make_decision(70, scores)
 
     assert decision == Decision.REJECT
 

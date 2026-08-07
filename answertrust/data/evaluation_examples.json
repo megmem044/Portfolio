@@ -1,0 +1,182 @@
+[
+  {
+    "id": "supported-001",
+    "category": "supported",
+    "question": "At what temperature does pure water freeze at standard atmospheric pressure?",
+    "reference": "Pure water freezes at 0 degrees Celsius at standard atmospheric pressure.",
+    "answer": "Pure water freezes at 0 degrees Celsius at standard atmospheric pressure.",
+    "expected_decision": "PUBLISH",
+    "reason": "The answer directly and completely matches the supplied reference."
+  },
+  {
+    "id": "supported-002",
+    "category": "supported",
+    "question": "Which planet is the largest in the Solar System?",
+    "reference": "Jupiter is the largest planet in the Solar System.",
+    "answer": "Jupiter is the largest planet in the Solar System.",
+    "expected_decision": "PUBLISH",
+    "reason": "The answer is relevant and fully supported by the reference."
+  },
+  {
+    "id": "supported-003",
+    "category": "supported",
+    "question": "What do plants use sunlight for?",
+    "reference": "Plants use sunlight to produce energy-rich sugars during photosynthesis.",
+    "answer": "Plants use sunlight to produce energy-rich sugars during photosynthesis.",
+    "expected_decision": "PUBLISH",
+    "reason": "The answer states the same supported information without adding a claim."
+  },
+  {
+    "id": "supported-004",
+    "category": "supported",
+    "question": "What is one purpose of a seat belt?",
+    "reference": "A seat belt helps restrain a vehicle occupant during a sudden stop or collision.",
+    "answer": "A seat belt helps restrain a vehicle occupant during a sudden stop or collision.",
+    "expected_decision": "PUBLISH",
+    "reason": "The response directly answers the question using the supplied evidence."
+  },
+  {
+    "id": "partial-001",
+    "category": "partially_supported",
+    "question": "Summarize the supplied information about honeybees.",
+    "reference": "Honeybees communicate through waggle dances and collect nectar to make honey.",
+    "answer": "Honeybees communicate through waggle dances.",
+    "expected_decision": "REVIEW",
+    "reason": "The answer is supported but omits the reference's second central detail."
+  },
+  {
+    "id": "partial-002",
+    "category": "partially_supported",
+    "question": "Describe the two stated benefits of urban trees.",
+    "reference": "Urban trees provide shade and can reduce local air temperatures.",
+    "answer": "Urban trees provide shade.",
+    "expected_decision": "REVIEW",
+    "reason": "The answer gives only one of the two requested benefits."
+  },
+  {
+    "id": "partial-003",
+    "category": "partially_supported",
+    "question": "What does the reference say about sleep and memory?",
+    "reference": "Sleep supports memory consolidation and helps maintain attention the next day.",
+    "answer": "Sleep supports memory consolidation.",
+    "expected_decision": "REVIEW",
+    "reason": "The claim is supported but does not cover the full supplied explanation."
+  },
+  {
+    "id": "partial-004",
+    "category": "partially_supported",
+    "question": "List the stated functions of wetlands.",
+    "reference": "Wetlands can store floodwater, filter pollutants, and provide wildlife habitat.",
+    "answer": "Wetlands can store floodwater.",
+    "expected_decision": "REVIEW",
+    "reason": "The answer is accurate but incomplete for a request to list multiple functions."
+  },
+  {
+    "id": "unsupported-001",
+    "category": "unsupported",
+    "question": "Does the reference establish that the supplement cures migraines?",
+    "reference": "A small pilot study found that some participants reported fewer headaches.",
+    "answer": "The supplement definitely cures migraines for everyone.",
+    "expected_decision": "REJECT",
+    "reason": "The universal cure claim is much stronger than the preliminary evidence."
+  },
+  {
+    "id": "unsupported-002",
+    "category": "unsupported",
+    "question": "How long did the bridge project take?",
+    "reference": "Construction began in April 2019. The provided record does not state a completion date.",
+    "answer": "The bridge took exactly eighteen months to complete.",
+    "expected_decision": "REJECT",
+    "reason": "The answer invents a duration that is absent from the reference."
+  },
+  {
+    "id": "unsupported-003",
+    "category": "unsupported",
+    "question": "What caused the power interruption?",
+    "reference": "The utility reported that the cause remained under investigation.",
+    "answer": "A lightning strike certainly caused the interruption.",
+    "expected_decision": "REJECT",
+    "reason": "The answer asserts a specific cause that the reference does not identify."
+  },
+  {
+    "id": "unsupported-004",
+    "category": "unsupported",
+    "question": "Was the software update responsible for the failure?",
+    "reference": "The failure occurred after an update, but no causal link has been established.",
+    "answer": "The update was proven to be the sole cause of the failure.",
+    "expected_decision": "REJECT",
+    "reason": "Sequence alone does not support the claimed proven causal relationship."
+  },
+  {
+    "id": "irrelevant-001",
+    "category": "irrelevant",
+    "question": "Why do leaves appear green?",
+    "reference": "Chlorophyll absorbs much of the red and blue light and reflects more green light.",
+    "answer": "Dolphins communicate using whistles and clicks.",
+    "expected_decision": "REJECT",
+    "reason": "The answer is unrelated to the question and reference."
+  },
+  {
+    "id": "irrelevant-002",
+    "category": "irrelevant",
+    "question": "What is the purpose of a smoke alarm?",
+    "reference": "A smoke alarm detects smoke and warns occupants of a possible fire.",
+    "answer": "A bicycle chain transfers force from the pedals to the rear wheel.",
+    "expected_decision": "REJECT",
+    "reason": "The response discusses a different object and does not answer the question."
+  },
+  {
+    "id": "irrelevant-003",
+    "category": "irrelevant",
+    "question": "How does compost benefit garden soil?",
+    "reference": "Compost adds organic matter and can improve soil structure and water retention.",
+    "answer": "The Moon completes an orbit around Earth in roughly one month.",
+    "expected_decision": "REJECT",
+    "reason": "The answer contains no information about compost or soil."
+  },
+  {
+    "id": "irrelevant-004",
+    "category": "irrelevant",
+    "question": "Why is handwashing recommended before preparing food?",
+    "reference": "Handwashing can reduce the transfer of harmful microorganisms to food.",
+    "answer": "Solar panels convert light energy into electrical energy.",
+    "expected_decision": "REJECT",
+    "reason": "The response is off topic despite being a coherent statement."
+  },
+  {
+    "id": "insufficient-001",
+    "category": "insufficient_reference",
+    "question": "Which candidate received the most votes?",
+    "reference": "The election was held on Tuesday, but the supplied notice contains no vote totals.",
+    "answer": "The reference does not provide enough information to identify which candidate received the most votes.",
+    "expected_decision": "REVIEW",
+    "reason": "The answer appropriately identifies that the supplied evidence is insufficient."
+  },
+  {
+    "id": "insufficient-002",
+    "category": "insufficient_reference",
+    "question": "What was the company's annual profit?",
+    "reference": "The summary reports annual revenue but does not include expenses or profit.",
+    "answer": "Annual profit cannot be determined from the supplied reference.",
+    "expected_decision": "REVIEW",
+    "reason": "The cautious answer correctly avoids inventing a missing financial value."
+  },
+  {
+    "id": "insufficient-003",
+    "category": "insufficient_reference",
+    "question": "Will the medication work for this specific patient?",
+    "reference": "The document describes average trial results and provides no information about the individual patient.",
+    "answer": "The reference is insufficient to predict whether the medication will work for this patient.",
+    "expected_decision": "REVIEW",
+    "reason": "The response is appropriately cautious about applying group evidence to an individual."
+  },
+  {
+    "id": "insufficient-004",
+    "category": "insufficient_reference",
+    "question": "What time will the delayed train arrive?",
+    "reference": "The service notice says the train is delayed but gives no revised arrival time.",
+    "answer": "The revised arrival time is not available in the supplied notice.",
+    "expected_decision": "REVIEW",
+    "reason": "The answer accurately communicates the limit of the reference information."
+  }
+]

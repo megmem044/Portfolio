@@ -1,11 +1,22 @@
 """Interaction tests for the main Streamlit evaluation page."""
 
 from pathlib import Path
+from unittest.mock import Mock
 
+import pytest
 from streamlit.testing.v1 import AppTest
 
+from src import database
 
 APP_PATH = Path(__file__).resolve().parent.parent / "app.py"
+
+
+@pytest.fixture(autouse=True)
+def prevent_real_database_writes(monkeypatch):
+    """Keep Streamlit interaction tests isolated from local history."""
+    save_mock = Mock()
+    monkeypatch.setattr(database, "save_evaluation", save_mock)
+    return save_mock
 
 
 def load_app() -> AppTest:
@@ -42,7 +53,9 @@ def test_app_renders_evaluation_form():
     assert app.button[0].label == "Evaluate Answer"
 
 
-def test_exact_supported_answer_shows_publish_result():
+def test_exact_supported_answer_shows_publish_result(
+    prevent_real_database_writes,
+):
     app = submit_evaluation(
         load_app(),
         "At what temperature does water freeze?",
@@ -54,7 +67,9 @@ def test_exact_supported_answer_shows_publish_result():
     assert app.success[0].value.startswith("PUBLISH")
     assert app.metric[0].label == "Overall score"
     assert app.metric[0].value.endswith("/100")
-    assert len(app.caption) == 5
+    assert len(app.caption) == 6
+    assert app.caption[-1].value == "Evaluation saved to local history."
+    prevent_real_database_writes.assert_called_once()
 
 
 def test_partially_supported_answer_shows_review_result():
@@ -84,7 +99,9 @@ def test_unrelated_answer_shows_reject_result():
     assert app.error[0].value.startswith("REJECT")
 
 
-def test_empty_submission_shows_validation_messages():
+def test_empty_submission_shows_validation_messages(
+    prevent_real_database_writes,
+):
     app = load_app()
     app.button[0].click().run()
 
@@ -93,3 +110,4 @@ def test_empty_submission_shows_validation_messages():
     assert any("question" in error.value.lower() for error in app.error)
     assert any("reference" in error.value.lower() for error in app.error)
     assert any("answer" in error.value.lower() for error in app.error)
+    prevent_real_database_writes.assert_not_called()

@@ -2,6 +2,8 @@
 
 import streamlit as st
 
+from src import database
+from src.config import DATABASE_PATH
 from src.evaluator import evaluate_answer
 from src.models import Decision, EvaluationInput, EvaluationResult
 
@@ -108,3 +110,19 @@ if submitted:
 
     evaluation_result = evaluate_answer(evaluation_input)
     show_result(evaluation_result)
+
+    is_valid_evaluation = (
+        evaluation_result.dimension_scores[0].name != "Validation"
+    )
+    if is_valid_evaluation:
+        try:
+            database.save_evaluation(
+                evaluation_input,
+                evaluation_result,
+                DATABASE_PATH,
+            )
+            st.caption("Evaluation saved to local history.")
+        except Exception:
+            st.warning(
+                "The evaluation completed, but it could not be saved to history."
+            )
