@@ -22,13 +22,18 @@ def test_dashboard_handles_empty_local_data(monkeypatch):
         "load_experiment_results",
         Mock(side_effect=FileNotFoundError),
     )
+    monkeypatch.setattr(
+        dashboard,
+        "load_prompt_comparison_results",
+        Mock(side_effect=FileNotFoundError),
+    )
 
     page = AppTest.from_file(str(PAGE_PATH)).run()
 
     assert not page.exception
     assert page.title[0].value == "Quality Dashboard"
     assert page.metric[0].value == "0"
-    assert len(page.info) == 2
+    assert len(page.info) == 3
 
 
 def test_dashboard_displays_experiment_metrics(monkeypatch):
@@ -46,6 +51,11 @@ def test_dashboard_displays_experiment_metrics(monkeypatch):
         dashboard,
         "load_experiment_results",
         Mock(return_value=rows),
+    )
+    monkeypatch.setattr(
+        dashboard,
+        "load_prompt_comparison_results",
+        Mock(side_effect=FileNotFoundError),
     )
 
     page = AppTest.from_file(str(PAGE_PATH)).run()

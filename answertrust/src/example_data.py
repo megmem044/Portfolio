@@ -26,7 +26,7 @@ REQUIRED_CATEGORIES = {
     "irrelevant",
     "insufficient_reference",
 }
-MINIMUM_EXAMPLES_PER_CATEGORY = 4
+MINIMUM_EXAMPLES_PER_CATEGORY = 6
 
 
 def load_examples(

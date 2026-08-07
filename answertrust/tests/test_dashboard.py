@@ -4,6 +4,7 @@ import csv
 
 from src.dashboard import (
     load_experiment_results,
+    load_prompt_comparison_results,
     summarize_experiment,
     summarize_history,
 )
@@ -89,3 +90,18 @@ def test_experiment_summary_uses_standard_metrics():
     assert summary["decision_accuracy_pct"] == 100.0
     assert summary["false_publish_rate_pct"] == 0.0
     assert summary["unsupported_detection_rate_pct"] == 100.0
+
+
+def test_prompt_comparison_csv_restores_optional_booleans(tmp_path):
+    path = tmp_path / "prompt_results.csv"
+    path.write_text(
+        "model_matches_expected,agrees_with_deterministic,"
+        "transformer_latency_ms\nTrue,,12\n",
+        encoding="utf-8",
+    )
+
+    rows = load_prompt_comparison_results(path)
+
+    assert rows[0]["model_matches_expected"] is True
+    assert rows[0]["agrees_with_deterministic"] is None
+    assert rows[0]["transformer_latency_ms"] == 12

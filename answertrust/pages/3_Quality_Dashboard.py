@@ -6,7 +6,12 @@ import pandas as pd
 import streamlit as st
 
 from src import dashboard, database
-from src.config import DATABASE_PATH, EXPERIMENT_RESULTS_PATH
+from src.config import (
+    DATABASE_PATH,
+    EXPERIMENT_RESULTS_PATH,
+    PROMPT_COMPARISON_RESULTS_PATH,
+)
+from src.experiments import calculate_prompt_comparison_metrics
 
 
 st.set_page_config(
@@ -105,4 +110,39 @@ if experiment_rows:
     st.caption(
         f'Measured on {experiment["total_examples"]} self-authored examples. '
         "Results describe this dataset and do not guarantee general performance."
+    )
+
+st.header("Local transformer prompt comparison")
+try:
+    prompt_rows = dashboard.load_prompt_comparison_results(
+        PROMPT_COMPARISON_RESULTS_PATH
+    )
+except FileNotFoundError:
+    prompt_rows = []
+    st.info(
+        "No prompt comparison is available. Run `python -m src.experiments "
+        "--compare-prompts` after caching the local model."
+    )
+except Exception:
+    prompt_rows = []
+    st.error("Prompt-comparison results could not be loaded.")
+
+if prompt_rows:
+    prompt_metrics = calculate_prompt_comparison_metrics(prompt_rows)
+    prompt_frame = pd.DataFrame.from_dict(
+        prompt_metrics,
+        orient="index",
+    )[
+        [
+            "availability_rate_pct",
+            "model_accuracy_pct",
+            "deterministic_agreement_pct",
+            "average_transformer_latency_ms",
+        ]
+    ]
+    prompt_frame.index.name = "Prompt"
+    st.dataframe(prompt_frame, use_container_width=True)
+    st.caption(
+        "Model accuracy and agreement are calculated only from successfully "
+        "generated structured outputs. Unavailable outputs are not invented."
     )

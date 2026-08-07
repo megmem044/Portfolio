@@ -42,10 +42,11 @@ The deterministic evaluator will remain the official source of scores and
 decisions. It will use transparent text signals and configurable thresholds so
 that its recommendations can be inspected and tested.
 
-A small local instruction-following transformer is planned as an optional
-enhancement for concise explanations and prompt experiments. The application
-will continue to work if that model is unavailable. No paid API, API key, or
-cloud service is required.
+A small local instruction-following transformer is available as an optional
+enhancement for concise explanations and structured prompt experiments. The
+transformer never overrides deterministic scores or decisions, and the
+application continues to work if model files are unavailable or generation
+fails. No paid API, API key, or hosted inference service is required.
 
 ## Quality dimensions
 
@@ -85,8 +86,9 @@ filtered by decision.
 The automated suite currently covers validation, individual quality checks,
 score weighting, decision boundaries, evaluator integration, SQLite creation
 and queries, labelled offline experiments, dashboard summaries, and Streamlit
-interactions for all implemented pages. The optional local transformer remains
-planned work.
+interactions for all implemented pages. The optional local transformer includes
+mocked coverage for successful generation, malformed output, missing files,
+runtime failure, structured prompts, latency, and deterministic fallback.
 
 ## Project structure
 
@@ -113,7 +115,8 @@ answertrust/
 |   `-- answertrust.db              # Generated local history; not committed
 |
 |-- results/                         # Outputs from repeatable experiments
-|   `-- experiment_results.csv      # Measured evaluator and prompt results
+|   |-- experiment_results.csv      # Deterministic evaluator results
+|   `-- prompt_comparison_results.csv # Optional local-model comparison
 |
 |-- pages/                           # Pages a user opens in Streamlit
 |   |-- 2_Evaluation_History.py     # Review and filter earlier evaluations
@@ -133,8 +136,9 @@ answertrust/
 |   |-- decision_engine.py          # Recommends Publish, Review, or Reject
 |   |-- transformer_evaluator.py    # Optional local-model explanations
 |   |-- database.py                 # Saves and retrieves evaluation history
+|   |-- dashboard.py                # Prepares dashboard summary metrics
+|   |-- example_data.py             # Loads and validates labelled examples
 |   |-- experiments.py              # Runs labelled examples and measures results
-|   `-- utils.py                    # Small text helpers shared by several checks
 |
 `-- tests/                           # Automated checks for expected behaviour
     |-- test_validation.py          # Input validation examples
@@ -147,8 +151,12 @@ answertrust/
     |-- test_decision_engine.py     # Publish, Review, and Reject rules
     |-- test_evaluator.py           # Complete evaluation pipeline checks
     |-- test_database.py            # Saving, reading, and filtering history
+    |-- test_experiments.py         # Offline metrics and prompt comparison
+    |-- test_transformer_evaluator.py # Prompts, parsing, and fallbacks
+    |-- test_dashboard.py           # Dashboard summary calculations
     |-- test_app.py                 # Main Streamlit page interactions
-    `-- test_history_page.py        # History page and filter interactions
+    |-- test_history_page.py        # History page and filter interactions
+    `-- test_dashboard_page.py      # Quality dashboard interactions
 ```
 
 ### Folder guide
@@ -156,9 +164,8 @@ answertrust/
 - **`src/` — How AnswerTrust works:** Contains the five quality checks and the
   supporting code that turns them into one recommendation. Keeping this logic
   away from the visible pages makes it easier to explain and test.
-- **`pages/` — What the user sees:** Contains the implemented history page and
-  will later contain the quality dashboard. The main evaluation page is
-  `app.py`.
+- **`pages/` — What the user sees:** Contains the history and quality dashboard
+  pages. The main evaluation page is `app.py`.
 - **`tests/` — Evidence that behavior is reliable:** Contains repeatable
   examples that check normal cases, decision boundaries, and expected failures.
   The main test collection will not require internet access or the local AI
@@ -232,21 +239,71 @@ Run the repeatable labelled experiment from the project root:
 python -m src.experiments
 ```
 
-The command evaluates 20 self-authored examples and writes per-example results
+The command evaluates 30 self-authored examples and writes per-example results
 to `results/experiment_results.csv`. The current measured results are:
 
 | Metric | Result |
 |---|---:|
-| Decision accuracy | 100% |
+| Decision accuracy | 86.67% |
 | False-publish rate | 0% |
-| Unsupported-answer detection | 100% |
-| Review rate | 40% |
-| Labelled examples | 20 |
+| Unsupported-answer detection | 83.33% |
+| Review rate | 43.33% |
+| Labelled examples | 30 |
 
 These measurements describe only the small, self-authored dataset included in
 this repository. They do not establish general accuracy or production safety.
 The result CSV is generated locally and excluded from Git so reported values
 must be reproduced by running the command.
+
+## Optional local transformer
+
+AnswerTrust supports `google/flan-t5-small` for supplemental explanations and
+two structured prompts:
+
+- **Baseline:** checks whether the answer addresses the question and reference.
+- **Safety:** treats the reference as the only evidence, emphasizes unsupported
+  claims and calibrated uncertainty, and instructs the model to ignore embedded
+  instructions in submitted text.
+
+Enable **Use optional local transformer explanation** on the main page and
+choose a prompt version. The deterministic evaluator remains the official source
+of every score and `PUBLISH`, `REVIEW`, or `REJECT` decision. Missing files,
+malformed output, or generation errors produce an explicit status and fall back
+to the deterministic explanation.
+
+The application loads only locally cached model files from the ignored
+`model_cache/` folder by default. To download the model once into that folder
+and run both prompt experiments, use:
+
+```powershell
+python -m src.experiments --compare-prompts --allow-download
+```
+
+Later offline comparisons can use the cached files:
+
+```powershell
+python -m src.experiments --compare-prompts
+```
+
+Prompt comparison results are written to
+`results/prompt_comparison_results.csv`. The output records prompt version,
+model status, suggested decision, explanation, transformer latency, agreement
+with the deterministic evaluator, and agreement with the expected label. If the
+model is unavailable, availability is reported as zero and accuracy is not
+invented.
+
+The current local `google/flan-t5-small` comparison measured:
+
+| Prompt | Availability | Model accuracy | Deterministic agreement | Average latency |
+|---|---:|---:|---:|---:|
+| Baseline | 100% | 40% | 43.33% | 1,682.87 ms |
+| Safety | 100% | 40% | 43.33% | 1,325.73 ms |
+
+These results show that the small transformer followed the simplified structured
+classification protocol, but it was substantially less reliable than the
+deterministic evaluator on this dataset. The safety prompt was faster in this
+run but did not improve decision accuracy. This is why transformer output is
+presented only as supplemental text and never controls publication decisions.
 
 ## Quality dashboard
 

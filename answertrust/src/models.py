@@ -30,6 +30,19 @@ class DimensionScore:
 
 
 @dataclass
+class TransformerResult:
+    """Supplemental output from the optional local transformer."""
+
+    explanation: str
+    suggested_decision: Decision | None
+    prompt_version: str
+    model_name: str
+    status: str
+    latency_ms: int
+    raw_output: str = ""
+
+
+@dataclass
 class EvaluationResult:
     evaluation_id: str
     timestamp: datetime

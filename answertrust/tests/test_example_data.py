@@ -15,7 +15,7 @@ from src.example_data import (
 def test_project_example_file_is_valid_and_balanced():
     examples = load_examples()
 
-    assert len(examples) >= 20
+    assert len(examples) >= 30
     assert validate_examples(examples) == []
     assert {example["category"] for example in examples} == REQUIRED_CATEGORIES
 

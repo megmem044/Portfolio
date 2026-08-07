@@ -6,6 +6,10 @@ from src import database
 from src.config import DATABASE_PATH
 from src.evaluator import evaluate_answer
 from src.models import Decision, EvaluationInput, EvaluationResult
+from src.transformer_evaluator import (
+    LocalTransformerEvaluator,
+    PROMPT_VERSIONS,
+)
 
 
 st.set_page_config(
@@ -13,6 +17,12 @@ st.set_page_config(
     page_icon="✅",
     layout="wide",
 )
+
+
+@st.cache_resource
+def get_transformer_evaluator() -> LocalTransformerEvaluator:
+    """Create one lazy local-model wrapper per Streamlit process."""
+    return LocalTransformerEvaluator()
 
 
 def show_decision(decision: Decision) -> None:
@@ -64,6 +74,19 @@ def show_result(result: EvaluationResult) -> None:
     st.write(f"**Main concern:** {result.main_concern}")
     st.write(f"**Recommended action:** {result.recommended_action}")
 
+    if result.model_status == "generated":
+        st.subheader("Local transformer explanation")
+        st.write(result.explanation)
+        st.caption(
+            f"Prompt: {result.prompt_version} · "
+            f"Transformer latency: {result.transformer_latency_ms} ms"
+        )
+    elif result.model_status != "not_used":
+        st.info(
+            "The optional local transformer was unavailable or returned an "
+            "invalid response. The deterministic result above remains valid."
+        )
+
 
 st.title("AnswerTrust")
 st.write(
@@ -95,6 +118,19 @@ with st.form("evaluation_form"):
         height=180,
     )
 
+    use_transformer = st.checkbox(
+        "Use optional local transformer explanation",
+        help=(
+            "Requires google/flan-t5-small in the local Hugging Face cache. "
+            "The model never overrides AnswerTrust's official decision."
+        ),
+    )
+    prompt_version = st.selectbox(
+        "Transformer prompt",
+        options=PROMPT_VERSIONS,
+        disabled=not use_transformer,
+    )
+
     submitted = st.form_submit_button(
         "Evaluate Answer",
         type="primary",
@@ -106,9 +142,16 @@ if submitted:
         question=question,
         reference=reference,
         answer=answer,
+        prompt_version=prompt_version,
     )
 
-    evaluation_result = evaluate_answer(evaluation_input)
+    transformer_evaluator = (
+        get_transformer_evaluator() if use_transformer else None
+    )
+    evaluation_result = evaluate_answer(
+        evaluation_input,
+        transformer_evaluator=transformer_evaluator,
+    )
     show_result(evaluation_result)
 
     is_valid_evaluation = (

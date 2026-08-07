@@ -178,5 +178,95 @@
     "answer": "The revised arrival time is not available in the supplied notice.",
     "expected_decision": "REVIEW",
     "reason": "The answer accurately communicates the limit of the reference information."
+  },
+  {
+    "id": "supported-005",
+    "category": "supported",
+    "question": "Which is Earth's largest ocean?",
+    "reference": "The Pacific Ocean is Earth's largest ocean.",
+    "answer": "Earth's largest ocean is the Pacific Ocean.",
+    "expected_decision": "PUBLISH",
+    "reason": "The answer is a faithful paraphrase of the reference."
+  },
+  {
+    "id": "supported-006",
+    "category": "supported",
+    "question": "What happens to liquid water during evaporation?",
+    "reference": "Evaporation changes liquid water into water vapor.",
+    "answer": "Liquid water becomes water vapor through evaporation.",
+    "expected_decision": "PUBLISH",
+    "reason": "The wording changes, but the answer preserves the supported meaning."
+  },
+  {
+    "id": "partial-005",
+    "category": "partially_supported",
+    "question": "Summarize the stated effects of the community garden.",
+    "reference": "The community garden supplied fresh produce and created a shared gathering space.",
+    "answer": "The community garden supplied fresh produce and probably reduced neighborhood crime.",
+    "expected_decision": "REVIEW",
+    "reason": "One claim is supported while the added crime claim is not established."
+  },
+  {
+    "id": "partial-006",
+    "category": "partially_supported",
+    "question": "What does the report say about the new bus route?",
+    "reference": "The new route shortened average travel time and added stops near the hospital.",
+    "answer": "The new route shortened average travel time but the answer does not mention the hospital stops.",
+    "expected_decision": "REVIEW",
+    "reason": "The response acknowledges but does not clearly deliver the second requested detail."
+  },
+  {
+    "id": "unsupported-005",
+    "category": "unsupported",
+    "question": "By what percentage did energy use decline?",
+    "reference": "The facility reported a 12 percent decline in annual energy use.",
+    "answer": "The facility's annual energy use declined by 20 percent.",
+    "expected_decision": "REJECT",
+    "reason": "The answer changes the central numerical value from 12 to 20 percent."
+  },
+  {
+    "id": "unsupported-006",
+    "category": "unsupported",
+    "question": "Did the audit conclude that fraud caused the discrepancy?",
+    "reference": "The audit found a discrepancy but did not determine that fraud caused it.",
+    "answer": "The audit concluded that fraud caused the discrepancy.",
+    "expected_decision": "REJECT",
+    "reason": "The answer reverses the reference's explicit negation."
+  },
+  {
+    "id": "irrelevant-005",
+    "category": "irrelevant",
+    "question": "How does insulation reduce heat loss from a building?",
+    "reference": "Insulation slows heat transfer through walls, roofs, and floors.",
+    "answer": "The building has three floors and a blue roof.",
+    "expected_decision": "REJECT",
+    "reason": "Shared building words do not make the answer responsive to heat loss."
+  },
+  {
+    "id": "irrelevant-006",
+    "category": "irrelevant",
+    "question": "Why did the library extend its weekend hours?",
+    "reference": "The library extended weekend hours after surveys showed strong community demand.",
+    "answer": "Weekend weather is often warmer than weekday weather.",
+    "expected_decision": "REJECT",
+    "reason": "The answer shares a time-related word but does not address the library decision."
+  },
+  {
+    "id": "insufficient-005",
+    "category": "insufficient_reference",
+    "question": "Which repair option will last the longest?",
+    "reference": "The document lists three repair options and their prices but provides no durability data.",
+    "answer": "The longest-lasting option cannot be determined because durability information is not provided.",
+    "expected_decision": "REVIEW",
+    "reason": "The answer correctly identifies the missing comparison evidence."
+  },
+  {
+    "id": "insufficient-006",
+    "category": "insufficient_reference",
+    "question": "Was customer satisfaction higher this year than last year?",
+    "reference": "This year's satisfaction score is reported, but last year's score is absent.",
+    "answer": "The year-over-year change cannot be established without last year's score.",
+    "expected_decision": "REVIEW",
+    "reason": "The answer appropriately refuses a comparison that the reference cannot support."
   }
 ]

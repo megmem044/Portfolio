@@ -66,3 +66,16 @@ def load_experiment_results(path: Path) -> list[dict]:
 def summarize_experiment(rows: list[dict]) -> dict[str, float | int]:
     """Return the standard experiment metrics for dashboard display."""
     return calculate_metrics(rows)
+
+
+def load_prompt_comparison_results(path: Path) -> list[dict]:
+    """Load prompt-comparison CSV rows with typed status metrics."""
+    with path.open(newline="", encoding="utf-8") as results_file:
+        rows = list(csv.DictReader(results_file))
+
+    for row in rows:
+        for field in ("model_matches_expected", "agrees_with_deterministic"):
+            value = row[field].strip().lower()
+            row[field] = None if not value else value == "true"
+        row["transformer_latency_ms"] = int(row["transformer_latency_ms"])
+    return rows

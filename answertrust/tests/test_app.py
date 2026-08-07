@@ -51,6 +51,9 @@ def test_app_renders_evaluation_form():
         "AI-generated answer",
     ]
     assert app.button[0].label == "Evaluate Answer"
+    assert app.checkbox[0].label == "Use optional local transformer explanation"
+    assert app.selectbox[0].label == "Transformer prompt"
+    assert app.selectbox[0].value == "baseline"
 
 
 def test_exact_supported_answer_shows_publish_result(
