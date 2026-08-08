@@ -1,0 +1,19 @@
+# Simulator build directories
+work/
+sim/
+build/
+
+# Simulation outputs and waveforms
+*.vcd
+*.fst
+*.wlf
+*.log
+transcript
+vsim_stacktrace.vstf
+
+# Compiled simulation executables
+*.out
+simv
+
+# Local simulator configuration
+modelsim.ini
