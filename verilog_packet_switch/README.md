@@ -141,11 +141,20 @@ Current verification implementation:
 | Complete-switch interface and clocking blocks | Implemented |
 | Transaction and typed sequencer | Implemented |
 | Driver, monitor, and agent | Implemented |
-| Reference-model scoreboard | Implemented; package connection pending |
-| Sequences and tests | Not yet implemented |
-| Functional coverage model | Not yet implemented |
-| UVM environment and simulation top | Not yet implemented |
+| Reference-model scoreboard | Implemented and connected |
+| Base randomized sequence and test | Implemented |
+| Directed contention sequence and test | Implemented |
+| Functional coverage model | Implemented and connected |
+| UVM environment and simulation top | Implemented |
+| Dependency-ordered compile file list | Implemented |
 | Questa compile and regression scripts | Not yet implemented |
+
+Available UVM tests:
+
+- `packet_switch_base_test` resets the switch, runs randomized ready/valid traffic, and drains all queued packets.
+- `packet_switch_contention_test` drives all four inputs toward Output 0 to exercise repeated round-robin arbitration.
+
+Implemented functional coverage measures every input-to-destination route, input and output handshake states, backpressure, simultaneous transfer counts, reset states, and reset transitions.
 
 Testing will answer questions such as:
 
@@ -166,6 +175,7 @@ Functional coverage will measure whether important situations were exercised, in
 
 ```text
 verilog_packet_switch/
+|-- DEVELOPMENT.md
 |-- rtl/
 |   |-- packet_switch.v
 |   |-- packet_destination_decoder.v
@@ -175,19 +185,29 @@ verilog_packet_switch/
 |   |-- interfaces/
 |   |   |-- input_packet_queue_interface.sv
 |   |   `-- packet_switch_interface.sv
-|   `-- uvm/
-|       |-- parameters_pkg.sv
-|       |-- transaction.sv
-|       |-- sequencer.sv
-|       |-- driver.sv
-|       |-- monitor.sv
-|       |-- agent.sv
-|       |-- scoreboard.sv
-|       `-- verification_pkg.sv
+|   |-- uvm/
+|   |   |-- parameters_pkg.sv
+|   |   |-- transaction.sv
+|   |   |-- sequencer.sv
+|   |   |-- driver.sv
+|   |   |-- monitor.sv
+|   |   |-- agent.sv
+|   |   |-- scoreboard.sv
+|   |   |-- coverage.sv
+|   |   |-- environment.sv
+|   |   |-- sequence.sv
+|   |   |-- contention_sequence.sv
+|   |   |-- test.sv
+|   |   |-- contention_test.sv
+|   |   `-- verification_pkg.sv
+|   |-- files.f
+|   `-- top.sv
 `-- README.md
 ```
 
-Only implemented files are shown. Sequences, coverage, environment, tests, simulation top, and run scripts will be added incrementally.
+Only implemented files are shown. Questa run and regression scripts will be added after the simulator environment is configured.
+
+A chronological explanation of the design and verification work is available in [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Development Roadmap
 
@@ -212,6 +232,6 @@ Only implemented files are shown. Sequences, coverage, environment, tests, simul
 
 The four RTL modules are implemented and pass Verilog-2005 parsing and top-level elaboration with Icarus Verilog 12.0. The RTL has not yet been functionally simulated.
 
-The UVM verification environment is the current development focus. The complete-switch interface, transaction, sequencer, driver, monitor, agent, and reference-model scoreboard have been implemented. The scoreboard still needs to be added to the central package, and sequences, functional coverage, environment, tests, simulation top, and run scripts remain to be implemented.
+The first complete UVM testbench structure is implemented. It includes the switch interface, transaction, sequencer, driver, monitor, agent, reference-model scoreboard, functional coverage, environment, randomized and contention sequences, selectable tests, simulation top, and dependency-ordered file list.
 
-The UVM source has not yet been compiled because a UVM-capable Questa installation is not configured. This status is kept separate from the successful Icarus RTL elaboration result above.
+The UVM source has not yet been compiled because a UVM-capable Questa installation is not configured. Run scripts may require small tool-path adjustments after installation. This status is kept separate from the successful Icarus RTL elaboration result above.
