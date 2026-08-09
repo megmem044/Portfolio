@@ -1,3 +1,5 @@
+"""Describe how transaction records and their category link are stored."""
+
 from sqlalchemy import Column, Date, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import relationship
 

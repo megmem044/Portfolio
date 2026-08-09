@@ -1,3 +1,5 @@
+"""Load application settings from defaults and an optional .env file."""
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 

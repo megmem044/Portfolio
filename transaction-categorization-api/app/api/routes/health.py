@@ -1,3 +1,5 @@
+"""Provide a simple endpoint that reports whether the API is running."""
+
 from fastapi import APIRouter
 
 # Router object is created for health-related endpoints

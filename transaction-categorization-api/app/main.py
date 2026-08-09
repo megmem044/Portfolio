@@ -1,3 +1,5 @@
+"""Create the FastAPI application and connect all API route groups."""
+
 from fastapi import FastAPI
 
 from app.api.routes.categories import router as categories_router

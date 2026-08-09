@@ -1,3 +1,5 @@
+"""Test transaction API behavior using realistic user actions and errors."""
+
 def add_transaction(client, amount, merchant, transaction_date):
     return client.post(
         "/transactions/",

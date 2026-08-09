@@ -1,3 +1,5 @@
+"""Handle viewing and safely managing spending categories."""
+
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session

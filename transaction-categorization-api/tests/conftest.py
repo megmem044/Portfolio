@@ -1,3 +1,5 @@
+"""Create a fresh temporary database and API client for every test."""
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine

@@ -1,3 +1,5 @@
+"""Provide shared helpers that API routes need during a request."""
+
 from collections.abc import Generator
 
 from sqlalchemy.orm import Session

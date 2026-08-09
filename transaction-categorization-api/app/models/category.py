@@ -1,3 +1,5 @@
+"""Describe how default and user-created spending categories are stored."""
+
 from sqlalchemy import Boolean, Column, Integer, String
 from sqlalchemy.orm import relationship
 

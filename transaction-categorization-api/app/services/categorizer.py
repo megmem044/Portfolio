@@ -1,3 +1,5 @@
+"""Assign a category by matching simple keywords in a merchant name."""
+
 CATEGORY_RULES = {
     "Food & Dining": ("starbucks", "restaurant"),
     "Transportation": ("uber", "lyft"),

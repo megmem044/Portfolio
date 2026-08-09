@@ -1,3 +1,5 @@
+"""Check that merchant keywords produce the expected categories."""
+
 import pytest
 
 from app.services.categorizer import categorize_transaction

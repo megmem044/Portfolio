@@ -1,3 +1,5 @@
+"""Handle transaction creation, browsing, reports, updates, and deletion."""
+
 from datetime import date
 from decimal import Decimal
 

@@ -1,3 +1,5 @@
+"""Check category input and define category API response shapes."""
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 

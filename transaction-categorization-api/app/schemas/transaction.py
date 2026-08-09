@@ -1,3 +1,5 @@
+"""Check transaction input and define transaction API response shapes."""
+
 from __future__ import annotations
 
 from datetime import date as Date

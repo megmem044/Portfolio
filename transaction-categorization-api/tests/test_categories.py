@@ -1,3 +1,5 @@
+"""Test safe creation, editing, listing, and deletion of categories."""
+
 def create_category(client, name="Entertainment", description="Movies and events"):
     return client.post(
         "/categories/",

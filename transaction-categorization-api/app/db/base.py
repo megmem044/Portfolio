@@ -1,3 +1,5 @@
+"""Provide the shared base class used by all database models."""
+
 from sqlalchemy.orm import declarative_base
 
 # Base class for all SQLAlchemy models is created

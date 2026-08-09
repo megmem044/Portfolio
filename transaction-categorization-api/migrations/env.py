@@ -1,3 +1,5 @@
+"""Connect Alembic to the configured database and model definitions."""
+
 from logging.config import fileConfig
 
 from alembic import context
