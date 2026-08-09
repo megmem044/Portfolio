@@ -134,6 +134,19 @@ The planned UVM environment will contain:
 - Directed and constrained-random sequences for normal and stressful traffic
 - Focused tests selected by name and repeatable random seeds
 
+Current verification implementation:
+
+| Component | Status |
+| --- | --- |
+| Complete-switch interface and clocking blocks | Implemented |
+| Transaction and typed sequencer | Implemented |
+| Driver, monitor, and agent | Implemented |
+| Reference-model scoreboard | Implemented; package connection pending |
+| Sequences and tests | Not yet implemented |
+| Functional coverage model | Not yet implemented |
+| UVM environment and simulation top | Not yet implemented |
+| Questa compile and regression scripts | Not yet implemented |
+
 Testing will answer questions such as:
 
 - Does every destination send a packet to the correct output?
@@ -160,14 +173,21 @@ verilog_packet_switch/
 |   `-- input_packet_queue.v
 |-- verification/
 |   |-- interfaces/
-|   |-- sequences/
-|   |-- agents/
-|   |-- environment/
-|   `-- tests/
+|   |   |-- input_packet_queue_interface.sv
+|   |   `-- packet_switch_interface.sv
+|   `-- uvm/
+|       |-- parameters_pkg.sv
+|       |-- transaction.sv
+|       |-- sequencer.sv
+|       |-- driver.sv
+|       |-- monitor.sv
+|       |-- agent.sv
+|       |-- scoreboard.sv
+|       `-- verification_pkg.sv
 `-- README.md
 ```
 
-Only directories containing implemented files are currently present. Verification folders will be added incrementally as the UVM environment is developed.
+Only implemented files are shown. Sequences, coverage, environment, tests, simulation top, and run scripts will be added incrementally.
 
 ## Development Roadmap
 
@@ -192,4 +212,6 @@ Only directories containing implemented files are currently present. Verificatio
 
 The four RTL modules are implemented and pass Verilog-2005 parsing and top-level elaboration with Icarus Verilog 12.0. The RTL has not yet been functionally simulated.
 
-The UVM verification environment is the current development focus. Its first queue-level SystemVerilog interface has been created; drivers, monitors, sequences, scoreboards, tests, and coverage models remain to be implemented.
+The UVM verification environment is the current development focus. The complete-switch interface, transaction, sequencer, driver, monitor, agent, and reference-model scoreboard have been implemented. The scoreboard still needs to be added to the central package, and sequences, functional coverage, environment, tests, simulation top, and run scripts remain to be implemented.
+
+The UVM source has not yet been compiled because a UVM-capable Questa installation is not configured. This status is kept separate from the successful Icarus RTL elaboration result above.
