@@ -114,20 +114,34 @@ The base sequence resets the switch, generates randomized traffic, and drains qu
 
 The simulation top generates the clock, connects the interface and DUT, provides virtual interfaces through the UVM configuration database, and starts the selected test. The file list records compilation dependencies.
 
+## Phase 12: Add Focused Directed Tests
+
+Files:
+
+- `verification/uvm/fifo_full_sequence.sv`
+- `verification/uvm/fifo_full_test.sv`
+- `verification/uvm/parallel_routing_sequence.sv`
+- `verification/uvm/parallel_routing_test.sv`
+- `verification/uvm/reset_during_traffic_sequence.sv`
+- `verification/uvm/reset_during_traffic_test.sv`
+
+Three focused tests were added for important switch behaviors. The FIFO-full test blocks one output and fills all input queues to exercise backpressure. The parallel-routing test sends four simultaneous packets to four different outputs. The reset-during-traffic test buffers packets, resets the switch, and then sends new traffic to check clean recovery.
+
+The simulation top now calls `run_test()` without hardcoding a class, allowing each test to be selected with the UVM command-line test-name option.
+
 ## Current Limitations
 
+- Questa-Altera FPGA Edition is installed and the license path is configured, but the license does not become active until August 9, 2026.
 - The UVM source has not yet been compiled with Questa.
 - Questa run and regression scripts are not yet implemented.
 - Coverage for explicit arbitration-winner history can be expanded.
-- Additional directed tests are needed for FIFO saturation, prolonged output stalls, independent parallel routes, and reset during traffic.
+- Additional directed testing is needed for prolonged output stalls.
 - Coverage goals and regression pass criteria still need to be documented.
 
 ## Next Phases
 
-1. Allow command-line UVM test selection.
-2. Add FIFO-full and backpressure-focused sequences.
-3. Add parallel-routing and reset-during-traffic tests.
-4. Add arbitration fairness coverage and end-of-test checks.
-5. Compile with Questa and correct any simulator-specific issues.
-6. Add Windows-friendly run and regression commands.
-7. Record coverage results and representative waveforms.
+1. Add arbitration fairness coverage and end-of-test checks.
+2. Compile with Questa and correct any simulator-specific issues.
+3. Add Windows-friendly run and regression commands.
+4. Add a prolonged-output-stall test.
+5. Record coverage results and representative waveforms.

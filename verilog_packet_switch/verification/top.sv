@@ -39,7 +39,7 @@ module top;
             null, "*", "monitor_vif", switch_interface.MONITOR
         );
 
-        run_test("packet_switch_base_test");
+        run_test();
     end
 
 endmodule

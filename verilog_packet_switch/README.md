@@ -144,6 +144,9 @@ Current verification implementation:
 | Reference-model scoreboard | Implemented and connected |
 | Base randomized sequence and test | Implemented |
 | Directed contention sequence and test | Implemented |
+| FIFO-full and backpressure sequence and test | Implemented |
+| Parallel-routing sequence and test | Implemented |
+| Reset-during-traffic sequence and test | Implemented |
 | Functional coverage model | Implemented and connected |
 | UVM environment and simulation top | Implemented |
 | Dependency-ordered compile file list | Implemented |
@@ -153,6 +156,11 @@ Available UVM tests:
 
 - `packet_switch_base_test` resets the switch, runs randomized ready/valid traffic, and drains all queued packets.
 - `packet_switch_contention_test` drives all four inputs toward Output 0 to exercise repeated round-robin arbitration.
+- `packet_switch_fifo_full_test` blocks Output 0 and fills every input queue to exercise backpressure.
+- `packet_switch_parallel_routing_test` sends four simultaneous packets to four different outputs.
+- `packet_switch_reset_during_traffic_test` resets the switch with packets buffered, then checks recovery traffic.
+
+Tests are selected from the simulator command line with `+UVM_TESTNAME=<test class>`.
 
 Implemented functional coverage measures every input-to-destination route, input and output handshake states, backpressure, simultaneous transfer counts, reset states, and reset transitions.
 
@@ -197,8 +205,14 @@ verilog_packet_switch/
 |   |   |-- environment.sv
 |   |   |-- sequence.sv
 |   |   |-- contention_sequence.sv
+|   |   |-- fifo_full_sequence.sv
+|   |   |-- parallel_routing_sequence.sv
+|   |   |-- reset_during_traffic_sequence.sv
 |   |   |-- test.sv
 |   |   |-- contention_test.sv
+|   |   |-- fifo_full_test.sv
+|   |   |-- parallel_routing_test.sv
+|   |   |-- reset_during_traffic_test.sv
 |   |   `-- verification_pkg.sv
 |   |-- files.f
 |   `-- top.sv
@@ -232,6 +246,6 @@ A chronological explanation of the design and verification work is available in 
 
 The four RTL modules are implemented and pass Verilog-2005 parsing and top-level elaboration with Icarus Verilog 12.0. The RTL has not yet been functionally simulated.
 
-The first complete UVM testbench structure is implemented. It includes the switch interface, transaction, sequencer, driver, monitor, agent, reference-model scoreboard, functional coverage, environment, randomized and contention sequences, selectable tests, simulation top, and dependency-ordered file list.
+The first complete UVM testbench structure is implemented. It includes the switch interface, transaction, sequencer, driver, monitor, agent, reference-model scoreboard, functional coverage, environment, randomized and directed sequences, command-line-selectable tests, simulation top, and dependency-ordered file list.
 
-The UVM source has not yet been compiled because a UVM-capable Questa installation is not configured. Run scripts may require small tool-path adjustments after installation. This status is kept separate from the successful Icarus RTL elaboration result above.
+Questa-Altera FPGA Edition is installed and its node-locked license is configured. The license begins on August 9, 2026, so UVM compilation and simulation remain pending until it becomes active. Run scripts may require small tool-path adjustments after the first successful compilation. This status is kept separate from the successful Icarus RTL elaboration result above.
