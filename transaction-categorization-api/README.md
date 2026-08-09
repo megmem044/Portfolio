@@ -19,6 +19,8 @@ Example:
 - Show monthly totals grouped by category
 - Run with SQLite or PostgreSQL
 - Demonstrate a measured PostgreSQL index improvement
+- Register, log in, log out, and protect each user's data
+- Register, log in, reach the dashboard, and log out through React
 - Check whether the service is running
 
 The project currently provides only the backend—the part that stores information and performs the work. It does not yet have a website for users.
@@ -26,7 +28,8 @@ The project currently provides only the backend—the part that stores informati
 ## What we plan to add
 
 - Better input checks and automated testing
-- User accounts and protected data
+- Real monthly data on the authenticated dashboard
+- Transaction, category, and rule screens
 - A simple dashboard
 - CSV imports from bank files
 - Category suggestions that improve using user corrections
@@ -53,6 +56,7 @@ Project documentation:
 - [Phase plan and progress log](docs/phase-plan.md): what we will build and test in each phase
 - [Architecture guide](docs/architecture.md): how the folders work together and where new code belongs
 - [PostgreSQL guide](docs/postgresql.md): how to run and test with the PostgreSQL database
+- [Frontend guide](docs/frontend.md): how React state, forms, and API requests work together
 
 ## Run the backend
 
@@ -104,7 +108,8 @@ The migration command creates or updates the database safely. To change a settin
 - `app/schemas` describes what transaction information is accepted and returned.
 - `app/db` connects the app to its database.
 - `tests` will contain automated checks.
+- `frontend` contains the React and TypeScript website.
 
 ## Current status
 
-This repository is a starting point, not a finished application. Phase 1 is next: add setup information, required packages, stronger input checks, and tests for the current features.
+The backend foundation, database phase, and authentication backend are complete. The React frontend supports registration, login, an authenticated dashboard shell, and logout. Displaying real transaction data is next.

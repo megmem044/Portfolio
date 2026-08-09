@@ -9,6 +9,9 @@
 .sidebar-footer { margin-top: auto; display: flex; align-items: center; gap: 0.75rem; padding-top: 1.25rem; border-top: 1px solid #2a4946; }
 .sidebar-footer div:last-child { display: grid; gap: 0.15rem; }
 .sidebar-footer span { color: #8fa8a2; font-size: 0.8rem; }
+.logout-button { margin-left: auto; border: 0; background: transparent; color: #d9e7e2; padding: 0.35rem; font: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+.logout-button:hover { color: #fff; text-decoration: underline; }
+.logout-button:disabled { cursor: wait; opacity: 0.65; }
 .avatar { width: 2.5rem; height: 2.5rem; display: grid; place-items: center; border-radius: 50%; background: #d8a84e; color: #102a2a; font-weight: 800; }
 .page-content { width: min(1120px, 100%); margin: 0 auto; padding: 3rem clamp(1.25rem, 4vw, 4rem); }
 .page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; margin-bottom: 2rem; }

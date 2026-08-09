@@ -31,14 +31,22 @@ app/
 ├── models/
 │   ├── category.py           Stored category fields
 │   ├── category_rule.py      Stored merchant matching rules
+│   ├── user.py               Registered user accounts
+│   ├── revoked_token.py      Logged-out token records
 │   └── transaction.py        Stored transaction fields
 ├── schemas/
 │   ├── category.py           Accepted category information
 │   ├── category_rule.py      Accepted merchant-rule information
 │   └── transaction.py        Accepted and returned information
 ├── services/
-│   └── categorizer.py        Ordered keyword-matching logic
+│   ├── categorizer.py        Ordered keyword-matching logic
+│   └── security.py           Password hashing and login tokens
 └── main.py                   Creates and starts the app
+
+frontend/
+├── src/api/                  Requests sent to FastAPI
+├── src/pages/                Registration, login, and dashboard screens
+└── src/App.tsx               Chooses the visible screen
 
 migrations/                   Ordered database changes
 

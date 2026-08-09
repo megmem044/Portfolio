@@ -1,0 +1,135 @@
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 520px);
+  align-items: center;
+  gap: clamp(2rem, 8vw, 8rem);
+  padding: clamp(1.5rem, 6vw, 6rem);
+  background: linear-gradient(135deg, #edf4ef 0%, #f8f6ee 100%);
+}
+
+.auth-page .eyebrow {
+  margin: 0 0 0.4rem;
+  color: #769991;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.auth-introduction h1 {
+  max-width: 700px;
+  margin: 0;
+  color: #17302f;
+  font-size: clamp(2.5rem, 6vw, 5.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
+}
+
+.auth-introduction > p:last-child {
+  max-width: 560px;
+  color: #5d706c;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.auth-card {
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border: 1px solid #d8e3df;
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 24px 70px rgba(25, 58, 54, 0.12);
+}
+
+.auth-card h2 {
+  margin: 0;
+  color: #17302f;
+  font-size: 2rem;
+  letter-spacing: -0.04em;
+}
+
+.auth-help {
+  margin: 0.5rem 0 1.5rem;
+  color: #687a76;
+}
+
+.auth-card form {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.auth-card label {
+  margin-top: 0.55rem;
+  color: #294743;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.auth-card input {
+  width: 100%;
+  border: 1px solid #bdccc7;
+  border-radius: 0.65rem;
+  background: #fff;
+  padding: 0.8rem 0.9rem;
+  color: #17302f;
+}
+
+.auth-card input:focus {
+  border-color: #2d625c;
+  outline: 3px solid rgba(45, 98, 92, 0.16);
+}
+
+.auth-card .primary-button {
+  width: 100%;
+  margin-top: 1rem;
+  border: 1px solid #173f3b;
+  border-radius: 0.65rem;
+  background: #173f3b;
+  color: #fff;
+  padding: 0.8rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-card .primary-button:hover {
+  background: #24534e;
+}
+
+.auth-card .primary-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.form-message {
+  margin: 1rem 0 0;
+  padding: 0.8rem;
+  border-radius: 0.65rem;
+  background: #edf4f1;
+  color: #28544f;
+}
+
+.auth-switch {
+  margin: 1.25rem 0 0;
+  color: #687a76;
+  text-align: center;
+}
+
+.auth-switch button {
+  border: 0;
+  background: transparent;
+  color: #24534e;
+  padding: 0;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (max-width: 850px) {
+  .auth-page {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-introduction h1 {
+    font-size: clamp(2.5rem, 12vw, 4rem);
+  }
+}

@@ -83,24 +83,24 @@ Notes: All four migrations are verified on both SQLite and PostgreSQL, with Alem
 
 Implementation:
 
-- [ ] Add registration, login, and logout.
-- [ ] Store passwords safely using password hashing.
-- [ ] Protect transaction routes.
-- [ ] Ensure users can access only their own data.
+- [x] Add registration, login, and logout.
+- [x] Store passwords safely using password hashing.
+- [x] Protect transaction routes.
+- [x] Ensure users can access only their own data.
 - [ ] Add request limits and safer handling of secrets.
 
 Testing:
 
-- [ ] Test successful and unsuccessful login attempts.
-- [ ] Test access without signing in.
-- [ ] Prove that one user cannot read or change another user's data.
-- [ ] Test expired or invalid login credentials.
+- [x] Test successful and unsuccessful login attempts.
+- [x] Test access without signing in.
+- [x] Prove that one user cannot read or change another user's data.
+- [x] Test expired or invalid login credentials.
 
 **Skills shown:** authentication, authorization, HTTP, API security, database relationships, privacy.
 
-Completion date: _Not started_
+Completion date: _In progress_
 
-Notes: _Add decisions and lessons here._
+Notes: Passwords use Argon2 hashing. Access tokens expire and can be revoked immediately through logout. Transactions, custom categories, and custom rules are isolated by owner. The database is at migration `20260809_08`, and 59 backend tests pass. Request limiting and production secret safeguards are still pending.
 
 ---
 
@@ -110,8 +110,8 @@ Notes: _Add decisions and lessons here._
 
 Implementation:
 
-- [ ] Create a React and JavaScript or TypeScript frontend.
-- [ ] Build registration and login screens.
+- [x] Create a React and TypeScript frontend.
+- [x] Build registration and login screens.
 - [ ] Build a monthly dashboard with accessible charts.
 - [ ] Build a searchable transaction table.
 - [ ] Add forms for creating, editing, and deleting transactions.
@@ -127,9 +127,9 @@ Testing:
 
 **Skills shown:** JavaScript or TypeScript, React, client-server design, JSON, usability, accessibility, frontend testing.
 
-Completion date: _Not started_
+Completion date: _In progress_
 
-Notes: _Add decisions and lessons here._
+Notes: The Vite frontend passes ESLint and production builds. Registration performs browser validation and displays backend errors. Login keeps its access token in React memory, confirms the user through `/auth/me`, and opens the dashboard shell. Logout revokes the token through FastAPI and clears local authentication state. Real dashboard data is next.
 
 ---
 

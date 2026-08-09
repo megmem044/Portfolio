@@ -127,3 +127,17 @@ def test_expired_token_is_rejected(client):
     )
 
     assert response.status_code == 401
+
+
+def test_frontend_origin_is_allowed_by_cors(client):
+    response = client.options(
+        "/auth/register",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"

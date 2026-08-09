@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./transactions.db"
     secret_key: str = "development-only-change-me"
     access_token_minutes: int = 30
+    frontend_origin: str = "http://localhost:5173"
 
 
 settings = Settings()
