@@ -37,8 +37,14 @@ class packet_switch_base_sequence extends uvm_sequence #(packet_switch_transacti
             traffic_item = packet_switch_transaction::type_id::create("traffic_item");
             start_item(traffic_item);
 
-            if (!traffic_item.randomize() with { reset == 1'b0; }) begin
-                `uvm_fatal("RANDOMIZE_FAILED", "Unable to randomize packet-switch traffic")
+            traffic_item.reset        = 1'b0;
+            traffic_item.input_valid  = $urandom;
+            traffic_item.output_ready = $urandom;
+
+            for (int input_number = 0; input_number < PORT_COUNT; input_number++) begin
+                traffic_item.input_packet[
+                    (input_number*PACKET_WIDTH) +: PACKET_WIDTH
+                ] = $urandom;
             end
 
             finish_item(traffic_item);

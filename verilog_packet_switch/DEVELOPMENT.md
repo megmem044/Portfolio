@@ -129,19 +129,39 @@ Three focused tests were added for important switch behaviors. The FIFO-full tes
 
 The simulation top now calls `run_test()` without hardcoding a class, allowing each test to be selected with the UVM command-line test-name option.
 
+## Phase 13: Compile and Run with Questa
+
+Questa-Altera FPGA Starter Edition compiled the complete RTL and UVM environment with zero errors and zero warnings. Initial compilation exposed reserved-keyword variable names and a UVM subscriber method-signature mismatch; both were corrected without changing test intent.
+
+The first base-test run exposed a scoreboard modeling defect. The model removed accepted packets while it was still checking other outputs in the same cycle, allowing a newly exposed packet to appear too early in the prediction. Output checking was changed to use one pre-clock state for all four outputs, followed by a separate state-update pass.
+
+After the correction, all five tests completed with zero UVM errors and zero UVM fatals:
+
+- Base pseudo-random traffic
+- Repeated output contention
+- FIFO saturation and backpressure
+- Four-way parallel routing
+- Reset during buffered traffic
+
+The Starter license does not include the `svverification` feature needed for constrained randomization and covergroup execution. Procedural `$urandom` stimulus is used locally, and simulations run with `-nocvg`. The functional coverage model remains implemented for future execution with a suitable advanced-verification license.
+
+Two representative waveforms provide visual evidence alongside the zero-error UVM reports and automated scoreboard checks:
+
+- `waves/contention_waveform.png` records sustained contention for Output 0 across the full 515 ns test.
+- `waves/fifo_full_backpressure_waveform.png` shows queue saturation, input backpressure, and recovery as stored packets drain.
+
 ## Current Limitations
 
-- Questa-Altera FPGA Edition is installed and the license path is configured, but the license does not become active until August 9, 2026.
-- The UVM source has not yet been compiled with Questa.
 - Questa run and regression scripts are not yet implemented.
+- Functional coverage has not been executed because the Starter license lacks the required advanced-verification feature.
 - Coverage for explicit arbitration-winner history can be expanded.
 - Additional directed testing is needed for prolonged output stalls.
 - Coverage goals and regression pass criteria still need to be documented.
 
 ## Next Phases
 
-1. Add arbitration fairness coverage and end-of-test checks.
-2. Compile with Questa and correct any simulator-specific issues.
-3. Add Windows-friendly run and regression commands.
-4. Add a prolonged-output-stall test.
-5. Record coverage results and representative waveforms.
+1. Add Windows-friendly run and regression commands.
+2. Add arbitration fairness checks and end-of-test checks.
+3. Add a prolonged-output-stall test.
+4. Save representative waveform views.
+5. Execute and record functional coverage when a suitable simulator license is available.

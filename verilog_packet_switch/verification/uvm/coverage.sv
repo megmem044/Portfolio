@@ -98,29 +98,29 @@ class packet_switch_coverage extends uvm_subscriber #(packet_switch_transaction)
         reset_coverage = new();
     endfunction
 
-    function void write(packet_switch_transaction observed);
+    function void write(packet_switch_transaction t);
         bit [PACKET_WIDTH-1:0] accepted_packet;
         int destination;
         int accepted_input_count;
         int accepted_output_count;
 
-        reset_coverage.sample(observed.reset);
+        reset_coverage.sample(t.reset);
 
-        if (!observed.reset) begin
+        if (!t.reset) begin
             accepted_input_count = 0;
             accepted_output_count = 0;
 
             for (int input_number = 0; input_number < PORT_COUNT; input_number++) begin
                 flow_control_coverage.sample(
                     input_number,
-                    observed.input_valid[input_number],
-                    observed.input_ready[input_number]
+                    t.input_valid[input_number],
+                    t.input_ready[input_number]
                 );
 
-                if (observed.input_valid[input_number] &&
-                    observed.input_ready[input_number]) begin
+                if (t.input_valid[input_number] &&
+                    t.input_ready[input_number]) begin
                     accepted_input_count++;
-                    accepted_packet = observed.input_packet[
+                    accepted_packet = t.input_packet[
                         (input_number*PACKET_WIDTH) +: PACKET_WIDTH
                     ];
                     destination = accepted_packet[
@@ -133,12 +133,12 @@ class packet_switch_coverage extends uvm_subscriber #(packet_switch_transaction)
             for (int output_number = 0; output_number < PORT_COUNT; output_number++) begin
                 output_flow_coverage.sample(
                     output_number,
-                    observed.output_valid[output_number],
-                    observed.output_ready[output_number]
+                    t.output_valid[output_number],
+                    t.output_ready[output_number]
                 );
 
-                if (observed.output_valid[output_number] &&
-                    observed.output_ready[output_number]) begin
+                if (t.output_valid[output_number] &&
+                    t.output_ready[output_number]) begin
                     accepted_output_count++;
                 end
             end

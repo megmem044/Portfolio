@@ -150,6 +150,8 @@ Current verification implementation:
 | Functional coverage model | Implemented and connected |
 | UVM environment and simulation top | Implemented |
 | Dependency-ordered compile file list | Implemented |
+| Questa compilation | Passing with 0 errors and 0 warnings |
+| Five-test UVM regression | Passing with 0 UVM errors and 0 UVM fatals |
 | Questa compile and regression scripts | Not yet implemented |
 
 Available UVM tests:
@@ -162,7 +164,7 @@ Available UVM tests:
 
 Tests are selected from the simulator command line with `+UVM_TESTNAME=<test class>`.
 
-Implemented functional coverage measures every input-to-destination route, input and output handshake states, backpressure, simultaneous transfer counts, reset states, and reset transitions.
+Implemented functional coverage measures every input-to-destination route, input and output handshake states, backpressure, simultaneous transfer counts, reset states, and reset transitions. The covergroups are ready for a simulator license that supports advanced verification features; the available Questa-Altera Starter license runs the tests with covergroups disabled.
 
 Testing will answer questions such as:
 
@@ -248,4 +250,20 @@ The four RTL modules are implemented and pass Verilog-2005 parsing and top-level
 
 The first complete UVM testbench structure is implemented. It includes the switch interface, transaction, sequencer, driver, monitor, agent, reference-model scoreboard, functional coverage, environment, randomized and directed sequences, command-line-selectable tests, simulation top, and dependency-ordered file list.
 
-Questa-Altera FPGA Edition is installed and its node-locked license is configured. The license begins on August 9, 2026, so UVM compilation and simulation remain pending until it becomes active. Run scripts may require small tool-path adjustments after the first successful compilation. This status is kept separate from the successful Icarus RTL elaboration result above.
+The complete RTL and UVM environment compiles in Questa-Altera FPGA Starter Edition with zero errors and zero warnings. The base randomized-traffic test and the directed contention, FIFO-full, parallel-routing, and reset-during-traffic tests all pass with zero UVM errors and zero UVM fatals.
+
+The Starter license does not provide the `svverification` feature required by constrained randomization and covergroups. The local regression therefore uses `$urandom` stimulus and runs with `-nocvg`; the driver, monitor, scoreboard, sequences, tests, and waveform generation remain active. Functional coverage execution remains pending access to a suitable advanced-verification license.
+
+## Simulation Evidence
+
+All five UVM tests compile and run in Questa-Altera FPGA Starter Edition with zero UVM errors and zero UVM fatals. The waveform below comes from `packet_switch_contention_test`, which drives all four inputs toward Output 0 under sustained traffic.
+
+![Questa contention-test waveform](waves/contention_waveform.png)
+
+The waveform shows reset, packet buses, and ready/valid activity across the complete 515 ns run. The self-checking scoreboard independently verified packet routing, data, ordering, completed transfers, and round-robin arbitration decisions throughout the test.
+
+The FIFO-full test below blocks Output 0 while all four inputs continue sending toward it. As the input queues fill, `input_ready` falls to `0` and applies backpressure. Once the output is released, readiness returns progressively while the stored packets drain.
+
+![Questa FIFO-full and backpressure waveform](waves/fifo_full_backpressure_waveform.png)
+
+`packet_switch_fifo_full_test` completed with zero UVM errors and zero UVM fatals, confirming that saturation and recovery did not lose, duplicate, reorder, or alter packets.

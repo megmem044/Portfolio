@@ -7,12 +7,12 @@ class packet_switch_fifo_full_test extends packet_switch_base_test;
     endfunction
 
     task run_phase(uvm_phase phase);
-        packet_switch_fifo_full_sequence sequence;
+        packet_switch_fifo_full_sequence test_sequence;
 
         phase.raise_objection(this);
 
-        sequence = packet_switch_fifo_full_sequence::type_id::create("sequence");
-        sequence.start(environment.agent.sequencer);
+        test_sequence = packet_switch_fifo_full_sequence::type_id::create("test_sequence");
+        test_sequence.start(environment.agent.sequencer);
 
         phase.drop_objection(this);
     endtask

@@ -62,26 +62,27 @@ class packet_switch_scoreboard extends uvm_scoreboard;
     endfunction
 
     function void check_outputs(packet_switch_transaction observed);
-        int expected_input;
-        bit expected_valid;
+        int expected_input [PORT_COUNT];
+        bit expected_valid [PORT_COUNT];
         bit [PACKET_WIDTH-1:0] expected_packet;
         bit [PACKET_WIDTH-1:0] actual_packet;
 
+        // First check every output from the same pre-clock model state.
         for (int output_number = 0; output_number < PORT_COUNT; output_number++) begin
-            expected_input = find_expected_input(output_number);
-            expected_valid = (expected_input >= 0);
+            expected_input[output_number] = find_expected_input(output_number);
+            expected_valid[output_number] = (expected_input[output_number] >= 0);
 
-            if (observed.output_valid[output_number] != expected_valid) begin
+            if (observed.output_valid[output_number] != expected_valid[output_number]) begin
                 `uvm_error("OUTPUT_VALID_MISMATCH", $sformatf(
                     "Output %0d valid=%0b, expected=%0b",
                     output_number,
                     observed.output_valid[output_number],
-                    expected_valid
+                    expected_valid[output_number]
                 ))
             end
 
-            if (expected_valid && observed.output_valid[output_number]) begin
-                expected_packet = expected_queue[expected_input][0];
+            if (expected_valid[output_number] && observed.output_valid[output_number]) begin
+                expected_packet = expected_queue[expected_input[output_number]][0];
                 actual_packet = observed.output_packet[
                     (output_number*PACKET_WIDTH) +: PACKET_WIDTH
                 ];
@@ -92,15 +93,20 @@ class packet_switch_scoreboard extends uvm_scoreboard;
                         output_number,
                         actual_packet,
                         expected_packet,
-                        expected_input
+                        expected_input[output_number]
                     ))
                 end
+            end
+        end
 
-                if (observed.output_ready[output_number]) begin
-                    expected_packet = expected_queue[expected_input].pop_front();
-                    expected_priority[output_number] =
-                        (expected_input + 1) % PORT_COUNT;
-                end
+        // Then apply all accepted transfers after the cycle has been checked.
+        for (int output_number = 0; output_number < PORT_COUNT; output_number++) begin
+            if (expected_valid[output_number] &&
+                observed.output_valid[output_number] &&
+                observed.output_ready[output_number]) begin
+                expected_packet = expected_queue[expected_input[output_number]].pop_front();
+                expected_priority[output_number] =
+                    (expected_input[output_number] + 1) % PORT_COUNT;
             end
         end
     endfunction
