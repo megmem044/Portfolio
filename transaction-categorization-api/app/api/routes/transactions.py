@@ -6,6 +6,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db
+from app.models.category import Category
 from app.models.transaction import Transaction
 from app.schemas.transaction import (
     MonthlySummary,
@@ -22,6 +23,13 @@ from app.services.categorizer import categorize_transaction
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
 
+def find_category(name: str, db: Session) -> Category:
+    category = db.query(Category).filter(Category.name == name).one_or_none()
+    if category is None:
+        raise HTTPException(status_code=422, detail="category does not exist")
+    return category
+
+
 # Transaction creation endpoint is defined
 @router.post("/", response_model=TransactionRead)
 def create_transaction(
@@ -29,13 +37,14 @@ def create_transaction(
     db: Session = Depends(get_db),
 ):
     # Category is determined using business logic
-    category = categorize_transaction(transaction.merchant)
+    category_name = categorize_transaction(transaction.merchant)
+    category = find_category(category_name, db)
 
     # Transaction database object is created
     db_transaction = Transaction(
         amount=transaction.amount,
         merchant=transaction.merchant,
-        category=category,
+        category_record=category,
         date=transaction.date,
     )
 
@@ -72,7 +81,7 @@ def list_transactions(
         )
 
     # Base query for transactions is created
-    query = db.query(Transaction)
+    query = db.query(Transaction).join(Transaction.category_record)
 
     # Start date filter is applied if provided
     if start is not None:
@@ -83,7 +92,7 @@ def list_transactions(
         query = query.filter(Transaction.date <= end)
 
     if category is not None:
-        query = query.filter(Transaction.category == category.strip())
+        query = query.filter(Category.name == category.strip())
 
     if search is not None:
         query = query.filter(Transaction.merchant.ilike(f"%{search.strip()}%"))
@@ -128,15 +137,16 @@ def monthly_summary(
     # Grouped totals are computed at the database level
     grouped_rows = (
         db.query(
-            Transaction.category.label("category"),
+            Category.name.label("category"),
             func.count(Transaction.id).label("transaction_count"),
             func.sum(Transaction.amount).label("category_total"),
         )
+        .join(Transaction.category_record)
         .filter(
             Transaction.date >= month_start,
             Transaction.date < next_month,
         )
-        .group_by(Transaction.category)
+        .group_by(Category.name)
         .all()
     )
 
@@ -200,12 +210,16 @@ def update_transaction(
 ):
     transaction = find_transaction(transaction_id, db)
     update_data = changes.model_dump(exclude_unset=True)
+    requested_category = update_data.pop("category", None)
 
     for field, value in update_data.items():
         setattr(transaction, field, value)
 
-    if "merchant" in update_data and "category" not in update_data:
-        transaction.category = categorize_transaction(transaction.merchant)
+    if requested_category is not None:
+        transaction.category_record = find_category(requested_category, db)
+    elif "merchant" in update_data:
+        category_name = categorize_transaction(transaction.merchant)
+        transaction.category_record = find_category(category_name, db)
 
     db.commit()
     db.refresh(transaction)

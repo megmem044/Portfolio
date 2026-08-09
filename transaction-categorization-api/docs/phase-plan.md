@@ -54,7 +54,7 @@ Implementation:
 
 - [ ] Move from SQLite to PostgreSQL while keeping SQLite available for simple tests.
 - [x] Add database migrations so changes can be applied safely.
-- [ ] Design tables for transactions, categories, and category rules.
+- [~] Design tables for transactions, categories, and category rules.
 - [x] Add edit and delete operations.
 - [x] Add searching, filtering, sorting, and pages.
 - [~] Add useful database indexes and explain why they help.
@@ -64,14 +64,14 @@ Testing:
 
 - [x] Test create, read, edit, and delete journeys.
 - [x] Test searches, filters, sorting, and page boundaries.
-- [ ] Test database changes and relationships.
+- [x] Test database changes and relationships.
 - [ ] Compare an important query before and after adding an index.
 
 **Skills shown:** SQL, PostgreSQL, data modelling, joins, grouping, indexing, transactions, REST API design.
 
 Completion date: _Not started_
 
-Notes: Two migrations are verified on SQLite, with Alembic at revision `20260808_02 (head)`. Retrieve, edit, delete, search, filter, sort, and pagination behavior is covered by 26 passing tests. Date and category indexes support common filters; their performance still needs to be measured. During implementation, the transaction field named `date` conflicted with Python's imported `date` type; using the clearer alias `Date` fixed the ambiguity.
+Notes: Three migrations are verified on SQLite, with Alembic at revision `20260808_03 (head)`. Transaction and category behavior is covered by 35 passing tests. Categories now have their own table, but configurable merchant rules are still future work. Built-in categories are protected, and categories attached to transactions cannot be deleted. Date and category indexes support common filters; their performance still needs to be measured.
 
 ---
 

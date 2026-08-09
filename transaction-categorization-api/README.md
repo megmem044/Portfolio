@@ -14,6 +14,7 @@ Example:
 - Suggest categories for a few known merchant names
 - Search, filter, sort, and page through saved transactions
 - View, edit, or delete one transaction
+- Create and manage custom spending categories
 - Show monthly totals grouped by category
 - Check whether the service is running
 
@@ -22,7 +23,7 @@ The project currently provides only the backend—the part that stores informati
 ## What we plan to add
 
 - Better input checks and automated testing
-- Category management
+- PostgreSQL verification and database performance measurements
 - A simple dashboard
 - CSV imports from bank files
 - Category suggestions that improve using user corrections

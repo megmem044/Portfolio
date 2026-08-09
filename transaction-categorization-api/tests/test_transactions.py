@@ -144,11 +144,23 @@ def test_update_transaction_allows_manual_category(client):
 
     response = client.patch(
         f"/transactions/{created['id']}",
-        json={"merchant": "Uber Trip", "category": "Work Travel"},
+        json={"merchant": "Uber Trip", "category": "Groceries"},
     )
 
     assert response.status_code == 200
-    assert response.json()["category"] == "Work Travel"
+    assert response.json()["category"] == "Groceries"
+
+
+def test_update_transaction_rejects_unknown_category(client):
+    created = add_transaction(client, "8.50", "Starbucks", "2026-07-10").json()
+
+    response = client.patch(
+        f"/transactions/{created['id']}",
+        json={"category": "Does Not Exist"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "category does not exist"
 
 
 def test_update_transaction_rejects_empty_or_null_changes(client):

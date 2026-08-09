@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Date, Integer, Numeric, String
+from sqlalchemy import Column, Date, ForeignKey, Integer, Numeric, String
+from sqlalchemy.orm import relationship
 
 from app.db.base import Base
 
@@ -18,7 +19,18 @@ class Transaction(Base):
     merchant = Column(String(200), nullable=False)
 
     # Category label is stored
-    category = Column(String(100), nullable=False, index=True)
+    category_id = Column(
+        Integer,
+        ForeignKey("categories.id"),
+        nullable=False,
+        index=True,
+    )
 
     # Transaction date is stored
     date = Column(Date, nullable=False, index=True)
+
+    category_record = relationship("Category", back_populates="transactions")
+
+    @property
+    def category(self) -> str:
+        return self.category_record.name

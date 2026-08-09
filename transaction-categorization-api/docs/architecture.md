@@ -29,8 +29,10 @@ app/
 │   ├── base.py               Shared database model base
 │   └── session.py            Database connection setup
 ├── models/
+│   ├── category.py           Stored category fields
 │   └── transaction.py        Stored transaction fields
 ├── schemas/
+│   ├── category.py           Accepted category information
 │   └── transaction.py        Accepted and returned information
 ├── services/
 │   └── categorizer.py        Merchant category rules
