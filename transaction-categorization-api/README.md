@@ -12,7 +12,7 @@ Example:
 
 - Add and save a transaction
 - Suggest categories for a few known merchant names
-- List saved transactions and filter them by date
+- Search, filter, sort, and page through saved transactions
 - View, edit, or delete one transaction
 - Show monthly totals grouped by category
 - Check whether the service is running
@@ -22,7 +22,7 @@ The project currently provides only the backend—the part that stores informati
 ## What we plan to add
 
 - Better input checks and automated testing
-- Search, pagination, and category management
+- Category management
 - A simple dashboard
 - CSV imports from bank files
 - Category suggestions that improve using user corrections

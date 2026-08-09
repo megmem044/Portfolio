@@ -56,14 +56,14 @@ Implementation:
 - [x] Add database migrations so changes can be applied safely.
 - [ ] Design tables for transactions, categories, and category rules.
 - [x] Add edit and delete operations.
-- [ ] Add searching, filtering, sorting, and pages.
-- [ ] Add useful database indexes and explain why they help.
+- [x] Add searching, filtering, sorting, and pages.
+- [~] Add useful database indexes and explain why they help.
 - [ ] Keep grouped spending calculations inside the database.
 
 Testing:
 
 - [x] Test create, read, edit, and delete journeys.
-- [ ] Test searches, filters, sorting, and page boundaries.
+- [x] Test searches, filters, sorting, and page boundaries.
 - [ ] Test database changes and relationships.
 - [ ] Compare an important query before and after adding an index.
 
@@ -71,7 +71,7 @@ Testing:
 
 Completion date: _Not started_
 
-Notes: The first migration was verified on SQLite on August 8, 2026. Alembic reported revision `20260808_01 (head)`. Retrieve, edit, and delete behavior is covered by 22 passing tests. During implementation, the transaction field named `date` conflicted with Python's imported `date` type; using the clearer alias `Date` fixed the ambiguity.
+Notes: Two migrations are verified on SQLite, with Alembic at revision `20260808_02 (head)`. Retrieve, edit, delete, search, filter, sort, and pagination behavior is covered by 26 passing tests. Date and category indexes support common filters; their performance still needs to be measured. During implementation, the transaction field named `date` conflicted with Python's imported `date` type; using the clearer alias `Date` fixed the ambiguity.
 
 ---
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date as Date
 from decimal import Decimal
+from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -63,6 +64,25 @@ class TransactionRead(BaseModel):
     date: Date
 
 # Schema for monthly summary response is defined
+class TransactionSortField(str, Enum):
+    date = "date"
+    amount = "amount"
+    merchant = "merchant"
+    category = "category"
+
+
+class SortDirection(str, Enum):
+    asc = "asc"
+    desc = "desc"
+
+
+class TransactionPage(BaseModel):
+    items: list[TransactionRead]
+    total: int
+    page: int
+    page_size: int
+
+
 class MonthlySummary(BaseModel):
     # Month string is returned
     month: str

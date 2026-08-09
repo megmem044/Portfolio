@@ -18,7 +18,7 @@ class Transaction(Base):
     merchant = Column(String(200), nullable=False)
 
     # Category label is stored
-    category = Column(String(100), nullable=False)
+    category = Column(String(100), nullable=False, index=True)
 
     # Transaction date is stored
-    date = Column(Date, nullable=False)
+    date = Column(Date, nullable=False, index=True)

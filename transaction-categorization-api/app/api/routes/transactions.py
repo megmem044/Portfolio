@@ -9,8 +9,11 @@ from app.api.dependencies import get_db
 from app.models.transaction import Transaction
 from app.schemas.transaction import (
     MonthlySummary,
+    SortDirection,
     TransactionCreate,
+    TransactionPage,
     TransactionRead,
+    TransactionSortField,
     TransactionUpdate,
 )
 from app.services.categorizer import categorize_transaction
@@ -50,10 +53,16 @@ def create_transaction(
 
 
 # Transaction list endpoint is defined
-@router.get("/", response_model=list[TransactionRead])
+@router.get("/", response_model=TransactionPage)
 def list_transactions(
     start: date | None = None,
     end: date | None = None,
+    category: str | None = Query(default=None, min_length=1, max_length=100),
+    search: str | None = Query(default=None, min_length=1, max_length=200),
+    sort_by: TransactionSortField = TransactionSortField.date,
+    sort_direction: SortDirection = SortDirection.desc,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=25, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
     if start is not None and end is not None and start > end:
@@ -73,7 +82,32 @@ def list_transactions(
     if end is not None:
         query = query.filter(Transaction.date <= end)
 
-    return query.order_by(Transaction.date.desc(), Transaction.id.desc()).all()
+    if category is not None:
+        query = query.filter(Transaction.category == category.strip())
+
+    if search is not None:
+        query = query.filter(Transaction.merchant.ilike(f"%{search.strip()}%"))
+
+    total = query.count()
+    sort_column = getattr(Transaction, sort_by.value)
+    order_expression = (
+        sort_column.asc()
+        if sort_direction == SortDirection.asc
+        else sort_column.desc()
+    )
+    items = (
+        query.order_by(order_expression, Transaction.id.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
 
 
 # Monthly summary endpoint is defined

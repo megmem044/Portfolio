@@ -37,7 +37,7 @@ def test_create_transaction_rejects_invalid_input(client):
         response = client.post("/transactions/", json=transaction)
         assert response.status_code == 422
 
-    assert client.get("/transactions/").json() == []
+    assert client.get("/transactions/").json()["items"] == []
 
 
 def test_list_transactions_filters_dates_and_orders_newest_first(client):
@@ -51,7 +51,7 @@ def test_list_transactions_filters_dates_and_orders_newest_first(client):
     )
 
     assert response.status_code == 200
-    assert [item["merchant"] for item in response.json()] == [
+    assert [item["merchant"] for item in response.json()["items"]] == [
         "Newer Shop",
         "Middle Shop",
     ]
@@ -183,3 +183,64 @@ def test_missing_transaction_returns_not_found(client):
     assert client.get("/transactions/999").status_code == 404
     assert client.patch("/transactions/999", json={"amount": "1.00"}).status_code == 404
     assert client.delete("/transactions/999").status_code == 404
+
+
+def test_list_transactions_returns_page_metadata(client):
+    for number in range(3):
+        add_transaction(
+            client,
+            "10.00",
+            f"Shop {number}",
+            f"2026-07-0{number + 1}",
+        )
+
+    response = client.get(
+        "/transactions/",
+        params={"page": 2, "page_size": 2},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["total"] == 3
+    assert response.json()["page"] == 2
+    assert response.json()["page_size"] == 2
+    assert len(response.json()["items"]) == 1
+
+
+def test_list_transactions_searches_and_filters_category(client):
+    add_transaction(client, "8.50", "Starbucks Downtown", "2026-07-10")
+    add_transaction(client, "15.00", "Starbucks Airport", "2026-07-11")
+    add_transaction(client, "20.00", "Uber Trip", "2026-07-12")
+
+    response = client.get(
+        "/transactions/",
+        params={"search": "STARBUCKS", "category": "Food & Dining"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["total"] == 2
+    assert {item["merchant"] for item in response.json()["items"]} == {
+        "Starbucks Downtown",
+        "Starbucks Airport",
+    }
+
+
+def test_list_transactions_sorts_by_amount(client):
+    add_transaction(client, "8.50", "Small Purchase", "2026-07-10")
+    add_transaction(client, "20.00", "Large Purchase", "2026-07-11")
+
+    response = client.get(
+        "/transactions/",
+        params={"sort_by": "amount", "sort_direction": "asc"},
+    )
+
+    assert response.status_code == 200
+    assert [item["amount"] for item in response.json()["items"]] == [
+        "8.50",
+        "20.00",
+    ]
+
+
+def test_list_transactions_rejects_invalid_page_or_sort(client):
+    assert client.get("/transactions/", params={"page": 0}).status_code == 422
+    assert client.get("/transactions/", params={"page_size": 101}).status_code == 422
+    assert client.get("/transactions/", params={"sort_by": "id"}).status_code == 422
