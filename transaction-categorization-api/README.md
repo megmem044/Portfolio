@@ -17,6 +17,8 @@ Example:
 - Create and manage custom spending categories
 - Create, prioritize, pause, and manage merchant category rules
 - Show monthly totals grouped by category
+- Run with SQLite or PostgreSQL
+- Demonstrate a measured PostgreSQL index improvement
 - Check whether the service is running
 
 The project currently provides only the backend—the part that stores information and performs the work. It does not yet have a website for users.
@@ -24,7 +26,7 @@ The project currently provides only the backend—the part that stores informati
 ## What we plan to add
 
 - Better input checks and automated testing
-- PostgreSQL verification and database performance measurements
+- User accounts and protected data
 - A simple dashboard
 - CSV imports from bank files
 - Category suggestions that improve using user corrections
@@ -50,6 +52,7 @@ Project documentation:
 - [Product guide and user stories](docs/product-requirements.md): what users need and when a feature is complete
 - [Phase plan and progress log](docs/phase-plan.md): what we will build and test in each phase
 - [Architecture guide](docs/architecture.md): how the folders work together and where new code belongs
+- [PostgreSQL guide](docs/postgresql.md): how to run and test with the PostgreSQL database
 
 ## Run the backend
 

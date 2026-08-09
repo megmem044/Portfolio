@@ -1,5 +1,7 @@
 """Create a fresh temporary database and API client for every test."""
 
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -32,11 +34,15 @@ DEFAULT_RULES = (
 
 @pytest.fixture
 def client():
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
+    postgres_test_url = os.getenv("TEST_DATABASE_URL")
+    if postgres_test_url:
+        engine = create_engine(postgres_test_url)
+    else:
+        engine = create_engine(
+            "sqlite://",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
     testing_session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
     Base.metadata.create_all(bind=engine)
 

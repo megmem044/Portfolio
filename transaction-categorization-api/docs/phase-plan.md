@@ -52,26 +52,28 @@ Notes: Money is stored as an exact decimal rather than an approximate floating-p
 
 Implementation:
 
-- [ ] Move from SQLite to PostgreSQL while keeping SQLite available for simple tests.
+- [x] Move from SQLite to PostgreSQL while keeping SQLite available for simple tests.
 - [x] Add database migrations so changes can be applied safely.
 - [x] Design tables for transactions, categories, and category rules.
 - [x] Add edit and delete operations.
 - [x] Add searching, filtering, sorting, and pages.
-- [~] Add useful database indexes and explain why they help.
-- [ ] Keep grouped spending calculations inside the database.
+- [x] Add useful database indexes and explain why they help.
+- [x] Keep grouped spending calculations inside the database.
 
 Testing:
 
 - [x] Test create, read, edit, and delete journeys.
 - [x] Test searches, filters, sorting, and page boundaries.
 - [x] Test database changes and relationships.
-- [ ] Compare an important query before and after adding an index.
+- [x] Compare an important query before and after adding an index.
 
 **Skills shown:** SQL, PostgreSQL, data modelling, joins, grouping, indexing, transactions, REST API design.
 
-Completion date: _Not started_
+Completion date: **August 8, 2026**
 
-Notes: Four migrations are verified on SQLite, with Alembic at revision `20260808_04 (head)`. Transaction, category, and merchant-rule behavior is covered by 43 passing tests. Rules are stored in the database, applied in priority order, and can be paused without deletion. Built-in and in-use categories are protected. Date and category indexes support common filters; their performance still needs to be measured.
+Performance evidence: On 50,000 temporary PostgreSQL rows, a date query changed from a sequential scan at 10.107 ms to a bitmap index scan at 0.840 ms, a measured 12.03× speedup. Results vary by hardware and data.
+
+Notes: All four migrations are verified on both SQLite and PostgreSQL, with Alembic at revision `20260808_04 (head)`. The same 43 tests pass against both databases. PostgreSQL completed the suite in 19.71 seconds. Rules are stored in the database, applied in priority order, and can be paused without deletion. Date and category indexes support common filters; their performance still needs to be measured.
 
 ---
 
