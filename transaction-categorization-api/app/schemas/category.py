@@ -4,8 +4,18 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 
 class CategoryCreate(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
-    description: str | None = Field(default=None, max_length=300)
+    name: str = Field(
+        min_length=1,
+        max_length=100,
+        description="Unique category name",
+        examples=["Entertainment"],
+    )
+    description: str | None = Field(
+        default=None,
+        max_length=300,
+        description="Optional explanation of what belongs in this category",
+        examples=["Movies, games, and events"],
+    )
 
     @field_validator("name")
     @classmethod
@@ -57,6 +67,6 @@ class CategoryRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    name: str
-    description: str | None
+    name: str = Field(examples=["Entertainment"])
+    description: str | None = Field(examples=["Movies, games, and events"])
     is_default: bool
