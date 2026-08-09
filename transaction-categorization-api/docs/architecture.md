@@ -36,6 +36,8 @@ app/
 │   └── categorizer.py        Merchant category rules
 └── main.py                   Creates and starts the app
 
+migrations/                   Ordered database changes
+
 tests/
 ├── conftest.py               Safe temporary test database
 ├── test_categorizer.py       Category-rule checks
@@ -55,6 +57,7 @@ docs/
 - Put stored database fields in `app/models`.
 - Put input and output checks in `app/schemas`.
 - Put database connection code in `app/db`.
+- Put each database structure change in a new migration.
 - Add a test whenever behavior is added or changed.
 
 Keeping these jobs separate makes the project easier to understand, test, and extend.

@@ -99,7 +99,87 @@ def test_monthly_summary_handles_empty_month(client):
     }
 
 
+def test_monthly_summary_handles_year_boundary(client):
+    add_transaction(client, "12.00", "December Shop", "2026-12-31")
+    add_transaction(client, "20.00", "January Shop", "2027-01-01")
+
+    response = client.get("/transactions/summary", params={"month": "2026-12"})
+
+    assert response.status_code == 200
+    assert response.json()["transaction_count"] == 1
+    assert response.json()["overall_total"] == "12.00"
+
+
 def test_monthly_summary_rejects_invalid_month(client):
     for month in ("2026-13", "July", "2026-7"):
         response = client.get("/transactions/summary", params={"month": month})
         assert response.status_code == 422
+
+
+def test_get_one_transaction(client):
+    created = add_transaction(client, "8.50", "Starbucks", "2026-07-10").json()
+
+    response = client.get(f"/transactions/{created['id']}")
+
+    assert response.status_code == 200
+    assert response.json() == created
+
+
+def test_update_transaction_and_recalculate_category(client):
+    created = add_transaction(client, "8.50", "Starbucks", "2026-07-10").json()
+
+    response = client.patch(
+        f"/transactions/{created['id']}",
+        json={"amount": "14.25", "merchant": "Uber Trip"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["amount"] == "14.25"
+    assert response.json()["merchant"] == "Uber Trip"
+    assert response.json()["category"] == "Transportation"
+
+
+def test_update_transaction_allows_manual_category(client):
+    created = add_transaction(client, "8.50", "Starbucks", "2026-07-10").json()
+
+    response = client.patch(
+        f"/transactions/{created['id']}",
+        json={"merchant": "Uber Trip", "category": "Work Travel"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["category"] == "Work Travel"
+
+
+def test_update_transaction_rejects_empty_or_null_changes(client):
+    created = add_transaction(client, "8.50", "Starbucks", "2026-07-10").json()
+
+    assert client.patch(f"/transactions/{created['id']}", json={}).status_code == 422
+    assert (
+        client.patch(
+            f"/transactions/{created['id']}",
+            json={"merchant": None},
+        ).status_code
+        == 422
+    )
+
+
+def test_delete_transaction_updates_summary(client):
+    created = add_transaction(client, "8.50", "Starbucks", "2026-07-10").json()
+
+    response = client.delete(f"/transactions/{created['id']}")
+
+    assert response.status_code == 204
+    assert client.get(f"/transactions/{created['id']}").status_code == 404
+    summary = client.get(
+        "/transactions/summary",
+        params={"month": "2026-07"},
+    ).json()
+    assert summary["transaction_count"] == 0
+    assert summary["overall_total"] == "0.00"
+
+
+def test_missing_transaction_returns_not_found(client):
+    assert client.get("/transactions/999").status_code == 404
+    assert client.patch("/transactions/999", json={"amount": "1.00"}).status_code == 404
+    assert client.delete("/transactions/999").status_code == 404

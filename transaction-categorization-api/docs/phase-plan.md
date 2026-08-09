@@ -53,16 +53,16 @@ Notes: Money is stored as an exact decimal rather than an approximate floating-p
 Implementation:
 
 - [ ] Move from SQLite to PostgreSQL while keeping SQLite available for simple tests.
-- [ ] Add database migrations so changes can be applied safely.
+- [x] Add database migrations so changes can be applied safely.
 - [ ] Design tables for transactions, categories, and category rules.
-- [ ] Add edit and delete operations.
+- [x] Add edit and delete operations.
 - [ ] Add searching, filtering, sorting, and pages.
 - [ ] Add useful database indexes and explain why they help.
 - [ ] Keep grouped spending calculations inside the database.
 
 Testing:
 
-- [ ] Test create, read, edit, and delete journeys.
+- [x] Test create, read, edit, and delete journeys.
 - [ ] Test searches, filters, sorting, and page boundaries.
 - [ ] Test database changes and relationships.
 - [ ] Compare an important query before and after adding an index.
@@ -71,7 +71,7 @@ Testing:
 
 Completion date: _Not started_
 
-Notes: _Add decisions and lessons here._
+Notes: The first migration was verified on SQLite on August 8, 2026. Alembic reported revision `20260808_01 (head)`. Retrieve, edit, and delete behavior is covered by 22 passing tests. During implementation, the transaction field named `date` conflicted with Python's imported `date` type; using the clearer alias `Date` fixed the ambiguity.
 
 ---
 

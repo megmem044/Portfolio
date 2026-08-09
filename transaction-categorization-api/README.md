@@ -13,6 +13,7 @@ Example:
 - Add and save a transaction
 - Suggest categories for a few known merchant names
 - List saved transactions and filter them by date
+- View, edit, or delete one transaction
 - Show monthly totals grouped by category
 - Check whether the service is running
 
@@ -21,7 +22,7 @@ The project currently provides only the backend—the part that stores informati
 ## What we plan to add
 
 - Better input checks and automated testing
-- Edit, delete, search, and category features
+- Search, pagination, and category management
 - A simple dashboard
 - CSV imports from bank files
 - Category suggestions that improve using user corrections
@@ -67,6 +68,14 @@ You need Python 3.11 or newer.
 
 3. Start the app:
 
+   First, apply the database changes:
+
+   ```powershell
+   python -m alembic upgrade head
+   ```
+
+   Then start the server:
+
    ```powershell
    python -m uvicorn app.main:app --reload
    ```
@@ -79,7 +88,7 @@ Run the automated checks with:
 python -m pytest
 ```
 
-The default SQLite database is created when the app starts. To change a setting, copy `.env.example` to `.env` and edit the copied file. Never commit `.env` because it may contain private settings.
+The migration command creates or updates the database safely. To change a setting, copy `.env.example` to `.env` and edit the copied file. Never commit `.env` because it may contain private settings.
 
 ## Project folders
 

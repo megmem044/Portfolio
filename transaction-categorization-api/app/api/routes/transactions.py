@@ -1,13 +1,18 @@
 from datetime import date
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db
 from app.models.transaction import Transaction
-from app.schemas.transaction import MonthlySummary, TransactionCreate, TransactionRead
+from app.schemas.transaction import (
+    MonthlySummary,
+    TransactionCreate,
+    TransactionRead,
+    TransactionUpdate,
+)
 from app.services.categorizer import categorize_transaction
 
 # Router object is created for transaction related endpoints
@@ -78,9 +83,13 @@ def monthly_summary(
     db: Session = Depends(get_db),
 ):
     month_key = month
-
-    # Month extraction expression is defined for SQLite
-    month_expr = func.strftime("%Y-%m", Transaction.date)
+    year, month_number = (int(part) for part in month_key.split("-"))
+    month_start = date(year, month_number, 1)
+    next_month = (
+        date(year + 1, 1, 1)
+        if month_number == 12
+        else date(year, month_number + 1, 1)
+    )
 
     # Grouped totals are computed at the database level
     grouped_rows = (
@@ -89,7 +98,10 @@ def monthly_summary(
             func.count(Transaction.id).label("transaction_count"),
             func.sum(Transaction.amount).label("category_total"),
         )
-        .filter(month_expr == month_key)
+        .filter(
+            Transaction.date >= month_start,
+            Transaction.date < next_month,
+        )
         .group_by(Transaction.category)
         .all()
     )
@@ -129,3 +141,49 @@ def monthly_summary(
         "overall_total": overall_total,
         "totals_by_category": totals_by_category,
     }
+
+
+def find_transaction(transaction_id: int, db: Session) -> Transaction:
+    transaction = db.get(Transaction, transaction_id)
+    if transaction is None:
+        raise HTTPException(status_code=404, detail="transaction not found")
+    return transaction
+
+
+@router.get("/{transaction_id}", response_model=TransactionRead)
+def get_transaction(
+    transaction_id: int,
+    db: Session = Depends(get_db),
+):
+    return find_transaction(transaction_id, db)
+
+
+@router.patch("/{transaction_id}", response_model=TransactionRead)
+def update_transaction(
+    transaction_id: int,
+    changes: TransactionUpdate,
+    db: Session = Depends(get_db),
+):
+    transaction = find_transaction(transaction_id, db)
+    update_data = changes.model_dump(exclude_unset=True)
+
+    for field, value in update_data.items():
+        setattr(transaction, field, value)
+
+    if "merchant" in update_data and "category" not in update_data:
+        transaction.category = categorize_transaction(transaction.merchant)
+
+    db.commit()
+    db.refresh(transaction)
+    return transaction
+
+
+@router.delete("/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_transaction(
+    transaction_id: int,
+    db: Session = Depends(get_db),
+) -> Response:
+    transaction = find_transaction(transaction_id, db)
+    db.delete(transaction)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
