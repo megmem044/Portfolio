@@ -1,0 +1,260 @@
+.transactions-page {
+  width: min(1180px, 100%);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 5vw, 4rem);
+}
+
+.transactions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.transactions-header h1 {
+  margin: 0.4rem 0;
+  color: #17302f;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: -0.05em;
+}
+
+.transactions-header p:not(.eyebrow) {
+  margin: 0;
+  color: #637570;
+}
+
+.back-button {
+  margin-bottom: 1.5rem;
+  border: 0;
+  background: transparent;
+  color: #2d625c;
+  padding: 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.result-count {
+  border-radius: 999px;
+  background: #e4f1ec;
+  padding: 0.5rem 0.8rem;
+  color: #28544f;
+  font-weight: 700;
+}
+
+.transaction-filters {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: minmax(180px, 1.5fr) repeat(5, minmax(120px, 1fr)) auto;
+  align-items: end;
+  gap: 0.8rem;
+  border: 1px solid #d8e3df;
+  border-radius: 1rem;
+  background: #fff;
+}
+
+.filter-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.filter-field label {
+  color: #536b66;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.filter-field input,
+.filter-field select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #bdccc7;
+  border-radius: 0.55rem;
+  background: #fff;
+  padding: 0.55rem 0.65rem;
+  color: #17302f;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.filter-actions button {
+  min-height: 42px;
+  border: 1px solid #2d625c;
+  border-radius: 0.55rem;
+  background: #fff;
+  padding: 0.55rem 0.75rem;
+  color: #28544f;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.filter-actions button[type='submit'] {
+  background: #173f3b;
+  color: #fff;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border: 1px solid #d8e3df;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 12px 35px rgba(22, 59, 55, 0.05);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid #e4ebe8;
+  text-align: left;
+}
+
+th {
+  color: #687a76;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.amount-column {
+  text-align: right;
+}
+
+.action-column {
+  width: 170px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.action-column button {
+  border: 1px solid #bdccc7;
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 0.45rem 0.7rem;
+  color: #28544f;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.action-column .delete-button {
+  margin-left: 0.4rem;
+  border-color: #e0b9b1;
+  color: #963b2d;
+}
+
+.delete-dialog {
+  width: min(460px, 100%);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 30px 90px rgba(4, 24, 22, 0.3);
+}
+
+.delete-dialog h2 {
+  margin: 0;
+  color: #17302f;
+}
+
+.delete-dialog > p:not(.eyebrow, .modal-error) {
+  color: #637570;
+  line-height: 1.6;
+}
+
+.danger-button {
+  border: 1px solid #a84738;
+  border-radius: 0.65rem;
+  background: #a84738;
+  color: #fff;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.danger-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.list-notice {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.65rem;
+  background: #edf4f1;
+  color: #28544f;
+}
+
+.category-pill {
+  display: inline-block;
+  border-radius: 999px;
+  background: #edf4f1;
+  padding: 0.35rem 0.65rem;
+  color: #28544f;
+  font-size: 0.85rem;
+}
+
+.list-message,
+.transaction-empty {
+  padding: 2rem;
+  border: 1px dashed #bdccc7;
+  border-radius: 1rem;
+  text-align: center;
+}
+
+.list-message.error {
+  background: #fff0ed;
+  color: #8b2e20;
+}
+
+.pagination {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pagination button {
+  border: 1px solid #bdccc7;
+  border-radius: 0.55rem;
+  background: #fff;
+  padding: 0.55rem 0.85rem;
+  color: #244b47;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+@media (max-width: 620px) {
+  .transactions-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 1000px) {
+  .transaction-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filter-actions {
+    grid-column: 1 / -1;
+  }
+}

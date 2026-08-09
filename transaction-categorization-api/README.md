@@ -21,6 +21,8 @@ Example:
 - Demonstrate a measured PostgreSQL index improvement
 - Register, log in, log out, and protect each user's data
 - Register, log in, reach the dashboard, and log out through React
+- Create, search, filter, sort, edit, and delete transactions through React
+- Display real monthly totals for the signed-in user
 - Check whether the service is running
 
 The project currently provides only the backend—the part that stores information and performs the work. It does not yet have a website for users.
@@ -28,8 +30,8 @@ The project currently provides only the backend—the part that stores informati
 ## What we plan to add
 
 - Better input checks and automated testing
-- Real monthly data on the authenticated dashboard
-- Transaction, category, and rule screens
+- Category and rule management screens
+- Monthly category charts and month selection
 - A simple dashboard
 - CSV imports from bank files
 - Category suggestions that improve using user corrections

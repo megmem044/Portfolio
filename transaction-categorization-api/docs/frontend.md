@@ -5,7 +5,7 @@ The frontend uses React, TypeScript, and Vite. React builds the visible screens,
 ## Current user journey
 
 ```text
-Register → Sign in → Confirm user → Dashboard → Sign out
+Register → Sign in → Dashboard → Add transaction → Review or edit → Sign out
 ```
 
 1. The registration form checks the email and matching passwords in the browser.
@@ -14,6 +14,9 @@ Register → Sign in → Confirm user → Dashboard → Sign out
 4. The token is sent to `/auth/me` to retrieve the signed-in user.
 5. `App.tsx` keeps the token and user in React state and shows the dashboard.
 6. Logout asks FastAPI to revoke the token, then clears the React state.
+7. The dashboard loads the current monthly summary using the token.
+8. The transaction page loads one database page at a time and supports filters and sorting.
+9. Create, edit, and delete actions refresh the affected data.
 
 The token currently exists only in memory. Refreshing or closing the page returns the user to login. This is intentional for the first version.
 
@@ -24,6 +27,9 @@ The token currently exists only in memory. Refreshing or closing the page return
 - `src/pages/RegisterPage.tsx` contains registration fields and browser checks.
 - `src/pages/LoginPage.tsx` signs in and loads the current user.
 - `src/pages/DashboardPage.tsx` contains the authenticated layout.
+- `src/pages/TransactionsPage.tsx` contains the table, filters, sorting, and pagination.
+- `src/components/TransactionForm.tsx` is reused for transaction creation and editing.
+- `src/api/transactions.ts` contains authenticated transaction and summary requests.
 
 Keeping API requests outside page components makes the screens easier to read and allows the request code to be reused.
 
@@ -62,6 +68,16 @@ npm --prefix frontend run build
 - `lint` checks for suspicious code patterns.
 - `build` checks TypeScript and creates optimized production files.
 
+## Transaction data flow
+
+```text
+React form → FastAPI validation → category rule → database → refreshed UI
+```
+
+The table sends filters and sorting choices to FastAPI. The database applies them before pagination, so results remain correct across pages.
+
+Deletion requires a second confirmation action and identifies the exact merchant and amount before removing data.
+
 ## Next step
 
-The dashboard will request the signed-in user's monthly summary and display loading, success, empty, and error states.
+Build category management screens, followed by merchant-rule management and richer monthly reporting.

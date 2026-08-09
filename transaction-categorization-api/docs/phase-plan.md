@@ -112,9 +112,9 @@ Implementation:
 
 - [x] Create a React and TypeScript frontend.
 - [x] Build registration and login screens.
-- [ ] Build a monthly dashboard with accessible charts.
-- [ ] Build a searchable transaction table.
-- [ ] Add forms for creating, editing, and deleting transactions.
+- [~] Build a monthly dashboard with accessible charts.
+- [x] Build a searchable transaction table.
+- [x] Add forms for creating, editing, and deleting transactions.
 - [ ] Show clear loading, empty, success, and error messages.
 - [ ] Support keyboards and smaller screens.
 
@@ -129,7 +129,7 @@ Testing:
 
 Completion date: _In progress_
 
-Notes: The Vite frontend passes ESLint and production builds. Registration performs browser validation and displays backend errors. Login keeps its access token in React memory, confirms the user through `/auth/me`, and opens the dashboard shell. Logout revokes the token through FastAPI and clears local authentication state. Real dashboard data is next.
+Notes: The Vite frontend passes ESLint and production builds. Authentication uses an in-memory token and backend logout revocation. The dashboard loads real monthly totals. The transaction UI supports creation, search, category/date filters, database sorting, pagination, editing with recategorization, and confirmed deletion. Category charts and management screens are next.
 
 ---
 
