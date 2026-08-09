@@ -1,21 +1,16 @@
-# Transaction categorization logic is defined in this file
-# Simple rule-based categorization is used
+CATEGORY_RULES = {
+    "Food & Dining": ("starbucks", "restaurant"),
+    "Transportation": ("uber", "lyft"),
+    "Groceries": ("walmart", "grocery"),
+}
+
 
 def categorize_transaction(merchant: str) -> str:
-    # Merchant name is normalized to lowercase
-    merchant_lower = merchant.lower()
+    """Return the first category whose keyword appears in the merchant name."""
+    normalized_merchant = merchant.casefold()
 
-    # Food and dining category is detected
-    if "starbucks" in merchant_lower or "restaurant" in merchant_lower:
-        return "Food & Dining"
+    for category, keywords in CATEGORY_RULES.items():
+        if any(keyword in normalized_merchant for keyword in keywords):
+            return category
 
-    # Transportation category is detected
-    if "uber" in merchant_lower or "lyft" in merchant_lower:
-        return "Transportation"
-
-    # Grocery category is detected
-    if "walmart" in merchant_lower or "grocery" in merchant_lower:
-        return "Groceries"
-
-    # Default category is assigned when no rule matches
     return "Uncategorized"

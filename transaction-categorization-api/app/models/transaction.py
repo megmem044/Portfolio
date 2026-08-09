@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date
+from sqlalchemy import Column, Date, Integer, Numeric, String
 
 from app.db.base import Base
 
@@ -11,14 +11,14 @@ class Transaction(Base):
     # Primary key column is defined
     id = Column(Integer, primary_key=True, index=True)
 
-    # Transaction amount is stored
-    amount = Column(Float, nullable=False)
+    # Numeric avoids the rounding errors that floating-point money can cause.
+    amount = Column(Numeric(12, 2), nullable=False)
 
     # Merchant name is stored
-    merchant = Column(String, nullable=False)
+    merchant = Column(String(200), nullable=False)
 
     # Category label is stored
-    category = Column(String, nullable=False)
+    category = Column(String(100), nullable=False)
 
     # Transaction date is stored
     date = Column(Date, nullable=False)

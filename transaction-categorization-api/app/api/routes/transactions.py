@@ -1,28 +1,17 @@
 from datetime import date
+from decimal import Decimal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.db.session import SessionLocal
+from app.api.dependencies import get_db
 from app.models.transaction import Transaction
 from app.schemas.transaction import MonthlySummary, TransactionCreate, TransactionRead
 from app.services.categorizer import categorize_transaction
 
 # Router object is created for transaction related endpoints
 router = APIRouter(prefix="/transactions", tags=["transactions"])
-
-
-# Database session dependency is defined
-def get_db():
-    # Database session is created
-    db = SessionLocal()
-    try:
-        # Session is yielded to the request
-        yield db
-    finally:
-        # Session is closed after request completion
-        db.close()
 
 
 # Transaction creation endpoint is defined
@@ -62,6 +51,12 @@ def list_transactions(
     end: date | None = None,
     db: Session = Depends(get_db),
 ):
+    if start is not None and end is not None and start > end:
+        raise HTTPException(
+            status_code=422,
+            detail="start date must be on or before end date",
+        )
+
     # Base query for transactions is created
     query = db.query(Transaction)
 
@@ -73,17 +68,15 @@ def list_transactions(
     if end is not None:
         query = query.filter(Transaction.date <= end)
 
-    # Query results are returned
-    return query.all()
+    return query.order_by(Transaction.date.desc(), Transaction.id.desc()).all()
 
 
 # Monthly summary endpoint is defined
 @router.get("/summary", response_model=MonthlySummary)
 def monthly_summary(
-    month: str,
+    month: str = Query(pattern=r"^\d{4}-(0[1-9]|1[0-2])$"),
     db: Session = Depends(get_db),
 ):
-    # Month value is expected in YYYY MM form
     month_key = month
 
     # Month extraction expression is defined for SQLite
@@ -102,10 +95,10 @@ def monthly_summary(
     )
 
     # Totals by category container is created
-    totals_by_category: dict[str, float] = {}
+    totals_by_category: dict[str, Decimal] = {}
 
     # Overall total accumulator is created
-    overall_total = 0.0
+    overall_total = Decimal("0.00")
 
     # Transaction count accumulator is created
     transaction_count = 0
@@ -115,8 +108,7 @@ def monthly_summary(
         # Category label is read
         category = row.category
 
-        # Category total value is normalized
-        category_total = float(row.category_total or 0.0)
+        category_total = Decimal(row.category_total or 0).quantize(Decimal("0.01"))
 
         # Transaction count value is normalized
         category_count = int(row.transaction_count or 0)

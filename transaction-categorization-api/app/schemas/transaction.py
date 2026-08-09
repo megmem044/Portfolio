@@ -1,40 +1,34 @@
 from datetime import date
-from pydantic import BaseModel
+from decimal import Decimal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Schema for creating a transaction is defined
 # This schema validates incoming request data
 class TransactionCreate(BaseModel):
-    # Transaction amount is provided
-    amount: float
-
-    # Merchant name is provided
-    merchant: str
-
-    # Transaction date is provided
+    amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
+    merchant: str = Field(min_length=1, max_length=200)
     date: date
+
+    @field_validator("merchant")
+    @classmethod
+    def clean_merchant(cls, merchant: str) -> str:
+        cleaned = merchant.strip()
+        if not cleaned:
+            raise ValueError("merchant must not be blank")
+        return cleaned
 
 
 # Schema for returning a transaction is defined
 # This schema controls response formatting
 class TransactionRead(BaseModel):
-    # Unique identifier is returned
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
-
-    # Transaction amount is returned
-    amount: float
-
-    # Merchant name is returned
+    amount: Decimal
     merchant: str
-
-    # Category label is returned
     category: str
-
-    # Transaction date is returned
     date: date
-
-    class Config:
-       
-         from_attributes = True
 
 # Schema for monthly summary response is defined
 class MonthlySummary(BaseModel):
@@ -44,9 +38,8 @@ class MonthlySummary(BaseModel):
     # Transaction count is returned
     transaction_count: int
 
-    # Overall total is returned
-    overall_total: float
+    overall_total: Decimal
 
     # Totals by category are returned
-    totals_by_category: dict[str, float]
+    totals_by_category: dict[str, Decimal]
 

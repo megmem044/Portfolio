@@ -1,153 +1,95 @@
-# Transaction Categorization API
+# Transaction Categorization
 
-A lightweight backend service for ingesting, categorizing, storing, and summarizing financial transactions.  
-The API exposes RESTful endpoints to create transactions, list them with optional filtering, and generate monthly summaries similar to basic accounting workflows.
+This project is an early version of an app that helps people organize their spending.
 
-This project is designed as a small, production style backend system demonstrating clean architecture, database modeling, and performance aware API design.
+A user records a transaction with an amount, merchant, and date. The app suggests a category, saves the transaction, and includes it in a monthly spending summary.
 
----
+Example:
 
-## Features
+`Starbucks, $8.50, July 10 → Food & Dining`
 
-- Create financial transactions via a REST API
-- Automatic transaction categorization using deterministic rule based logic
-- Persistent storage using a relational database
-- List transactions with optional date range filtering
-- Monthly summary endpoint with category level aggregation
-- Database level aggregation using SQL GROUP BY via SQLAlchemy
-- Interactive API documentation via Swagger UI
+## What works today
 
----
+- Add and save a transaction
+- Suggest categories for a few known merchant names
+- List saved transactions and filter them by date
+- Show monthly totals grouped by category
+- Check whether the service is running
 
-## Tech Stack
+The project currently provides only the backend—the part that stores information and performs the work. It does not yet have a website for users.
 
-- **Language:** Python  
-- **Web Framework:** FastAPI  
-- **Database:** SQLite  
-- **ORM:** SQLAlchemy  
-- **Data Validation:** Pydantic  
-- **ASGI Server:** Uvicorn  
+## What we plan to add
 
----
+- Better input checks and automated testing
+- Edit, delete, search, and category features
+- A simple dashboard
+- CSV imports from bank files
+- Category suggestions that improve using user corrections
 
-## Architecture Overview
+## How we will build it
 
-The application follows a layered architecture to separate responsibilities and keep the codebase extensible.
+The project will be developed in small phases. Each phase must work and pass its tests before the next one begins.
 
-- The API layer handles HTTP routing and request validation
-- The schema layer defines request and response data shapes
-- The service layer contains business logic such as transaction categorization
-- The model layer defines database tables using SQLAlchemy ORM
-- The database layer manages engine and session lifecycle
-- The core layer centralizes configuration and environment handling
+| Phase | Main result | Skills demonstrated |
+|---|---|---|
+| 1. Foundation | A reliable backend that is easy to run | Python, FastAPI, Git, testing |
+| 2. Data and API | Safe storage and complete transaction features | SQL, PostgreSQL, database design, REST APIs |
+| 3. Users and security | Private accounts and protected data | Authentication, authorization, security |
+| 4. Frontend | A usable dashboard and transaction screens | JavaScript, React, API integration |
+| 5. Imports | Bank CSV upload and duplicate checking | Algorithms, file processing, background work |
+| 6. Machine learning | Category suggestions that learn from corrections | ML, model evaluation, data handling |
+| 7. Delivery | Automated checks and a deployed application | Linux, Bash, Docker, CI/CD, debugging |
 
-This separation ensures that business logic, persistence, and transport concerns remain independent.
+See the [phase plan and progress log](docs/phase-plan.md) for implementation and testing details.
 
----
+Project documentation:
 
-## Project Structure
+- [Product guide and user stories](docs/product-requirements.md): what users need and when a feature is complete
+- [Phase plan and progress log](docs/phase-plan.md): what we will build and test in each phase
+- [Architecture guide](docs/architecture.md): how the folders work together and where new code belongs
 
-transaction-categorization-api/
-│
-├── app/
-│ ├── main.py
-│ ├── core/
-│ ├── db/
-│ ├── models/
-│ ├── schemas/
-│ ├── services/
-│ └── api/
-│
-├── tests/
-├── pyproject.toml
-├── .env.example
-└── README.md
+## Run the backend
 
----
+You need Python 3.11 or newer.
 
-## API Endpoints
+1. Create a private project environment:
 
-### Create Transaction
+   ```powershell
+   python -m venv .venv
+   .venv\Scripts\Activate.ps1
+   ```
 
-POST /transactions
+2. Install the app and its testing tools:
 
+   ```powershell
+   python -m pip install -e ".[dev]"
+   ```
 
-Creates a new transaction and applies automatic categorization based on merchant name.
+3. Start the app:
 
----
+   ```powershell
+   python -m uvicorn app.main:app --reload
+   ```
 
-### List Transactions
+4. Open `http://127.0.0.1:8000/docs` to try the API in a browser.
 
-GET /transactions
+Run the automated checks with:
 
+```powershell
+python -m pytest
+```
 
-Optional query parameters:
+The default SQLite database is created when the app starts. To change a setting, copy `.env.example` to `.env` and edit the copied file. Never commit `.env` because it may contain private settings.
 
-- `start` – filter by start date
-- `end` – filter by end date
+## Project folders
 
----
+- `app/api` receives requests and provides shared route helpers.
+- `app/services` contains the category rules.
+- `app/models` describes how transactions are stored.
+- `app/schemas` describes what transaction information is accepted and returned.
+- `app/db` connects the app to its database.
+- `tests` will contain automated checks.
 
-### Monthly Summary
+## Current status
 
-GET /transactions/summary?month=YYYY-MM
-
-
-Returns a monthly financial summary including:
-
-- Total number of transactions
-- Overall total amount
-- Totals grouped by category
-
-#### Aggregation Strategy
-
-Monthly summaries are computed at the database level using SQL aggregation functions through SQLAlchemy.
-
-- Aggregation uses SQL `GROUP BY` on transaction categories
-- Totals are computed directly in the database
-- This avoids loading all transactions into application memory
-- This approach improves performance and scalability as data volume grows
-
----
-
-### Health Check
-
-GET /health
-
-
-Used to verify application availability.
-
----
-
-## Running the Application
-
-Start the server using:
-
-
-python -m uvicorn app.main:app
-Swagger UI will be available at:
-
-http://127.0.0.1:8000/docs
-
-### Design Goals
-
-Clear separation of concerns
-
-Predictable and deterministic business logic
-
-Database as the source of truth
-
-Performance aware data aggregation
-
-Clean and extensible project structure
-
-### Future Enhancements
-
-Pagination for transaction listing
-
-Update and delete transaction endpoints
-
-Expanded automated test coverage
-
-Containerized deployment
-
+This repository is a starting point, not a finished application. Phase 1 is next: add setup information, required packages, stronger input checks, and tests for the current features.
