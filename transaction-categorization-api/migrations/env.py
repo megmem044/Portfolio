@@ -9,7 +9,9 @@ from app.core.config import settings
 from app.db.base import Base
 from app.models.category import Category  # noqa: F401
 from app.models.category_rule import CategoryRule  # noqa: F401
+from app.models.revoked_token import RevokedToken  # noqa: F401
 from app.models.transaction import Transaction  # noqa: F401
+from app.models.user import User  # noqa: F401
 
 
 config = context.config

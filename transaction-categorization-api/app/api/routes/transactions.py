@@ -4,13 +4,14 @@ from datetime import date
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import get_db
+from app.api.dependencies import get_current_user, get_db
 from app.models.category import Category
 from app.models.category_rule import CategoryRule
 from app.models.transaction import Transaction
+from app.models.user import User
 from app.schemas.transaction import (
     MonthlySummary,
     SortDirection,
@@ -26,18 +27,31 @@ from app.services.categorizer import categorize_transaction
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
 
-def find_category(name: str, db: Session) -> Category:
-    category = db.query(Category).filter(Category.name == name).one_or_none()
+def find_category(name: str, owner_id: int, db: Session) -> Category:
+    category = (
+        db.query(Category)
+        .filter(
+            Category.name == name,
+            or_(Category.is_default.is_(True), Category.owner_id == owner_id),
+        )
+        .one_or_none()
+    )
     if category is None:
         raise HTTPException(status_code=422, detail="category does not exist")
     return category
 
 
-def categorize_merchant(merchant: str, db: Session) -> str:
+def categorize_merchant(merchant: str, owner_id: int, db: Session) -> str:
     stored_rules = (
         db.query(CategoryRule)
         .join(CategoryRule.category)
-        .filter(CategoryRule.is_active.is_(True))
+        .filter(
+            CategoryRule.is_active.is_(True),
+            or_(
+                CategoryRule.is_default.is_(True),
+                CategoryRule.owner_id == owner_id,
+            ),
+        )
         .order_by(CategoryRule.priority.asc(), CategoryRule.id.asc())
         .all()
     )
@@ -50,16 +64,18 @@ def categorize_merchant(merchant: str, db: Session) -> str:
 def create_transaction(
     transaction: TransactionCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     # Category is determined using business logic
-    category_name = categorize_merchant(transaction.merchant, db)
-    category = find_category(category_name, db)
+    category_name = categorize_merchant(transaction.merchant, current_user.id, db)
+    category = find_category(category_name, current_user.id, db)
 
     # Transaction database object is created
     db_transaction = Transaction(
         amount=transaction.amount,
         merchant=transaction.merchant,
         category_record=category,
+        owner=current_user,
         date=transaction.date,
     )
 
@@ -88,6 +104,7 @@ def list_transactions(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=25, ge=1, le=100),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     if start is not None and end is not None and start > end:
         raise HTTPException(
@@ -96,7 +113,11 @@ def list_transactions(
         )
 
     # Base query for transactions is created
-    query = db.query(Transaction).join(Transaction.category_record)
+    query = (
+        db.query(Transaction)
+        .join(Transaction.category_record)
+        .filter(Transaction.owner_id == current_user.id)
+    )
 
     # Start date filter is applied if provided
     if start is not None:
@@ -139,6 +160,7 @@ def list_transactions(
 def monthly_summary(
     month: str = Query(pattern=r"^\d{4}-(0[1-9]|1[0-2])$"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     month_key = month
     year, month_number = (int(part) for part in month_key.split("-"))
@@ -158,6 +180,7 @@ def monthly_summary(
         )
         .join(Transaction.category_record)
         .filter(
+            Transaction.owner_id == current_user.id,
             Transaction.date >= month_start,
             Transaction.date < next_month,
         )
@@ -202,8 +225,19 @@ def monthly_summary(
     }
 
 
-def find_transaction(transaction_id: int, db: Session) -> Transaction:
-    transaction = db.get(Transaction, transaction_id)
+def find_transaction(
+    transaction_id: int,
+    owner_id: int,
+    db: Session,
+) -> Transaction:
+    transaction = (
+        db.query(Transaction)
+        .filter(
+            Transaction.id == transaction_id,
+            Transaction.owner_id == owner_id,
+        )
+        .one_or_none()
+    )
     if transaction is None:
         raise HTTPException(status_code=404, detail="transaction not found")
     return transaction
@@ -213,8 +247,9 @@ def find_transaction(transaction_id: int, db: Session) -> Transaction:
 def get_transaction(
     transaction_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    return find_transaction(transaction_id, db)
+    return find_transaction(transaction_id, current_user.id, db)
 
 
 @router.patch("/{transaction_id}", response_model=TransactionRead)
@@ -222,8 +257,9 @@ def update_transaction(
     transaction_id: int,
     changes: TransactionUpdate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    transaction = find_transaction(transaction_id, db)
+    transaction = find_transaction(transaction_id, current_user.id, db)
     update_data = changes.model_dump(exclude_unset=True)
     requested_category = update_data.pop("category", None)
 
@@ -231,10 +267,22 @@ def update_transaction(
         setattr(transaction, field, value)
 
     if requested_category is not None:
-        transaction.category_record = find_category(requested_category, db)
+        transaction.category_record = find_category(
+            requested_category,
+            current_user.id,
+            db,
+        )
     elif "merchant" in update_data:
-        category_name = categorize_merchant(transaction.merchant, db)
-        transaction.category_record = find_category(category_name, db)
+        category_name = categorize_merchant(
+            transaction.merchant,
+            current_user.id,
+            db,
+        )
+        transaction.category_record = find_category(
+            category_name,
+            current_user.id,
+            db,
+        )
 
     db.commit()
     db.refresh(transaction)
@@ -245,8 +293,9 @@ def update_transaction(
 def delete_transaction(
     transaction_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> Response:
-    transaction = find_transaction(transaction_id, db)
+    transaction = find_transaction(transaction_id, current_user.id, db)
     db.delete(transaction)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

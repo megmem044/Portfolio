@@ -258,3 +258,49 @@ def test_list_transactions_rejects_invalid_page_or_sort(client):
     assert client.get("/transactions/", params={"page": 0}).status_code == 422
     assert client.get("/transactions/", params={"page_size": 101}).status_code == 422
     assert client.get("/transactions/", params={"sort_by": "id"}).status_code == 422
+
+
+def test_transaction_routes_require_authentication(client):
+    response = client.get("/transactions/", headers={"Authorization": ""})
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "valid authentication is required"
+
+
+def test_users_can_access_only_their_own_transactions(client):
+    first_user_transaction = add_transaction(
+        client,
+        "10.00",
+        "First User Shop",
+        "2026-08-08",
+    ).json()
+    client.post(
+        "/auth/register",
+        json={"email": "second@example.com", "password": "StrongPass123"},
+    )
+    second_token = client.post(
+        "/auth/login",
+        json={"email": "second@example.com", "password": "StrongPass123"},
+    ).json()["access_token"]
+    second_headers = {"Authorization": f"Bearer {second_token}"}
+
+    hidden = client.get(
+        f"/transactions/{first_user_transaction['id']}",
+        headers=second_headers,
+    )
+    second_user_transaction = client.post(
+        "/transactions/",
+        headers=second_headers,
+        json={"amount": "20.00", "merchant": "Second User Shop", "date": "2026-08-09"},
+    )
+    second_user_list = client.get("/transactions/", headers=second_headers).json()
+    first_user_list = client.get("/transactions/").json()
+
+    assert hidden.status_code == 404
+    assert second_user_transaction.status_code == 200
+    assert [item["merchant"] for item in second_user_list["items"]] == [
+        "Second User Shop"
+    ]
+    assert [item["merchant"] for item in first_user_list["items"]] == [
+        "First User Shop"
+    ]

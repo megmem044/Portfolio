@@ -10,6 +10,8 @@ class Settings(BaseSettings):
 
     app_name: str = "Transaction Categorization API"
     database_url: str = "sqlite:///./transactions.db"
+    secret_key: str = "development-only-change-me"
+    access_token_minutes: int = 30
 
 
 settings = Settings()

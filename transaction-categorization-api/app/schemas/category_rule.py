@@ -57,3 +57,4 @@ class CategoryRuleRead(BaseModel):
     category_name: str
     priority: int
     is_active: bool
+    is_default: bool

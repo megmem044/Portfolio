@@ -27,11 +27,18 @@ class Transaction(Base):
         nullable=False,
         index=True,
     )
+    owner_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True,
+    )
 
     # Transaction date is stored
     date = Column(Date, nullable=False, index=True)
 
     category_record = relationship("Category", back_populates="transactions")
+    owner = relationship("User", back_populates="transactions")
 
     @property
     def category(self) -> str:

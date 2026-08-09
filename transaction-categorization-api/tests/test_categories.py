@@ -99,3 +99,37 @@ def test_missing_category_returns_not_found(client):
     assert client.get("/categories/999").status_code == 404
     assert client.patch("/categories/999", json={"name": "Missing"}).status_code == 404
     assert client.delete("/categories/999").status_code == 404
+
+
+def test_custom_categories_are_private_to_their_owner(client):
+    first_category = create_category(client).json()
+    client.post(
+        "/auth/register",
+        json={"email": "second@example.com", "password": "StrongPass123"},
+    )
+    second_token = client.post(
+        "/auth/login",
+        json={"email": "second@example.com", "password": "StrongPass123"},
+    ).json()["access_token"]
+    second_headers = {"Authorization": f"Bearer {second_token}"}
+
+    hidden = client.get(
+        f"/categories/{first_category['id']}",
+        headers=second_headers,
+    )
+    second_list = client.get("/categories/", headers=second_headers).json()
+    same_name = client.post(
+        "/categories/",
+        headers=second_headers,
+        json={"name": first_category["name"]},
+    )
+
+    assert hidden.status_code == 404
+    assert first_category["name"] not in {item["name"] for item in second_list}
+    assert same_name.status_code == 201
+
+
+def test_category_management_requires_authentication(client):
+    response = client.get("/categories/", headers={"Authorization": ""})
+
+    assert response.status_code == 401

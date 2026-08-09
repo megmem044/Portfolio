@@ -13,6 +13,8 @@ from app.db.base import Base
 from app.main import create_app
 from app.models.category import Category
 from app.models.category_rule import CategoryRule
+from app.models.user import User
+from app.services.security import create_access_token
 
 
 DEFAULT_CATEGORIES = (
@@ -47,6 +49,12 @@ def client():
     Base.metadata.create_all(bind=engine)
 
     with testing_session() as seed_session:
+        test_owner = User(
+            email="test-owner@example.com",
+            password_hash="not-used-by-tests",
+            is_active=True,
+        )
+        seed_session.add(test_owner)
         categories = {
             name: Category(name=name, is_default=True)
             for name in DEFAULT_CATEGORIES
@@ -59,10 +67,12 @@ def client():
                 category=categories[category_name],
                 priority=priority,
                 is_active=True,
+                is_default=True,
             )
             for keyword, category_name, priority in DEFAULT_RULES
         )
         seed_session.commit()
+        owner_token = create_access_token(test_owner.id)
 
     def override_get_db():
         db = testing_session()
@@ -75,6 +85,7 @@ def client():
     app.dependency_overrides[get_db] = override_get_db
 
     with TestClient(app) as test_client:
+        test_client.headers.update({"Authorization": f"Bearer {owner_token}"})
         yield test_client
 
     Base.metadata.drop_all(bind=engine)

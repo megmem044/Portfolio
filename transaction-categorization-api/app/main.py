@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI
 
+from app.api.routes.auth import router as auth_router
 from app.api.routes.categories import router as categories_router
 from app.api.routes.category_rules import router as category_rules_router
 from app.api.routes.health import router as health_router
@@ -14,6 +15,7 @@ def create_app() -> FastAPI:
         description="Backend service for categorizing and summarizing financial transactions",
         version="0.1.0",
     )
+    application.include_router(auth_router)
     application.include_router(categories_router)
     application.include_router(category_rules_router)
     application.include_router(health_router)
