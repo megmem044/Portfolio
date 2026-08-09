@@ -15,6 +15,7 @@ Example:
 - Search, filter, sort, and page through saved transactions
 - View, edit, or delete one transaction
 - Create and manage custom spending categories
+- Create, prioritize, pause, and manage merchant category rules
 - Show monthly totals grouped by category
 - Check whether the service is running
 
@@ -95,6 +96,7 @@ The migration command creates or updates the database safely. To change a settin
 
 - `app/api` receives requests and provides shared route helpers.
 - `app/services` contains the category rules.
+- `app/services` contains the rule-matching logic.
 - `app/models` describes how transactions are stored.
 - `app/schemas` describes what transaction information is accepted and returned.
 - `app/db` connects the app to its database.

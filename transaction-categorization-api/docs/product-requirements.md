@@ -10,7 +10,7 @@ A user adds transactions such as:
 
 The app recognizes the merchant and suggests a category such as **Food & Dining**. The user can review transactions, correct categories, and see how much they spent each month.
 
-The project is currently an early backend version. It can save transactions, apply a few simple category rules, list saved transactions, and calculate monthly totals. A website, file imports, user accounts, and machine learning are planned for later.
+The project currently provides a tested backend. It can save and manage transactions, manage categories and merchant rules, search transaction history, and calculate monthly totals. A website, file imports, user accounts, and machine learning are planned for later.
 
 ## Why is it useful?
 
@@ -150,4 +150,3 @@ We will improve the project in small, working steps:
 8. Add confidence-based suggestions and review them with real examples.
 
 Each step should be tested and documented before moving to the next one.
-

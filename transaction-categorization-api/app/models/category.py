@@ -15,3 +15,4 @@ class Category(Base):
     is_default = Column(Boolean, nullable=False, default=False)
 
     transactions = relationship("Transaction", back_populates="category_record")
+    rules = relationship("CategoryRule", back_populates="category")

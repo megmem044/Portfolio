@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db
 from app.models.category import Category
+from app.models.category_rule import CategoryRule
 from app.models.transaction import Transaction
 from app.schemas.category import CategoryCreate, CategoryRead, CategoryUpdate
 
@@ -92,6 +93,15 @@ def delete_category(
     )
     if is_in_use:
         raise HTTPException(status_code=409, detail="category is used by transactions")
+
+    has_rules = (
+        db.query(CategoryRule.id)
+        .filter(CategoryRule.category_id == category.id)
+        .first()
+        is not None
+    )
+    if has_rules:
+        raise HTTPException(status_code=409, detail="category is used by rules")
 
     db.delete(category)
     db.commit()

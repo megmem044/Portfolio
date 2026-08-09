@@ -30,12 +30,14 @@ app/
 │   └── session.py            Database connection setup
 ├── models/
 │   ├── category.py           Stored category fields
+│   ├── category_rule.py      Stored merchant matching rules
 │   └── transaction.py        Stored transaction fields
 ├── schemas/
 │   ├── category.py           Accepted category information
+│   ├── category_rule.py      Accepted merchant-rule information
 │   └── transaction.py        Accepted and returned information
 ├── services/
-│   └── categorizer.py        Merchant category rules
+│   └── categorizer.py        Ordered keyword-matching logic
 └── main.py                   Creates and starts the app
 
 migrations/                   Ordered database changes

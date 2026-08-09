@@ -10,6 +10,7 @@ from app.api.dependencies import get_db
 from app.db.base import Base
 from app.main import create_app
 from app.models.category import Category
+from app.models.category_rule import CategoryRule
 
 
 DEFAULT_CATEGORIES = (
@@ -17,6 +18,15 @@ DEFAULT_CATEGORIES = (
     "Transportation",
     "Groceries",
     "Uncategorized",
+)
+
+DEFAULT_RULES = (
+    ("starbucks", "Food & Dining", 10),
+    ("restaurant", "Food & Dining", 20),
+    ("uber", "Transportation", 30),
+    ("lyft", "Transportation", 40),
+    ("walmart", "Groceries", 50),
+    ("grocery", "Groceries", 60),
 )
 
 
@@ -31,8 +41,20 @@ def client():
     Base.metadata.create_all(bind=engine)
 
     with testing_session() as seed_session:
+        categories = {
+            name: Category(name=name, is_default=True)
+            for name in DEFAULT_CATEGORIES
+        }
+        seed_session.add_all(categories.values())
+        seed_session.flush()
         seed_session.add_all(
-            Category(name=name, is_default=True) for name in DEFAULT_CATEGORIES
+            CategoryRule(
+                keyword=keyword,
+                category=categories[category_name],
+                priority=priority,
+                is_active=True,
+            )
+            for keyword, category_name, priority in DEFAULT_RULES
         )
         seed_session.commit()
 

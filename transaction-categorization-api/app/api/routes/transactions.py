@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db
 from app.models.category import Category
+from app.models.category_rule import CategoryRule
 from app.models.transaction import Transaction
 from app.schemas.transaction import (
     MonthlySummary,
@@ -32,6 +33,18 @@ def find_category(name: str, db: Session) -> Category:
     return category
 
 
+def categorize_merchant(merchant: str, db: Session) -> str:
+    stored_rules = (
+        db.query(CategoryRule)
+        .join(CategoryRule.category)
+        .filter(CategoryRule.is_active.is_(True))
+        .order_by(CategoryRule.priority.asc(), CategoryRule.id.asc())
+        .all()
+    )
+    rules = ((rule.keyword, rule.category.name) for rule in stored_rules)
+    return categorize_transaction(merchant, rules)
+
+
 # Transaction creation endpoint is defined
 @router.post("/", response_model=TransactionRead)
 def create_transaction(
@@ -39,7 +52,7 @@ def create_transaction(
     db: Session = Depends(get_db),
 ):
     # Category is determined using business logic
-    category_name = categorize_transaction(transaction.merchant)
+    category_name = categorize_merchant(transaction.merchant, db)
     category = find_category(category_name, db)
 
     # Transaction database object is created
@@ -220,7 +233,7 @@ def update_transaction(
     if requested_category is not None:
         transaction.category_record = find_category(requested_category, db)
     elif "merchant" in update_data:
-        category_name = categorize_transaction(transaction.merchant)
+        category_name = categorize_merchant(transaction.merchant, db)
         transaction.category_record = find_category(category_name, db)
 
     db.commit()

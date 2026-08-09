@@ -54,7 +54,7 @@ Implementation:
 
 - [ ] Move from SQLite to PostgreSQL while keeping SQLite available for simple tests.
 - [x] Add database migrations so changes can be applied safely.
-- [~] Design tables for transactions, categories, and category rules.
+- [x] Design tables for transactions, categories, and category rules.
 - [x] Add edit and delete operations.
 - [x] Add searching, filtering, sorting, and pages.
 - [~] Add useful database indexes and explain why they help.
@@ -71,7 +71,7 @@ Testing:
 
 Completion date: _Not started_
 
-Notes: Three migrations are verified on SQLite, with Alembic at revision `20260808_03 (head)`. Transaction and category behavior is covered by 35 passing tests. Categories now have their own table, but configurable merchant rules are still future work. Built-in categories are protected, and categories attached to transactions cannot be deleted. Date and category indexes support common filters; their performance still needs to be measured.
+Notes: Four migrations are verified on SQLite, with Alembic at revision `20260808_04 (head)`. Transaction, category, and merchant-rule behavior is covered by 43 passing tests. Rules are stored in the database, applied in priority order, and can be paused without deletion. Built-in and in-use categories are protected. Date and category indexes support common filters; their performance still needs to be measured.
 
 ---
 

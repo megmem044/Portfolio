@@ -1,18 +1,28 @@
-"""Assign a category by matching simple keywords in a merchant name."""
+"""Assign a category by matching ordered keywords in a merchant name."""
 
-CATEGORY_RULES = {
-    "Food & Dining": ("starbucks", "restaurant"),
-    "Transportation": ("uber", "lyft"),
-    "Groceries": ("walmart", "grocery"),
-}
+from collections.abc import Iterable
 
 
-def categorize_transaction(merchant: str) -> str:
+DEFAULT_RULES = (
+    ("starbucks", "Food & Dining"),
+    ("restaurant", "Food & Dining"),
+    ("uber", "Transportation"),
+    ("lyft", "Transportation"),
+    ("walmart", "Groceries"),
+    ("grocery", "Groceries"),
+)
+
+
+def categorize_transaction(
+    merchant: str,
+    rules: Iterable[tuple[str, str]] | None = None,
+) -> str:
     """Return the first category whose keyword appears in the merchant name."""
     normalized_merchant = merchant.casefold()
+    active_rules = rules if rules is not None else DEFAULT_RULES
 
-    for category, keywords in CATEGORY_RULES.items():
-        if any(keyword in normalized_merchant for keyword in keywords):
+    for keyword, category in active_rules:
+        if keyword.casefold() in normalized_merchant:
             return category
 
     return "Uncategorized"
