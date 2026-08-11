@@ -1,0 +1,98 @@
+(kicad_sch
+	(version 20250114)
+	(generator "eeschema")
+	(generator_version "9.0")
+	(uuid "3f3d3534-d777-4922-b2d5-dec082c6385b")
+	(paper "A4")
+	(lib_symbols)
+	(sheet
+		(at 161.29 59.69)
+		(size 48.26 33.02)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "74b02ac7-f649-406d-afd0-b1eeec2a02bc")
+		(property "Sheetname" "Digital Section"
+			(at 161.29 58.9784 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "digital_section.kicad_sch"
+			(at 161.29 93.2946 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rdf_kicad"
+				(path "/3f3d3534-d777-4922-b2d5-dec082c6385b"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 83.82 59.69)
+		(size 49.53 33.02)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "9492a51b-cf36-407a-9346-26feabd29839")
+		(property "Sheetname" "RF Frontend"
+			(at 83.82 58.9784 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "rf_frontend.kicad_sch"
+			(at 83.82 93.2946 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rdf_kicad"
+				(path "/3f3d3534-d777-4922-b2d5-dec082c6385b"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+	(embedded_fonts no)
+)

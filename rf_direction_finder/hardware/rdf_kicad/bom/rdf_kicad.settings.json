@@ -1,0 +1,47 @@
+{
+    "type": "InteractiveHtmlBom settings",
+    "version": 1,
+    "pcbmetadata": {
+        "title": "rdf_kicad",
+        "revision": "",
+        "company": "",
+        "date": "2026-01-21 06:38:48"
+    },
+    "settings": {
+        "canvaslayout": "F",
+        "bomlayout": "left-right",
+        "bommode": "grouped",
+        "checkboxes": [
+            "Sourced",
+            "Placed"
+        ],
+        "checkboxStoredRefs": {
+            "Sourced": "225,82,63,187,223,162,218,245,48,142,54,90,194,149,196,193,108,255,17,132,102,57,80,76,117,128,256,138,246,195,35,164,87,53,247,84,7,107,217,134,236,127,191,125,264,4,68,42,56,158,239,89,106,119,78,33,190,116,259,30,197,200,165,13,28,180,155,249,91,136,144,93,121,219,170,88,216,3,81,169,189,215,201,120,10,182,61,92,151,199,221,118,230,160,79,233,97,253,192,137,98,173,40,15,69,1,49,85,66,244,109,213,211,135,222,44,139,203,209,47,75,185,174,166,248,240,181,12,25,58,16,140,5,153,112,220,64,146,262,71,22,178,11,252,152,124,72,122,6,104,114,237,29,113,254,175,148,133,43,24,62,235,101,111,74,21,129,147,172,65,131,159,52,171,115,186,32,126,46,163,258,14,257,31,100,51,95,50,27,228,167,145,39,231,260,141,59,38,0,232,86,143,207,37,205,250,177,198,60,206,184,55,208,234,96,251,214,83,161,227,224,154,243,103,123,9,67,130,238,41,241,105,188,179,261,20,242,34,150,99,226,176,212,18,210",
+            "Placed": ""
+        },
+        "darkMode": false,
+        "highlightpin1": "none",
+        "redrawOnDrag": true,
+        "boardRotation": 0,
+        "offsetBackRotation": false,
+        "renderPads": true,
+        "renderReferences": true,
+        "renderValues": true,
+        "renderSilkscreen": true,
+        "renderFabrication": false,
+        "renderDnpOutline": false,
+        "renderTracks": false,
+        "renderZones": false,
+        "columnOrder": [
+            "checkboxes",
+            "References",
+            "Value",
+            "Footprint",
+            "Quantity"
+        ],
+        "hiddenColumns": [],
+        "netColors": {},
+        "markWhenChecked": "",
+        "highlightRowOnClick": false
+    }
+}

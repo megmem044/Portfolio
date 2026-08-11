@@ -1,0 +1,158 @@
+# =============================================================================
+# C++ / General
+# =============================================================================
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Linker files
+*.ilk
+
+# Debugger Files
+*.pdb
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# debug information files
+*.dwo
+*.log
+
+# =============================================================================
+# PlatformIO / ESP32 / Arduino (Firmware)
+# =============================================================================
+.pio
+.vscode/.browse.c_cpp.db*
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/ipch
+.vscode/extensions.json
+.vscode/settings.json
+.clang_complete
+.gcc-flags.json
+*.pio
+*.pyc
+__pycache__/
+
+# Arduino
+*.hex
+*.eep
+*.elf
+*.lss
+*.map
+*.sym
+
+# ESP32 specific
+sdkconfig
+sdkconfig.old
+build/
+*.bin
+
+# =============================================================================
+# KiCAD (Hardware)
+# =============================================================================
+# KiCAD temporary files
+*.000
+*.bak
+*.bck
+*.kicad_pcb-bak
+*.kicad_sch-bak
+*.kicad_prl
+*.sch-bak
+*-backups
+*-save.pro
+*-save.kicad_pcb
+*-cache.lib
+*-rescue.lib
+*-rescue.dcm
+fp-info-cache
+*.kicad_pcb.lck
+*.kicad_sch.lck
+fp-lib-table
+sym-lib-table
+
+# KiCAD gerber and fab outputs (can be regenerated)
+gerber/
+*.zip
+*.gbr
+*.drl
+*.csv
+*.pos
+
+# =============================================================================
+# 3D CAD / Mechanical
+# =============================================================================
+# STEP files backup
+*.step~
+*.stp~
+
+# FreeCAD
+*.FCStd1
+*.FCStd[0-9]*
+
+# Fusion 360 / local cache
+*.f3d.lock
+*.f3z.lock
+
+# OnShape (local copies/exports)
+*.onshape
+
+# STL mesh files (can be large, typically exported artifacts)
+# Uncomment if you don't want to track STL files:
+# *.stl
+
+# Common 3D formats that are exports
+# Uncomment if you don't want to track these:
+# *.obj
+# *.fbx
+# *.3mf
+
+# =============================================================================
+# OS / Editor
+# =============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+.directory
+
+# IDEs
+.idea/
+*.swp
+*.swo
+*~
