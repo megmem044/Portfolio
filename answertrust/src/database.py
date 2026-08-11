@@ -5,9 +5,11 @@ from __future__ import annotations
 import json
 import sqlite3
 from dataclasses import asdict
+from datetime import datetime, timezone
 from pathlib import Path
+from uuid import uuid4
 
-from src.models import Decision, EvaluationInput, EvaluationResult
+from src.models import Decision, EvaluationInput, EvaluationResult, RunState
 
 
 CREATE_EVALUATIONS_TABLE = """
@@ -31,6 +33,21 @@ CREATE TABLE IF NOT EXISTS evaluations (
 )
 """
 
+CREATE_EVALUATION_RUNS_TABLE = """
+CREATE TABLE IF NOT EXISTS evaluation_runs (
+    run_id TEXT PRIMARY KEY,
+    evaluation_id TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    state TEXT NOT NULL,
+    question TEXT NOT NULL,
+    reference TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    prompt_version TEXT NOT NULL,
+    FOREIGN KEY (evaluation_id) REFERENCES evaluations(evaluation_id)
+)
+"""
+
 
 def _connect(database_path: Path) -> sqlite3.Connection:
     """Open a database connection whose rows behave like mappings."""
@@ -44,6 +61,7 @@ def initialize_database(database_path: Path) -> None:
     database_path.parent.mkdir(parents=True, exist_ok=True)
     with _connect(database_path) as connection:
         connection.execute(CREATE_EVALUATIONS_TABLE)
+        connection.execute(CREATE_EVALUATION_RUNS_TABLE)
 
 
 def save_evaluation(
@@ -127,3 +145,97 @@ def get_evaluations(
         evaluations.append(evaluation)
 
     return evaluations
+
+
+def create_evaluation_run(
+    evaluation_input: EvaluationInput,
+    database_path: Path,
+) -> str:
+    """Persist a newly received evaluation run and return its identifier."""
+    initialize_database(database_path)
+    run_id = str(uuid4())
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    with _connect(database_path) as connection:
+        connection.execute(
+            """
+            INSERT INTO evaluation_runs (
+                run_id,
+                evaluation_id,
+                created_at,
+                updated_at,
+                state,
+                question,
+                reference,
+                answer,
+                prompt_version
+            ) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                run_id,
+                timestamp,
+                timestamp,
+                RunState.RECEIVED.value,
+                evaluation_input.question,
+                evaluation_input.reference,
+                evaluation_input.answer,
+                evaluation_input.prompt_version,
+            ),
+        )
+
+    return run_id
+
+
+def update_evaluation_run_state(
+    run_id: str,
+    state: RunState,
+    database_path: Path,
+    evaluation_id: str | None = None,
+) -> None:
+    """Persist a run's current state and optional completed evaluation ID."""
+    initialize_database(database_path)
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    with _connect(database_path) as connection:
+        cursor = connection.execute(
+            """
+            UPDATE evaluation_runs
+            SET state = ?, updated_at = ?, evaluation_id = COALESCE(?, evaluation_id)
+            WHERE run_id = ?
+            """,
+            (state.value, timestamp, evaluation_id, run_id),
+        )
+        if cursor.rowcount == 0:
+            raise KeyError(f"Unknown evaluation run: {run_id}")
+
+
+def get_evaluation_run(
+    run_id: str,
+    database_path: Path,
+) -> dict | None:
+    """Return one persisted evaluation run, or None when it does not exist."""
+    initialize_database(database_path)
+    with _connect(database_path) as connection:
+        row = connection.execute(
+            "SELECT * FROM evaluation_runs WHERE run_id = ?",
+            (run_id,),
+        ).fetchone()
+    return dict(row) if row is not None else None
+
+
+def get_evaluation_runs(
+    database_path: Path,
+    state: RunState | None = None,
+) -> list[dict]:
+    """Return persisted runs newest-first, optionally filtered by state."""
+    initialize_database(database_path)
+    query = "SELECT * FROM evaluation_runs"
+    parameters: tuple[str, ...] = ()
+    if state is not None:
+        query += " WHERE state = ?"
+        parameters = (state.value,)
+    query += " ORDER BY created_at DESC"
+
+    with _connect(database_path) as connection:
+        rows = connection.execute(query, parameters).fetchall()
+    return [dict(row) for row in rows]

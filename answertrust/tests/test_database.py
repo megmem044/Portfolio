@@ -7,12 +7,16 @@ from datetime import datetime, timezone
 import pytest
 
 from src.database import (
+    create_evaluation_run,
+    get_evaluation_run,
+    get_evaluation_runs,
     get_evaluations,
     initialize_database,
     save_evaluation,
+    update_evaluation_run_state,
 )
 from src.evaluator import evaluate_answer
-from src.models import Decision, EvaluationInput
+from src.models import Decision, EvaluationInput, RunState
 
 
 def supported_input(answer: str = "Paris") -> EvaluationInput:
@@ -113,3 +117,67 @@ def test_duplicate_evaluation_id_is_rejected(tmp_path):
 
     with pytest.raises(sqlite3.IntegrityError):
         save_evaluation(evaluation_input, result, database_path)
+
+
+def test_create_evaluation_run_starts_in_received_state(tmp_path):
+    database_path = tmp_path / "answertrust.db"
+    evaluation_input = supported_input()
+
+    run_id = create_evaluation_run(evaluation_input, database_path)
+    run = get_evaluation_run(run_id, database_path)
+
+    assert run is not None
+    assert run["run_id"] == run_id
+    assert run["state"] == RunState.RECEIVED.value
+    assert run["evaluation_id"] is None
+    assert run["question"] == evaluation_input.question
+    assert run["reference"] == evaluation_input.reference
+    assert run["answer"] == evaluation_input.answer
+
+
+def test_update_evaluation_run_state_and_evaluation_id(tmp_path):
+    database_path = tmp_path / "answertrust.db"
+    evaluation_input = supported_input()
+    result = evaluate_answer(evaluation_input)
+    save_evaluation(evaluation_input, result, database_path)
+    run_id = create_evaluation_run(evaluation_input, database_path)
+
+    update_evaluation_run_state(
+        run_id,
+        RunState.APPROVED,
+        database_path,
+        evaluation_id=result.evaluation_id,
+    )
+    run = get_evaluation_run(run_id, database_path)
+
+    assert run is not None
+    assert run["state"] == RunState.APPROVED.value
+    assert run["evaluation_id"] == result.evaluation_id
+
+
+def test_get_evaluation_runs_can_filter_by_state(tmp_path):
+    database_path = tmp_path / "answertrust.db"
+    first_run_id = create_evaluation_run(supported_input(), database_path)
+    second_run_id = create_evaluation_run(supported_input("Lyon"), database_path)
+    update_evaluation_run_state(
+        second_run_id,
+        RunState.REJECTED,
+        database_path,
+    )
+
+    received_runs = get_evaluation_runs(database_path, RunState.RECEIVED)
+    rejected_runs = get_evaluation_runs(database_path, RunState.REJECTED)
+
+    assert [run["run_id"] for run in received_runs] == [first_run_id]
+    assert [run["run_id"] for run in rejected_runs] == [second_run_id]
+
+
+def test_updating_unknown_evaluation_run_raises_key_error(tmp_path):
+    database_path = tmp_path / "answertrust.db"
+
+    with pytest.raises(KeyError, match="Unknown evaluation run"):
+        update_evaluation_run_state(
+            "missing-run",
+            RunState.FAILED,
+            database_path,
+        )

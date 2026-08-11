@@ -2,14 +2,13 @@
 
 import streamlit as st
 
-from src import database
 from src.config import DATABASE_PATH
-from src.evaluator import evaluate_answer
 from src.models import Decision, EvaluationInput, EvaluationResult
 from src.transformer_evaluator import (
     LocalTransformerEvaluator,
     PROMPT_VERSIONS,
 )
+from src.workflow import execute_evaluation_run
 
 
 st.set_page_config(
@@ -148,24 +147,23 @@ if submitted:
     transformer_evaluator = (
         get_transformer_evaluator() if use_transformer else None
     )
-    evaluation_result = evaluate_answer(
-        evaluation_input,
-        transformer_evaluator=transformer_evaluator,
-    )
+    try:
+        run_id, evaluation_result = execute_evaluation_run(
+            evaluation_input,
+            DATABASE_PATH,
+            transformer_evaluator=transformer_evaluator,
+        )
+    except Exception:
+        st.error(
+            "The evaluation run failed. Its FAILED state was saved for "
+            "later inspection."
+        )
+        st.stop()
+
     show_result(evaluation_result)
 
     is_valid_evaluation = (
         evaluation_result.dimension_scores[0].name != "Validation"
     )
     if is_valid_evaluation:
-        try:
-            database.save_evaluation(
-                evaluation_input,
-                evaluation_result,
-                DATABASE_PATH,
-            )
-            st.caption("Evaluation saved to local history.")
-        except Exception:
-            st.warning(
-                "The evaluation completed, but it could not be saved to history."
-            )
+        st.caption("Evaluation saved to local history.")

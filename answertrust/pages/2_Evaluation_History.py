@@ -5,7 +5,7 @@ from datetime import datetime
 import streamlit as st
 
 from src.config import DATABASE_PATH
-from src.database import get_evaluations
+from src.database import get_evaluation_runs, get_evaluations
 from src.models import Decision
 
 
@@ -36,11 +36,25 @@ except Exception:
     st.error("Evaluation history could not be loaded.")
     evaluations = []
 
+try:
+    runs = get_evaluation_runs(DATABASE_PATH)
+except Exception:
+    st.warning("Workflow states could not be loaded.")
+    runs = []
+
+run_by_evaluation_id = {
+    run["evaluation_id"]: run
+    for run in runs
+    if run["evaluation_id"] is not None
+}
+
 if not evaluations:
     st.info("No saved evaluations match this filter.")
 
 for evaluation in evaluations:
     timestamp = datetime.fromisoformat(evaluation["timestamp"])
+    run = run_by_evaluation_id.get(evaluation["evaluation_id"])
+    workflow_state = run["state"] if run else "LEGACY"
     heading = (
         f'{evaluation["final_decision"]} · '
         f'{evaluation["overall_score"]}/100 · '
@@ -48,6 +62,13 @@ for evaluation in evaluations:
     )
 
     with st.expander(heading):
+        st.write(f"**Workflow state:** {workflow_state}")
+        if run:
+            st.caption(f'Run ID: {run["run_id"]}')
+        else:
+            st.caption(
+                "This evaluation predates persistent workflow runs."
+            )
         st.write(f'**Question:** {evaluation["question"]}')
         st.write(f'**Reference:** {evaluation["reference"]}')
         st.write(f'**Answer:** {evaluation["answer"]}')

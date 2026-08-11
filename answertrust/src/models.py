@@ -13,6 +13,17 @@ class Decision(str, Enum):
     REJECT = "REJECT"
 
 
+class RunState(str, Enum):
+    """Durable lifecycle states for one answer evaluation run."""
+
+    RECEIVED = "RECEIVED"
+    EVALUATING = "EVALUATING"
+    HUMAN_REVIEW = "HUMAN_REVIEW"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    FAILED = "FAILED"
+
+
 @dataclass
 class EvaluationInput:
     question: str
