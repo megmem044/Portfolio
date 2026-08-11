@@ -1,0 +1,412 @@
+<!-- File: volunteer/volunteer_browse_opportunities.html
+     Purpose:
+     Allows volunteers to browse all available roles and filter them by keyword,
+     language level, and task complexity. Uses the axolotl theme consistent
+     across all volunteer-facing pages.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Browse Opportunities</title>
+
+    <style>
+        :root {
+            --bg: #FFEFF3;
+            --primary: #E46B8C;
+            --primary-dark: #C15575;
+            --card: #ffffff;
+            --card-border: #f7d3e2;
+            --text: #44393D;
+            --muted: #6F6A7A;
+            --shadow: rgba(228, 107, 140, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .page-header {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .back-btn {
+            background: var(--primary);
+            color: white;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 4px 10px var(--shadow);
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .page-container {
+            width: 92%;
+            max-width: 900px;
+            margin: 40px auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            margin-bottom: 28px;
+        }
+
+        /* Filter section */
+        .filter-box {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            padding: 20px;
+            border-radius: 14px;
+            margin-bottom: 28px;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .filter-row label {
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .filter-row input,
+        .filter-row select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            margin-top: 4px;
+        }
+
+        /* Role cards */
+        .role-card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            padding: 22px;
+            border-radius: 18px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .role-title {
+            font-size: 22px;
+            color: var(--primary-dark);
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .apply-btn {
+            padding: 10px 16px;
+            background: var(--primary);
+            border: none;
+            color: white;
+            border-radius: 12px;
+            font-size: 14px;
+            margin-top: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px var(--shadow);
+            font-weight: 600;
+        }
+
+        .apply-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+
+<body>
+<div class="page-container">
+
+    <div class="page-header">
+        <h1>Browse Opportunities</h1>
+        <a href="/volunteer/home/" class="back-btn">← Back</a>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-box">
+        <div class="filter-row">
+            <div style="flex: 1;">
+                <label for="searchKeyword">Search</label>
+                <input id="searchKeyword" type="text" placeholder="Search by title or location">
+            </div>
+
+            <div style="flex: 1;">
+                <label for="languageLevel">Language Level</label>
+                <select id="languageLevel">
+                    <option value="">Any</option>
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                </select>
+            </div>
+
+            <div style="flex: 1;">
+                <label for="complexityFilter">Task Complexity</label>
+                <select id="complexityFilter">
+                    <option value="">Any</option>
+                    <option value="simple">Simple</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="complex">Complex</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Opportunities List: prefer events, fall back to roles -->
+    <div id="opportunityList">
+        {% if events %}
+            {% for ev in events %}
+            <div class="role-card"
+                 data-title="{{ ev.name|lower }}"
+                 data-location="{{ ev.location|lower }}"
+                 data-language=""
+                 data-complexity="">
+
+                <div class="role-title">{{ ev.name }}</div>
+
+                <p><strong>Date:</strong> {{ ev.start_datetime|date:"M d, Y" }} - {{ ev.end_datetime|date:"M d, Y" }}</p>
+                <p><strong>Location:</strong> {{ ev.location }}</p>
+                <p>{{ ev.description }}</p>
+
+                {% if ev.shifts.all %}
+                <div style="margin-top: 14px; padding: 12px; background: #fff6fa; border-radius: 10px;">
+                    <strong style="color: var(--primary-dark); font-size: 15px;">Available Shifts:</strong>
+                    <div style="margin-top: 12px;">
+                    {% for shift in ev.shifts.all %}
+                        <div style="margin-bottom: 12px; padding: 12px; background: white; border-radius: 8px; border-left: 3px solid var(--primary);">
+                            <div style="margin-bottom: 8px;">
+                                <strong>{{ shift.shift_date|date:"D, M d" }}</strong> — 
+                                {{ shift.start_time|time:"g:i A" }} to {{ shift.end_time|time:"g:i A" }}
+                            </div>
+                            <div style="color: var(--muted); font-size: 13px; margin-bottom: 8px;">
+                                {{ shift.volunteers_needed }} volunteer{{ shift.volunteers_needed|pluralize }} needed
+                                {% if shift.description %}<br><em>{{ shift.description }}</em>{% endif %}
+                            </div>
+                            <button class="apply-btn" style="width: auto; padding: 8px 16px; font-size: 13px;" onclick="requestShift({{ shift.id }}, '{{ ev.name }}', '{{ shift.shift_date|date:"M d" }}')">Apply for this shift</button>
+                            <div id="msg-shift-{{ shift.id }}" class="message" style="display: none; margin-top: 8px;"></div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+            {% empty %}
+            <p>No events available. Try setting your availability to see matching opportunities.</p>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+    // Store volunteer ID for event requests
+    {% if volunteer_id %}
+    sessionStorage.setItem('volunteer_id', {{ volunteer_id }});
+    {% endif %}
+
+    // Check if availability was just updated and reload if needed
+    document.addEventListener('DOMContentLoaded', () => {
+        const availabilityUpdated = sessionStorage.getItem('availability_updated');
+        if (availabilityUpdated === 'true') {
+            sessionStorage.removeItem('availability_updated');
+            // Show a brief notification
+            const notification = document.createElement('div');
+            notification.style.cssText = 'position:fixed;top:20px;right:20px;background:#e7fbe9;color:#2d7a3b;padding:14px 20px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1000;font-weight:600;';
+            notification.textContent = '✓ Opportunities updated based on your availability';
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+            
+            // Reload the page to get filtered opportunities
+            window.location.reload();
+        }
+    });
+
+    /* Simple client-side filtering for volunteer browsing */
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const keywordInput = document.getElementById("searchKeyword");
+        const languageSelect = document.getElementById("languageLevel");
+        const complexitySelect = document.getElementById("complexityFilter");
+        const cards = document.querySelectorAll(".role-card");
+
+        function filterCards() {
+            const keyword = keywordInput.value.toLowerCase();
+            const language = languageSelect.value;
+            const complexity = complexitySelect.value;
+
+            cards.forEach(card => {
+                const matchesKeyword =
+                    !keyword ||
+                    card.dataset.title.includes(keyword) ||
+                    card.dataset.location.includes(keyword);
+
+                const matchesLanguage =
+                    !language || card.dataset.language === language;
+
+                const matchesComplexity =
+                    !complexity || card.dataset.complexity === complexity;
+
+                const show = matchesKeyword && matchesLanguage && matchesComplexity;
+                card.style.display = show ? "block" : "none";
+            });
+        }
+
+        keywordInput.addEventListener("keyup", filterCards);
+        languageSelect.addEventListener("change", filterCards);
+        complexitySelect.addEventListener("change", filterCards);
+    });
+
+    // Submit volunteer request for an event
+    async function requestEvent(eventId, eventName) {
+        try {
+            // Get volunteer ID from session (stored in page or cookie)
+            const volunteerId = sessionStorage.getItem('volunteer_id') || localStorage.getItem('volunteer_id');
+            
+            if (!volunteerId) {
+                alert('Please sign in as a volunteer first');
+                return;
+            }
+
+            const response = await fetch('/api/requests/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    volunteer: parseInt(volunteerId),
+                    event: eventId,
+                    message: ''
+                })
+            });
+
+            const msgDiv = document.getElementById(`msg-${eventId}`);
+            
+            if (response.status === 201) {
+                msgDiv.className = 'message success-message';
+                msgDiv.textContent = `✓ Request submitted for ${eventName}!`;
+                msgDiv.style.display = 'block';
+                setTimeout(() => msgDiv.style.display = 'none', 3000);
+            } else if (response.status === 409) {
+                msgDiv.className = 'message error-message';
+                msgDiv.textContent = 'You have already requested this event';
+                msgDiv.style.display = 'block';
+            } else {
+                msgDiv.className = 'message error-message';
+                msgDiv.textContent = 'Failed to submit request';
+                msgDiv.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error submitting request:', error);
+            alert('Error submitting request');
+        }
+    }
+
+    // Submit volunteer request for a specific shift
+    async function requestShift(shiftId, eventName, shiftDate) {
+        try {
+            // Get volunteer ID from session
+            const volunteerId = sessionStorage.getItem('volunteer_id') || localStorage.getItem('volunteer_id');
+            
+            if (!volunteerId) {
+                alert('Please sign in as a volunteer first');
+                return;
+            }
+
+            const response = await fetch('/api/shift-requests/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    volunteer: parseInt(volunteerId),
+                    shift: shiftId
+                })
+            });
+
+            const msgDiv = document.getElementById(`msg-shift-${shiftId}`);
+            
+            if (response.status === 201) {
+                msgDiv.className = 'message success-message';
+                msgDiv.textContent = `✓ Request submitted for ${eventName} on ${shiftDate}!`;
+                msgDiv.style.display = 'block';
+                setTimeout(() => msgDiv.style.display = 'none', 4000);
+            } else if (response.status === 409) {
+                msgDiv.className = 'message error-message';
+                msgDiv.textContent = 'You have already requested this shift';
+                msgDiv.style.display = 'block';
+            } else {
+                const data = await response.json();
+                msgDiv.className = 'message error-message';
+                msgDiv.textContent = data.error || 'Failed to submit request';
+                msgDiv.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error submitting request:', error);
+            const msgDiv = document.getElementById(`msg-shift-${shiftId}`);
+            msgDiv.className = 'message error-message';
+            msgDiv.textContent = 'Failed to submit request';
+            msgDiv.style.display = 'block';
+        }
+    }
+
+    function getCookie(name) {
+        let value = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    value = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return value;
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,366 @@
+<!-- File: signups/templates/coordinator/coordinator_request_detail.html
+     Purpose:
+       Coordinator-facing page that shows full details about a single volunteer
+       request for an event. Allows approving or declining the request and
+       viewing relevant volunteer information and certificates.
+       Uses the cerulean coordinator theme.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Volunteer Request Detail</title>
+
+    <style>
+        :root {
+            /* Blue palette matching coordinator dashboard */
+            --bg: #F0F8FF;
+            --card: #FFFFFF;
+            --primary: #4A90E2;
+            --primary-dark: #2E5C8A;
+            --text: #1F3A4D;
+            --muted: #6B7C8F;
+            --shadow: rgba(74, 144, 226, 0.15);
+            --accent: #F5FAFF;
+            --approved: #4caf50;
+            --declined: #d9534f;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            font-family: Inter, system-ui, Arial, sans-serif; 
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px;
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 6px 20px var(--shadow);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--primary-dark);
+            font-size: 2rem;
+        }
+
+        .back-btn {
+            display: inline-block;
+            background: var(--primary);
+            padding: 10px 16px;
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.25s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .section {
+            margin-bottom: 28px;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            color: var(--primary-dark);
+            font-weight: 700;
+            margin-bottom: 12px;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 8px;
+        }
+
+        .info-card {
+            background: var(--accent);
+            border-radius: 12px;
+            padding: 18px;
+            margin-top: 8px;
+        }
+
+        .info-row {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            margin-bottom: 12px;
+            align-items: start;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .info-value {
+            color: var(--muted);
+        }
+
+        ul {
+            margin: 8px 0 0 0;
+            padding-left: 20px;
+            color: var(--muted);
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        .btn-row {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            font-weight: 600;
+        }
+
+        .approve-btn { 
+            background: #d4edda;
+            color: #155724;
+        }
+        .approve-btn:hover { 
+            background: #c3e6cb;
+            color: #155724;
+        }
+
+        .decline-btn { 
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .decline-btn:hover { 
+            background: #f5c6cb;
+            color: #721c24;
+        }
+
+        textarea {
+            width: 100%;
+            margin-top: 10px;
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            font-family: Inter, system-ui, Arial, sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="header">
+        <h1>Volunteer Request Details</h1>
+        <button class="back-btn" onclick="window.location.href='/coordinator/requests/'">← Back</button>
+    </div>
+
+    <!-- Volunteer Info -->
+    <div class="section">
+        <div class="section-title">Volunteer Information</div>
+        <div class="info-card">
+            <div class="info-row">
+                <div class="info-label">Name:</div>
+                <div class="info-value" id="volName">Loading...</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Email:</div>
+                <div class="info-value" id="volEmail">Loading...</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Phone:</div>
+                <div class="info-value" id="volPhone">Not provided</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">School:</div>
+                <div class="info-value" id="volSchool">Not provided</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">English Level:</div>
+                <div class="info-value" id="volEnglish">N/A</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Interests:</div>
+                <ul id="volInterests"></ul>
+            </div>
+        </div>
+        <button class="btn" id="viewProfileBtn" style="margin-top: 15px; background: #4A90E2; color: white;">View Full Profile</button>
+    </div>
+
+    <!-- Event Information -->
+    <div class="section">
+        <div class="section-title">Event Information</div>
+        <div class="info-card">
+            <div class="info-row">
+                <div class="info-label">Event:</div>
+                <div class="info-value" id="roleName">Loading...</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Date:</div>
+                <div class="info-value" id="roleDate">Loading...</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Location:</div>
+                <div class="info-value" id="roleLocation">N/A</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Decision Section -->
+    <div class="section">
+        <div class="section-title">Decision</div>
+        <div class="info-card">
+            <textarea id="decisionNote" placeholder="Add a note (optional when approving, recommended when declining)..." rows="4"></textarea>
+
+            <div class="btn-row">
+                <button class="btn approve-btn" onclick="approveRequest()">Approve</button>
+                <button class="btn decline-btn" onclick="declineRequest()">Decline</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</div>
+
+<script>
+    // Request ID from URL
+    const parts = window.location.pathname.split("/").filter(p => p);
+    const requestId = parts[parts.length - 1];
+
+    async function loadRequest() {
+        try {
+            const res = await fetch(`/api/requests/${requestId}/`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const req = await res.json();
+
+            // Store volunteer ID for View Profile button
+            window.currentVolunteerId = req.volunteer;
+
+            // Volunteer details
+            await loadVolunteer(req.volunteer);
+            // Event details
+            await loadEvent(req.event);
+        } catch (error) {
+            console.error("Error loading request:", error);
+            alert("Error loading request details: " + error.message);
+        }
+    }
+
+    async function loadVolunteer(id) {
+        try {
+            const res = await fetch(`/api/volunteers/${id}/`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const v = await res.json();
+
+            document.getElementById("volName").textContent = v.name;
+            document.getElementById("volEmail").textContent = v.email;
+            document.getElementById("volPhone").textContent = v.phone || "Not provided";
+            document.getElementById("volSchool").textContent = v.school || "Not provided";
+            
+            // Format English level with capital first letter
+            const englishLevel = v.english_level || "N/A";
+            document.getElementById("volEnglish").textContent = englishLevel.charAt(0).toUpperCase() + englishLevel.slice(1);
+
+            const ul = document.getElementById("volInterests");
+            ul.innerHTML = "";
+            if (v.cultural_interests && v.cultural_interests.length > 0) {
+                v.cultural_interests.forEach(interest => {
+                    ul.innerHTML += `<li>${interest.name}</li>`;
+                });
+            } else {
+                ul.innerHTML = "<li>No preferences selected</li>";
+            }
+        } catch (error) {
+            console.error("Error loading volunteer:", error);
+        }
+    }
+
+    async function loadEvent(id) {
+        try {
+            const res = await fetch(`/api/events/${id}/`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const e = await res.json();
+
+            document.getElementById("roleName").textContent = e.name;
+            
+            // Format the date properly
+            if (e.start_datetime) {
+                const date = new Date(e.start_datetime);
+                const formatted = date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                document.getElementById("roleDate").textContent = formatted;
+            } else {
+                document.getElementById("roleDate").textContent = "N/A";
+            }
+            
+            document.getElementById("roleLocation").textContent = e.location || "N/A";
+        } catch (error) {
+            console.error("Error loading event:", error);
+        }
+    }
+
+    async function approveRequest() {
+        const note = document.getElementById("decisionNote").value;
+
+        await fetch(`/api/requests/${requestId}/approve/`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({notes: note})
+        });
+
+        alert("Request approved");
+        window.location.href = "/coordinator/requests/";
+    }
+
+    async function declineRequest() {
+        const note = document.getElementById("decisionNote").value;
+
+        await fetch(`/api/requests/${requestId}/decline/`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({notes: note})
+        });
+
+        alert("Request declined");
+        window.location.href = "/coordinator/requests/";
+    }
+
+    loadRequest();
+
+    // Set up View Profile button
+    document.getElementById("viewProfileBtn").addEventListener("click", function() {
+        if (window.currentVolunteerId) {
+            window.location.href = `/coordinator/volunteers/${window.currentVolunteerId}/`;
+        }
+    });
+</script>
+
+</body>
+</html>

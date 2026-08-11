@@ -1,0 +1,120 @@
+<!-- File: signups/templates/signups/home.html
+    Purpose:
+       Main landing page for the entire system.
+       This version adds scheduling links for availability and shifts.
+       The style keeps the same blush pink theme.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>VolunteerHub</title>
+
+    <style>
+        :root{
+            --bg:#FFEFF3;
+            --primary:#E46B8C;
+            --primary-dark:#C15575;
+            --card:#ffffff;
+            --shadow:rgba(0,0,0,0.10);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            padding: 32px;
+            background: var(--card);
+            border-radius: 20px;
+            box-shadow: 0 8px 25px var(--shadow);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            margin-bottom: 30px;
+        }
+
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .btn {
+            padding: 14px;
+            text-align: center;
+            background: var(--primary);
+            color: white;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        /* The big signup button keeps its original style */
+        .signup-btn {
+            background:#E46B8C;
+            color:white;
+            border:none;
+            padding:18px 0;
+            border-radius:20px;
+            width:100%;
+            font-size:1.3rem;
+            margin-bottom:24px;
+            cursor:pointer;
+        }
+
+        .signup-btn:hover {
+            background: var(--primary-dark);
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <h1>VolunteerHub</h1>
+
+    <!-- Main volunteer signup button -->
+    <button onclick="window.location.href='/volunteer-signup/'"
+            class="signup-btn">
+        Volunteer Signup
+    </button>
+
+    <div class="menu">
+
+        <!-- Existing core navigation -->
+        <a class="btn" href="/volunteers-page/">View Volunteers</a>
+        <a class="btn" href="/certificates-page/">Certificate Upload</a>
+        <a class="btn" href="/emi/preferences/">Preferences</a>
+        <a class="btn" href="/posts/">Announcements</a>
+        <a class="btn" href="/posts/create/">Create New Announcement</a>
+
+        <!-- New Scheduling Navigation -->
+        <!-- These links send users to the new availability and shift pages -->
+        <a class="btn" href="/availability/">Set Availability</a>
+        <a class="btn" href="/volunteer-shifts/">Your Shifts</a>
+        <a class="btn" href="/coordinator-shifts/">Coordinator Shift Calendar</a>
+
+    </div>
+</div>
+</body>
+</html>

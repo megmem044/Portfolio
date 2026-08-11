@@ -1,0 +1,524 @@
+<!-- File: volunteer/volunteer_availability.html
+     Purpose:
+       Allows volunteers to select their weekly availability.
+       Uses axolotl blush-pink theme consistent with all volunteer UI.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Availability</title>
+
+    <style>
+        :root {
+            --bg: #FFEFF3;
+            --primary: #E46B8C;
+            --primary-dark: #C15575;
+            --card: #ffffff;
+            --muted: #6F6A7A;
+            --shadow: rgba(228, 107, 140, 0.18);
+        }
+
+        * {
+            font-family: Inter, system-ui, Arial, sans-serif;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+        }
+
+        .page-header {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            background: var(--primary);
+            color: white;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 4px 10px var(--shadow);
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 750px;
+            padding: 32px;
+            background: var(--card);
+            border-radius: 20px;
+            box-shadow: 0 6px 16px var(--shadow);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-dark);
+            margin-top: 0;
+            margin-bottom: 30px;
+        }
+
+        .day-box {
+            background: #fff6fa;
+            padding: 18px;
+            border-radius: 14px;
+            margin-bottom: 22px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        /* Weekly calendar grid */
+        .calendar {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+        }
+
+        .calendar th, .calendar td {
+            border: 1px solid #f4e3ea;
+            padding: 6px;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        .calendar thead th {
+            background: #fff6fa;
+            color: var(--primary-dark);
+            font-weight: 700;
+            padding: 10px;
+        }
+
+        .time-cell {
+            width: 10%;
+            cursor: pointer;
+            user-select: none;
+            background: #fff;
+        }
+
+        .time-cell.selected {
+            background: linear-gradient(90deg,#ffdbe9,#ffe6ef);
+        }
+
+        .time-col {
+            width: 8%;
+            font-weight: 600;
+            background:#fff;
+        }
+
+        .day-title {
+            color: var(--primary-dark);
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .time-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 10px;
+        }
+
+        input[type="time"] {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .add-btn {
+            margin-top: 10px;
+            background: var(--primary);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .add-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .submit-btn {
+            width: 100%;
+            margin-top: 30px;
+            background: var(--primary);
+            color: white;
+            padding: 14px 18px;
+            border-radius: 12px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 5px 12px var(--shadow);
+        }
+
+        .submit-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        .message.success {
+            background: #e7fbe9;
+            color: #2d7a3b;
+        }
+
+        .message.error {
+            background: #fde2e2;
+            color: #9d3b3b;
+        }
+
+        /* Button group for save and back-to-dashboard */
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+            justify-content: center;
+        }
+
+        .button-group button {
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .back-btn {
+            background: #ccc;
+            color: #333;
+        }
+
+        .back-btn:hover {
+            background: #bbb;
+        }
+
+        /* Navigation controls for week switching */
+        .week-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .week-nav button {
+            background: var(--primary);
+            color: white;
+            padding: 8px 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 6px var(--shadow);
+        }
+
+        .week-nav button:hover {
+            background: var(--primary-dark);
+        }
+
+        .week-nav button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .week-display {
+            font-weight: 700;
+            color: var(--primary-dark);
+            font-size: 16px;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="page-header">
+        <h1>Your Availability</h1>
+        <a href="/volunteer/home/" class="back-btn">← Back</a>
+    </div>
+
+    <div class="week-nav">
+        <button onclick="prevWeek()">← Previous Week</button>
+        <div class="week-display" id="weekDisplay"></div>
+        <button onclick="nextWeek()">Next Week →</button>
+    </div>
+
+    <div id="calendarContainer"></div>
+
+    <div class="button-group">
+        <button class="submit-btn" onclick="saveAvailability()">Save Availability</button>
+    </div>
+    <div id="message" class="message"></div>
+
+</div>
+
+
+<script>
+
+    // Get volunteer_id from server-side template context (set by view)
+    const volunteerId = "{{ volunteer_id|default:'' }}";
+    const csrf = getCookie("csrftoken");
+
+    // Redirect to signin if not authenticated
+    if (!volunteerId) {
+        document.addEventListener('DOMContentLoaded', () => {
+            const msg = document.getElementById('message');
+            msg.className = 'message error';
+            msg.textContent = 'Not signed in. Redirecting to sign-in...';
+            msg.style.display = 'block';
+            setTimeout(() => {
+                window.location.href = '/volunteer/signin/';
+            }, 2000);
+        });
+    }
+
+    function getCookie(name) {
+        let value = null;
+        const parts = document.cookie.split(";");
+        for (let c of parts) {
+            c = c.trim();
+            if (c.startsWith(name + "=")) {
+                value = decodeURIComponent(c.substring(name.length + 1));
+                break;
+            }
+        }
+        return value;
+    }
+
+    const DAYS = [
+        "monday", "tuesday", "wednesday",
+        "thursday", "friday", "saturday", "sunday"
+    ];
+
+    // Track current week offset (0 = this week, 1 = next week, etc.)
+    let currentWeekOffset = 0;
+
+    // Calendar time slots: 30-minute granularity (8:00, 8:30, 9:00, ..., 19:30)
+    const startHour = 8;
+    const endHour = 20; // exclusive
+
+    // Limit to next 4 weeks only
+    const MAX_WEEKS = 4;
+
+    function getWeekDates(weekOffset = 0) {
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, ...
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // offset to Monday
+        const monday = new Date(today);
+        monday.setDate(today.getDate() + mondayOffset + (weekOffset * 7));
+
+        const dates = [];
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(monday);
+            d.setDate(monday.getDate() + i);
+            dates.push(d);
+        }
+        return dates;
+    }
+
+    function updateWeekDisplay() {
+        const weekDates = getWeekDates(currentWeekOffset);
+        const startDate = weekDates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const endDate = weekDates[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        document.getElementById('weekDisplay').textContent = `${startDate} — ${endDate}`;
+        
+        // Disable next button if at max weeks
+        const nextBtn = document.querySelector('.week-nav button:last-of-type');
+        if (nextBtn) nextBtn.disabled = currentWeekOffset >= MAX_WEEKS - 1;
+    }
+
+    function prevWeek() {
+        currentWeekOffset = Math.max(0, currentWeekOffset - 1);
+        loadExistingAvailability();
+    }
+
+    function nextWeek() {
+        if (currentWeekOffset < MAX_WEEKS - 1) {
+            currentWeekOffset += 1;
+            loadExistingAvailability();
+        }
+    }
+
+    function buildCalendar(existing = {}) {
+        const container = document.getElementById('calendarContainer');
+        container.innerHTML = '';
+
+        const weekDates = getWeekDates(currentWeekOffset);
+
+        const table = document.createElement('table');
+        table.className = 'calendar';
+
+        const thead = document.createElement('thead');
+        const headRow = document.createElement('tr');
+        headRow.appendChild(document.createElement('th'));// corner cell for times
+
+        DAYS.forEach((d, idx) => {
+            const th = document.createElement('th');
+            const date = weekDates[idx];
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+            const monthDay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            th.textContent = `${dayName}\n${monthDay}`;
+            th.style.whiteSpace = 'pre-wrap';
+            th.style.lineHeight = '1.4';
+            th.style.fontSize = '0.9rem';
+            headRow.appendChild(th);
+        });
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+
+        for (let h = startHour; h < endHour; h++) {
+            // Two rows per hour: one for :00 and one for :30
+            for (let m = 0; m < 60; m += 30) {
+                const row = document.createElement('tr');
+                const timeCell = document.createElement('td');
+                timeCell.className = 'time-col';
+                timeCell.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+                row.appendChild(timeCell);
+
+                DAYS.forEach(d => {
+                    const td = document.createElement('td');
+                    td.className = 'time-cell';
+                    td.dataset.day = d;
+                    td.dataset.time = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+
+                    // mark selected if existing ranges include this time slot
+                    const ranges = existing[d] || [];
+                    for (const r of ranges) {
+                        const [s,e] = r.split('-');
+                        if (s <= td.dataset.time && td.dataset.time < e) {
+                            td.classList.add('selected');
+                            break;
+                        }
+                    }
+
+                    td.onclick = () => td.classList.toggle('selected');
+                    row.appendChild(td);
+                });
+
+                tbody.appendChild(row);
+            }
+        }
+
+        table.appendChild(tbody);
+        container.appendChild(table);
+    }
+
+    async function loadExistingAvailability() {
+        let existing = {};
+        if (volunteerId) {
+            const res = await fetch(`/api/volunteers/${volunteerId}/`);
+            if (res.ok) {
+                const data = await res.json();
+                existing = data.availability || {};
+            }
+        }
+        buildCalendar(existing);
+        updateWeekDisplay();
+    }
+
+    // Convert selected cells into ranges like '08:00-08:30' or '08:00-10:00' per day
+    function collectAvailabilityFromCalendar() {
+        const availability = {};
+        DAYS.forEach(d => {
+            const cells = Array.from(document.querySelectorAll(`td.time-cell[data-day="${d}"]`));
+            const times = cells.map(c => ({time: c.dataset.time, sel: c.classList.contains('selected')}));
+
+            const ranges = [];
+            let start = null;
+            for (let i = 0; i < times.length; i++) {
+                if (times[i].sel && start === null) {
+                    start = times[i].time;
+                }
+                if ((!times[i].sel || i === times.length - 1) && start !== null) {
+                    // end is the next time slot after current or current+30min if last is selected
+                    const endTime = (i === times.length - 1 && times[i].sel) ? addThirtyMinutes(times[i].time) : times[i].time;
+                    ranges.push(`${start}-${endTime}`);
+                    start = null;
+                }
+            }
+            availability[d] = ranges;
+        });
+        return availability;
+    }
+
+    function addThirtyMinutes(hhmm) {
+        const [hh, mm] = hhmm.split(':').map(Number);
+        let nh = hh;
+        let nm = mm + 30;
+        if (nm >= 60) {
+            nm = 0;
+            nh = nh + 1;
+        }
+        return `${String(nh).padStart(2,'0')}:${String(nm).padStart(2,'0')}`;
+    }
+
+    async function saveAvailability() {
+        const msg = document.getElementById('message');
+        msg.style.display = 'none';
+
+        if (!volunteerId) {
+            msg.className = 'message error';
+            msg.textContent = 'Session not found.';
+            msg.style.display = 'block';
+            return;
+        }
+
+        const availability = collectAvailabilityFromCalendar();
+
+        const res = await fetch(`/api/volunteers/${volunteerId}/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrf
+            },
+            body: JSON.stringify({ availability })
+        });
+
+        if (res.ok) {
+            msg.className = 'message success';
+            msg.textContent = 'Availability saved. Your opportunities list will be updated.';
+            msg.style.display = 'block';
+            
+            // Set a flag in sessionStorage to trigger opportunities refresh
+            sessionStorage.setItem('availability_updated', 'true');
+        } else {
+            msg.className = 'message error';
+            msg.textContent = 'Could not save availability.';
+            msg.style.display = 'block';
+        }
+    }
+
+    loadExistingAvailability();
+
+</script>
+
+</body>
+</html>

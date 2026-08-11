@@ -1,0 +1,457 @@
+<!-- File: signups/templates/coordinator/coordinator_volunteer_signups.html
+     Purpose:
+     Display shifts for all published events and show volunteer signup requests
+     for each shift with ability to approve/reject them
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Volunteer Signups</title>
+
+    <style>
+        :root {
+            /* Blue palette matching coordinator dashboard */
+            --bg: #F0F8FF;
+            --primary: #4A90E2;
+            --primary-dark: #2E5C8A;
+            --card: #FFFFFF;
+            --text: #1F3A4D;
+            --muted: #6B7C8F;
+            --shadow: rgba(74, 144, 226, 0.15);
+            --success: #4CAF50;
+            --danger: #f44336;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 15px;
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 28px;
+            font-size: 22px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            color: var(--primary);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.25s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+            color: white;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            margin-top: 0;
+            text-align: center;
+            color: var(--primary-dark);
+            margin-bottom: 28px;
+        }
+
+        .back-link {
+            margin-bottom: 24px;
+        }
+
+        .back-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link a:hover {
+            color: var(--primary-dark);
+        }
+
+        .event-section {
+            background: var(--card);
+            padding: 24px;
+            margin-bottom: 28px;
+            border-radius: 14px;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .event-header {
+            color: var(--primary-dark);
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .event-meta {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 18px;
+        }
+
+        .shifts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 18px;
+        }
+
+        .shift-card {
+            background: #f9fbfd;
+            border: 1px solid #d7e7f7;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .shift-info {
+            color: var(--primary-dark);
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 15px;
+        }
+
+        .shift-time {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .signups-list {
+            border-top: 1px solid #e0ecf7;
+            padding-top: 12px;
+            margin-top: 12px;
+        }
+
+        .signup-item {
+            background: white;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .signup-name {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .signup-status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: #e3f2fd;
+            color: var(--primary-dark);
+            text-transform: capitalize;
+        }
+
+        .signup-status.approved {
+            background: #e8f5e9;
+            color: var(--success);
+        }
+
+        .signup-status.declined {
+            background: #ffebee;
+            color: var(--danger);
+        }
+
+        .signup-status.pending {
+            background: #fff8e1;
+            color: #f57c00;
+        }
+
+        .btn-approve, .btn-decline {
+            border: none;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s ease;
+        }
+
+        .btn-approve {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-approve:hover {
+            background: #388e3c;
+        }
+
+        .btn-decline {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-decline:hover {
+            background: #d32f2f;
+        }
+
+        .no-signups {
+            color: var(--muted);
+            font-size: 14px;
+            padding: 10px;
+            font-style: italic;
+        }
+
+        .no-events {
+            text-align: center;
+            color: var(--muted);
+            padding: 40px 20px;
+            font-size: 16px;
+        }
+
+        .btn-small {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+            transition: background 0.2s ease;
+        }
+
+        .btn-small:hover {
+            background: var(--primary-dark);
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <div class="header-title">Volunteer Signups</div>
+</div>
+
+<div class="container">
+
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+        <a class="btn back-btn" href="/coordinator/dashboard/">← Back</a>
+    </div>
+
+    <h1>Volunteer Signups</h1>
+
+    <h1>Volunteer Signups</h1>
+
+    <div id="signupsContainer">
+        <div class="no-events">Loading signups...</div>
+    </div>
+</div>
+
+<script>
+    async function loadSignups() {
+        try {
+            // Fetch all published events
+            const eventsRes = await fetch('/api/events/?status=published');
+            if (!eventsRes.ok) {
+                document.getElementById('signupsContainer').innerHTML = '<div class="no-events">Unable to load events.</div>';
+                return;
+            }
+
+            const events = await eventsRes.json();
+
+            if (events.length === 0) {
+                document.getElementById('signupsContainer').innerHTML = '<div class="no-events">No published events with signups yet.</div>';
+                return;
+            }
+
+            let html = '';
+
+            for (const event of events) {
+                // Get shifts for this event
+                const shiftsRes = await fetch(`/api/events/${event.id}/shifts/`);
+                const shifts = shiftsRes.ok ? await shiftsRes.json() : [];
+
+                html += `
+                    <div class="event-section">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <div class="event-header">${event.name}</div>
+                            <a href="/coordinator/events/${event.id}/shifts/" class="btn-small">Manage Shifts</a>
+                        </div>
+                        <div class="event-meta">
+                            ${new Date(event.start_datetime).toLocaleDateString()} - 
+                            ${new Date(event.end_datetime).toLocaleDateString()}
+                        </div>
+                `;
+
+                if (shifts.length === 0) {
+                    html += '<div class="no-signups">No shifts defined for this event.</div>';
+                } else {
+                    html += '<div class="shifts-grid">';
+                    
+                    for (const shift of shifts) {
+                        const shiftDate = new Date(shift.shift_date).toLocaleDateString();
+                        html += `
+                            <div class="shift-card">
+                                <div class="shift-info">${shiftDate}</div>
+                                <div class="shift-time">${shift.start_time} - ${shift.end_time}</div>
+                                <div class="shift-time">Volunteers needed: ${shift.volunteers_needed}</div>
+                                <div class="signups-list" id="shift-${shift.id}">
+                                    <div class="no-signups">Loading signups...</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    html += '</div>';
+                }
+
+                html += '</div>';
+            }
+
+            document.getElementById('signupsContainer').innerHTML = html;
+
+            // Load shift requests for each shift
+            for (const event of events) {
+                const shiftsRes = await fetch(`/api/events/${event.id}/shifts/`);
+                const shifts = shiftsRes.ok ? await shiftsRes.json() : [];
+                
+                for (const shift of shifts) {
+                    loadShiftRequests(shift.id);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading signups:', error);
+            document.getElementById('signupsContainer').innerHTML = '<div class="no-events">Error loading signups.</div>';
+        }
+    }
+
+    async function loadShiftRequests(shiftId) {
+        try {
+            const res = await fetch(`/api/shift-requests/?shift=${shiftId}`);
+            const requests = res.ok ? await res.json() : [];
+            
+            const container = document.getElementById(`shift-${shiftId}`);
+            
+            if (requests.length === 0) {
+                container.innerHTML = '<div class="no-signups">No signup requests yet</div>';
+                return;
+            }
+
+            let html = '';
+            for (const req of requests) {
+                const statusClass = req.status === 'approved' ? 'approved' : req.status === 'declined' ? 'declined' : 'pending';
+                html += `
+                    <div class="signup-item">
+                        <div>
+                            <div class="signup-name">${req.volunteer_name}</div>
+                            <div style="font-size: 12px; color: var(--muted);">${req.volunteer_email}</div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span class="signup-status ${statusClass}">${req.status}</span>
+                            ${req.status === 'pending' ? `
+                                <button class="btn-approve" onclick="approveRequest(${req.id}, ${shiftId})">✓</button>
+                                <button class="btn-decline" onclick="declineRequest(${req.id}, ${shiftId})">✕</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        } catch (error) {
+            console.error(`Error loading requests for shift ${shiftId}:`, error);
+        }
+    }
+
+    async function approveRequest(requestId, shiftId) {
+        try {
+            const res = await fetch(`/api/shift-requests/${requestId}/approve/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ notes: '' })
+            });
+
+            if (res.ok) {
+                loadShiftRequests(shiftId);
+            } else {
+                alert('Error approving request');
+            }
+        } catch (error) {
+            console.error('Error approving request:', error);
+        }
+    }
+
+    async function declineRequest(requestId, shiftId) {
+        try {
+            const res = await fetch(`/api/shift-requests/${requestId}/decline/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ notes: '' })
+            });
+
+            if (res.ok) {
+                loadShiftRequests(shiftId);
+            } else {
+                alert('Error declining request');
+            }
+        } catch (error) {
+            console.error('Error declining request:', error);
+        }
+    }
+
+    function getCookie(name) {
+        let value = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    value = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return value;
+    }
+
+    // Load signups on page load
+    document.addEventListener('DOMContentLoaded', loadSignups);
+</script>
+
+</body>
+</html>

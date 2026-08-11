@@ -1,0 +1,61 @@
+<script>
+  // Get volunteer id from URL path
+  const pathParts = window.location.pathname.split("/");
+  const volunteerId = pathParts[2];
+
+  async function loadSummary() {
+    const res = await fetch(`/api/volunteers/${volunteerId}/summary/`);
+    const data = await res.json();
+
+    // Volunteer basic info
+    const v = data.volunteer;
+
+    document.getElementById("volName").textContent = v.name;
+    document.getElementById("email").textContent = "Email: " + v.email;
+    document.getElementById("status").textContent = "Active: " + (v.active ? "Yes" : "No");
+
+    // Compute total hours from enrollments
+    let totalHours = 0;
+    data.enrollments.forEach(e => {
+      totalHours += parseFloat(e.hours_worked);
+    });
+
+    document.getElementById("totalHours").textContent = totalHours.toFixed(2);
+
+    // Roles section
+    const rolesDiv = document.getElementById("rolesList");
+    rolesDiv.innerHTML = "";
+
+    data.enrollments.forEach(e => {
+      const r = document.createElement("div");
+      r.className = "item";
+
+      r.innerHTML = `
+        <p><strong>Role:</strong> ${e.role.title}</p>
+        <p><strong>Date:</strong> ${e.role.date}</p>
+        <p><strong>Hours Worked:</strong> ${e.hours_worked}</p>
+      `;
+
+      rolesDiv.appendChild(r);
+    });
+
+    // Certificates section
+    const certDiv = document.getElementById("certList");
+    certDiv.innerHTML = "";
+
+    data.certificates.forEach(c => {
+      const d = document.createElement("div");
+      d.className = "item";
+
+      d.innerHTML = `
+        <p><strong>${c.title}</strong></p>
+        <p>Status: ${c.status}</p>
+        <p>Uploaded: ${c.uploaded_at}</p>
+      `;
+
+      certDiv.appendChild(d);
+    });
+  }
+
+  loadSummary();
+</script>

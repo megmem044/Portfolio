@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Certificates</title>
+    <style>
+        :root {
+            --bg: #FFEFF3;
+            --primary: #E46B8C;
+            --primary-dark: #C15575;
+            --card: #ffffff;
+            --muted: #6F6A7A;
+            --shadow: rgba(228, 107, 140, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 36px;
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px;
+            background: var(--card);
+            border-radius: 20px;
+            box-shadow: 0 6px 18px var(--shadow);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--primary-dark);
+            font-size: 24px;
+        }
+
+        .back-btn {
+            background: var(--primary);
+            color: white;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 4px 10px var(--shadow);
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .message {
+            text-align: center;
+            color: var(--muted);
+            font-size: 16px;
+            padding: 40px 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Upload Certificates</h1>
+        <a href="/volunteer/home/" class="back-btn">← Back</a>
+    </div>
+    <div class="message">
+        <p>Certificates coming soon!</p>
+    </div>
+</div>
+</body>
+</html>

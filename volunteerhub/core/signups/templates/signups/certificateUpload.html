@@ -1,0 +1,253 @@
+<!-- File: signups/templates/certificateUpload.html
+     Purpose:
+       Volunteer-facing page for uploading certificates.
+       PlannerPaco later verifies them through a separate admin tool.
+       This file uses the blush-pink theme and ONLY uses API calls,
+       with no direct navigation to API pages.
+
+     Personas:
+       - Volunteers: upload certificates.
+       - PlannerPaco: will verify later.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Upload Certificate</title>
+
+  <style>
+    :root {
+      --bg:#FFF3F7;
+      --primary:#E46B8C;
+      --primary-dark:#C15575;
+      --card:#ffffff;
+      --muted:#666;
+      --shadow:rgba(228,107,140,0.25);
+    }
+
+    * { box-sizing:border-box; font-family:Inter, system-ui, Arial; }
+
+    body {
+      margin:0;
+      padding:0;
+      background:var(--bg);
+      min-height:100vh;
+    }
+
+    .banner {
+      background: linear-gradient(to right, #fefcfd, #ffe9f0);
+      padding:40px 0;
+      text-align:center;
+      box-shadow:0 2px 6px var(--shadow);
+    }
+
+    .banner h1 {
+      margin:0;
+      font-size:32px;
+      color:var(--primary-dark);
+    }
+
+    .container {
+      max-width:600px;
+      margin:40px auto;
+      padding:30px;
+      background:white;
+      border-radius:18px;
+      box-shadow:0 6px 18px var(--shadow);
+    }
+
+    label {
+      font-weight:600;
+      color:var(--primary-dark);
+      margin-top:12px;
+      display:block;
+    }
+
+    input[type="email"],
+    input[type="text"],
+    input[type="file"] {
+      width:100%;
+      padding:10px;
+      border-radius:10px;
+      border:1.5px solid var(--primary);
+      margin-top:6px;
+      margin-bottom:16px;
+    }
+
+    button {
+      background:var(--primary);
+      color:white;
+      border:none;
+      padding:12px 18px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:600;
+    }
+
+    button:hover {
+      background:var(--primary-dark);
+    }
+
+    .message {
+      margin-top:20px;
+      padding:12px;
+      border-radius:10px;
+      text-align:center;
+      display:none;
+    }
+
+    .message.success {
+      background:#e7fbe9;
+      color:#2d7a3b;
+      display:block;
+    }
+
+    .message.error {
+      background:#fde6e6;
+      color:#a94442;
+      display:block;
+    }
+
+    .cert-list {
+      margin-top:40px;
+      padding:20px;
+      background:white;
+      border-radius:14px;
+      box-shadow:0 4px 10px var(--shadow);
+    }
+
+    .cert-card {
+      padding:16px;
+      margin-bottom:14px;
+      background:#fff8f9;
+      border-left:6px solid var(--primary);
+      border-radius:12px;
+    }
+
+    .status {
+      font-weight:700;
+      margin-left:6px;
+    }
+
+    .pending { color:#b89a9a; }
+    .verified { color:#5dbb63; }
+    .rejected { color:#e25c5c; }
+  </style>
+</head>
+
+<body>
+
+  <div class="banner">
+    <h1>Upload Your Certificate</h1>
+  </div>
+
+  <div class="container">
+    <form id="uploadForm" enctype="multipart/form-data">
+      <label>Your Email</label>
+      <input type="email" id="email" required>
+
+      <label>Certificate Title</label>
+      <input type="text" id="title" required>
+
+      <label>Select File</label>
+      <input type="file" id="file" accept=".pdf,.png,.jpg" required>
+
+      <button type="submit">Upload Certificate</button>
+    </form>
+
+    <div id="message" class="message"></div>
+
+    <div class="cert-list" id="certList">
+      <h3>Your Uploaded Certificates</h3>
+    </div>
+  </div>
+
+  <script>
+    function getCookie(name) {
+      let value = null;
+      const cookies = document.cookie.split(";");
+      for (let c of cookies) {
+        c = c.trim();
+        if (c.startsWith(name + "=")) {
+          value = decodeURIComponent(c.substring(name.length + 1));
+        }
+      }
+      return value;
+    }
+
+    const csrftoken = getCookie("csrftoken");
+    const msg = document.getElementById("message");
+    const certList = document.getElementById("certList");
+
+    // Load certificates for a given email
+    async function loadCertificates(email) {
+      certList.innerHTML = "<h3>Your Uploaded Certificates</h3>";
+
+      const res = await fetch("/api/certificates/");
+      const all = await res.json();
+
+      const mine = all.filter(c => c.user_email === email || c.email === email || c.user === email);
+
+      if (mine.length === 0) {
+        certList.innerHTML += "<p>No certificates uploaded yet.</p>";
+        return;
+      }
+
+      mine.forEach(cert => {
+        const div = document.createElement("div");
+        div.className = "cert-card";
+        div.innerHTML = `
+          <p><strong>${cert.title}</strong></p>
+          <p>Status: <span class="status ${cert.status.toLowerCase()}">${cert.status}</span></p>
+          ${cert.file ? `<a href="${cert.file}" target="_blank">View File</a>` : ""}
+        `;
+        certList.appendChild(div);
+      });
+    }
+
+    // Upload form handler
+    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.style.display = "none";
+
+      const email = document.getElementById("email").value;
+      const title = document.getElementById("title").value;
+      const file = document.getElementById("file").files[0];
+
+      const users = await (await fetch("/api/volunteers/")).json();
+      const match = users.find(u => u.email === email);
+
+      if (!match) {
+        msg.className = "message error";
+        msg.textContent = "Volunteer not found. Please register first.";
+        msg.style.display = "block";
+        return;
+      }
+
+      const fd = new FormData();
+      fd.append("user", match.id);
+      fd.append("title", title);
+      fd.append("file", file);
+
+      const res = await fetch("/api/certificates/", {
+        method: "POST",
+        headers: { "X-CSRFToken": csrftoken },
+        body: fd,
+      });
+
+      if (res.ok) {
+        msg.className = "message success";
+        msg.textContent = "Certificate uploaded successfully!";
+        msg.style.display = "block";
+        loadCertificates(email);
+      } else {
+        msg.className = "message error";
+        msg.textContent = "Upload failed.";
+        msg.style.display = "block";
+      }
+    });
+  </script>
+
+</body>
+</html>

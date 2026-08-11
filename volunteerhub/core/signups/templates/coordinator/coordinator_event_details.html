@@ -1,0 +1,437 @@
+<!-- File: signups/templates/coordinator/coordinator_event_details.html
+     Purpose:
+       Event details page showing comprehensive event information.
+       Displays: Start, End, Location, Created by, Max Volunteers, Status, Certificate requirements.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Event Details</title>
+
+    <style>
+        :root {
+            /* Blue palette matching coordinator pages */
+            --bg: #F0F8FF;
+            --primary: #4A90E2;
+            --primary-dark: #2E5C8A;
+            --card: #FFFFFF;
+            --text: #1F3A4D;
+            --muted: #6B7C8F;
+            --shadow: rgba(74, 144, 226, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 28px;
+            font-size: 22px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            color: var(--primary);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.25s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+            color: white;
+        }
+
+        .page-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 22px;
+        }
+
+        h1 {
+            color: var(--primary-dark);
+            font-size: 32px;
+            margin: 0 0 28px 0;
+        }
+
+        .details-card {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 28px;
+            box-shadow: 0 2px 8px var(--shadow);
+            margin-bottom: 22px;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px 32px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .detail-value {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .detail-value.status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .status.published {
+            background: #E8F5E9;
+            color: #2E7D32;
+        }
+
+        .status.draft {
+            background: #FFF3E0;
+            color: #E65100;
+        }
+
+        .status.closed {
+            background: #F3E5F5;
+            color: #6A1B9A;
+        }
+
+        .status.cancelled {
+            background: #FFEBEE;
+            color: #C62828;
+        }
+
+        .cert-requirements {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .cert-badge {
+            background: #E3F2FD;
+            color: var(--primary-dark);
+            border: 1px solid var(--primary);
+            padding: 6px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .no-certs {
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        .description-section {
+            grid-column: 1 / -1;
+        }
+
+        .description {
+            background: #F9FAFB;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            color: var(--text);
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            font-weight: 600;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: background 0.25s ease;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: #E8EAEF;
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: #D6DAEB;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+            font-size: 16px;
+        }
+
+        .error {
+            background: #FFEBEE;
+            border: 1px solid #EF5350;
+            color: #C62828;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .detail-value {
+                font-size: 16px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+
+<div class="header">
+    <div class="header-title">Event Details</div>
+    <a class="back-btn" href="/coordinator/shifts/">← Back</a>
+</div>
+
+<div class="page-container">
+
+    <div id="loading" class="loading">Loading event details...</div>
+    <div id="error" class="error" style="display: none;"></div>
+
+    <div id="content" style="display: none;">
+
+        <h1 id="eventTitle"></h1>
+
+        <div class="details-card">
+
+            <div class="details-grid">
+                
+                <div class="detail-item">
+                    <div class="detail-label">Start Date & Time</div>
+                    <div class="detail-value" id="startDateTime"></div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">End Date & Time</div>
+                    <div class="detail-value" id="endDateTime"></div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Location</div>
+                    <div class="detail-value" id="location"></div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Created by</div>
+                    <div class="detail-value" id="coordinator"></div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Max Volunteers</div>
+                    <div class="detail-value" id="maxVolunteers"></div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value status" id="status"></div>
+                </div>
+
+                <div class="detail-item description-section">
+                    <div class="detail-label">Certificate Requirements</div>
+                    <div class="cert-requirements" id="certRequirements"></div>
+                </div>
+
+                <div class="detail-item description-section" id="descriptionContainer" style="display: none;">
+                    <div class="detail-label">Description</div>
+                    <div class="description" id="description"></div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="action-buttons">
+            <a class="btn" id="editBtn" href="#">Edit Event</a>
+            <a class="btn btn-secondary" id="dashboardBtn" href="#">View Dashboard</a>
+            <a class="btn btn-secondary" id="shiftsBtn" href="#">Manage Shifts</a>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    const eventId = {{ event_id }};
+
+    // Fetch event details from API
+    async function loadEventDetails() {
+        try {
+            const response = await fetch(`/api/events/${eventId}/`);
+            if (!response.ok) {
+                throw new Error('Event not found');
+            }
+
+            const event = await response.json();
+            displayEventDetails(event);
+
+        } catch (error) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').textContent = `Error: ${error.message}`;
+        }
+    }
+
+    function displayEventDetails(event) {
+        // Title
+        document.getElementById('eventTitle').textContent = event.name;
+
+        // Format date and time
+        const startDate = new Date(event.start_datetime);
+        const endDate = new Date(event.end_datetime);
+
+        const startFormatted = startDate.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        }) + ', ' + startDate.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+
+        const endFormatted = endDate.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        }) + ', ' + endDate.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+
+        document.getElementById('startDateTime').textContent = startFormatted;
+        document.getElementById('endDateTime').textContent = endFormatted;
+        document.getElementById('location').textContent = event.location || 'Not specified';
+        document.getElementById('coordinator').textContent = event.coordinator_name || 'N/A';
+        document.getElementById('maxVolunteers').textContent = event.max_volunteers;
+
+        // Status badge
+        const statusElement = document.getElementById('status');
+        statusElement.textContent = event.status;
+        statusElement.className = `detail-value status ${event.status}`;
+
+        // Certificate requirements
+        const certContainer = document.getElementById('certRequirements');
+        certContainer.innerHTML = '';
+
+        if (event.requires_first_aid || event.requires_food_safety) {
+            if (event.requires_first_aid) {
+                const badge = document.createElement('div');
+                badge.className = 'cert-badge';
+                badge.textContent = 'First Aid';
+                certContainer.appendChild(badge);
+            }
+            if (event.requires_food_safety) {
+                const badge = document.createElement('div');
+                badge.className = 'cert-badge';
+                badge.textContent = 'Food Safety';
+                certContainer.appendChild(badge);
+            }
+        } else {
+            certContainer.innerHTML = '<span class="no-certs">No certificate requirements</span>';
+        }
+
+        // Description (if available)
+        if (event.description) {
+            document.getElementById('descriptionContainer').style.display = 'block';
+            document.getElementById('description').textContent = event.description;
+        }
+
+        // Action buttons
+        document.getElementById('editBtn').href = `/coordinator/events/${eventId}/edit/`;
+        document.getElementById('dashboardBtn').href = `/coordinator/events/${eventId}/dashboard/`;
+        document.getElementById('shiftsBtn').href = `/coordinator/events/${eventId}/shifts/`;
+
+        // Hide loading and show content
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+    }
+
+    // Load event details on page load
+    document.addEventListener('DOMContentLoaded', loadEventDetails);
+</script>
+
+</body>
+</html>

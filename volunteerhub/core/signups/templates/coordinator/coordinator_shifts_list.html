@@ -1,0 +1,189 @@
+<!-- File: signups/templates/coordinator/coordinator_shifts_list.html
+     Purpose:
+       Shifts management page for coordinators.
+       Shows a list of all events with links to manage shifts for each event.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Shifts</title>
+
+    <style>
+        :root {
+            /* Blue palette matching coordinator dashboard */
+            --bg: #F0F8FF;
+            --primary: #4A90E2;
+            --primary-dark: #2E5C8A;
+            --card: #FFFFFF;
+            --text: #1F3A4D;
+            --muted: #6B7C8F;
+            --shadow: rgba(74, 144, 226, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 28px;
+            font-size: 22px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            color: var(--primary);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.25s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+            color: white;
+        }
+
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 22px;
+        }
+
+        h1 {
+            color: var(--primary-dark);
+            font-size: 26px;
+            margin-bottom: 18px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 10px 16px;
+            font-weight: 600;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: background 0.25s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+
+        .event-card {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 22px;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .event-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 6px;
+        }
+
+        .event-detail {
+            color: var(--muted);
+            margin: 2px 0;
+            font-size: 15px;
+        }
+
+        .actions {
+            margin-top: 16px;
+        }
+
+        .back-btn {
+            margin-bottom: 20px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<div class="header">
+    <div class="header-title">Select Event to Manage Shifts</div>
+</div>
+
+<div class="page-container">
+
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+        <a class="btn back-btn" href="/coordinator/dashboard/">← Back</a>
+    </div>
+
+    <h1>Select Event to Manage Shifts</h1>
+
+    <div style="height: 22px;"></div>
+
+    {% if events %}
+        {% for event in events %}
+            <div class="event-card">
+
+                <div class="event-title">{{ event.name }}</div>
+
+                <p class="event-detail"><strong>Created:</strong> {{ event.created_at|date:"M d, Y \a\t g:i A" }}</p>
+                <p class="event-detail"><strong>Start:</strong> {{ event.start_datetime }}</p>
+                <p class="event-detail"><strong>End:</strong> {{ event.end_datetime }}</p>
+                <p class="event-detail"><strong>Location:</strong> {{ event.location }}</p>
+                <p class="event-detail"><strong>Max Volunteers:</strong> {{ event.max_volunteers }}</p>
+
+                {% if event.notes %}
+                    <p class="event-detail"><strong>Notes:</strong> {{ event.notes }}</p>
+                {% endif %}
+
+                <div class="actions">
+                    <a class="btn btn-small" href="/coordinator/events/{{ event.id }}/details/">View Details</a>
+                    <a class="btn btn-small" href="/coordinator/events/{{ event.id }}/shifts/">Manage Shifts</a>
+                    <a class="btn btn-small" href="/coordinator/events/{{ event.id }}/dashboard/">Event Dashboard</a>
+                </div>
+
+            </div>
+        {% endfor %}
+    {% else %}
+        <p style="color: var(--muted); margin-top: 20px;">No events have been created yet. <a href="/coordinator/events/create/" style="color: var(--primary);">Create an event first</a>.</p>
+    {% endif %}
+
+</div>
+
+</body>
+</html>
+

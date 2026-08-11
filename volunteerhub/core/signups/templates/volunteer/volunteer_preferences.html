@@ -1,0 +1,255 @@
+<!-- File: volunteer/volunteer_preferences.html
+     Purpose:
+       Volunteer-facing page that allows selection of:
+         - English comfort level
+         - Cultural interests
+       Uses the axolotl theme consistent across all volunteer UI pages.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Preferences</title>
+
+    <style>
+        :root {
+            --bg: #FFEFF3;
+            --primary: #E46B8C;
+            --primary-dark: #C15575;
+            --card: #ffffff;
+            --muted: #6F6A7A;
+            --shadow: rgba(228, 107, 140, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            padding: 32px;
+            background: var(--card);
+            border-radius: 20px;
+            box-shadow: 0 6px 16px var(--shadow);
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 0;
+            color: var(--primary-dark);
+        }
+
+        .section-title {
+            margin-top: 26px;
+            font-size: 19px;
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+
+        .group-box {
+            background: #fff6fa;
+            padding: 18px;
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-top: 12px;
+        }
+
+        label {
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 14px;
+        }
+
+        .interest-list label {
+            font-weight: normal;
+            color: var(--muted);
+        }
+
+        .interest-list div {
+            margin-bottom: 8px;
+        }
+
+        .submit-btn {
+            margin-top: 16px;
+            background: var(--primary);
+            color: white;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 10px var(--shadow);
+            transition: background 0.2s ease;
+        }
+
+        .submit-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .message {
+            margin-top: 18px;
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        .message.success {
+            background: #e8fbe7;
+            color: #2f6e3a;
+        }
+
+        .message.error {
+            background: #fde7e7;
+            color: #9f3e3e;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Your Preferences</h1>
+
+    <!-- English level -->
+    <div class="section-title">English Comfort Level</div>
+    <div class="group-box">
+        <label for="englishLevel">Select Level</label>
+        <select id="englishLevel">
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+        </select>
+    </div>
+
+    <!-- Cultural Interests -->
+    <div class="section-title">Cultural Interests</div>
+    <div class="group-box interest-list" id="interestContainer">
+        <!-- Loaded dynamically -->
+    </div>
+
+    <button class="submit-btn" onclick="savePreferences()">Save Preferences</button>
+
+    <div id="message" class="message"></div>
+
+</div>
+
+<script>
+
+    const msg = document.getElementById("message");
+
+    async function loadInterests() {
+        try {
+            const result = await fetch("/api/interests/");
+            const interests = await result.json();
+            const container = document.getElementById("interestContainer");
+
+            container.innerHTML = "";
+
+            interests.forEach(item => {
+                const row = document.createElement("div");
+                row.innerHTML = `
+                    <label>
+                        <input type="checkbox" value="${item.id}" class="interest-check">
+                        ${item.name}
+                    </label>
+                `;
+                container.appendChild(row);
+            });
+
+        } catch (err) {
+            console.log("Error loading interests");
+        }
+    }
+
+    async function savePreferences() {
+
+        msg.style.display = "none";
+
+        const englishLevel = document.getElementById("englishLevel").value;
+
+        const selected = Array.from(
+            document.querySelectorAll(".interest-check:checked")
+        ).map(c => c.value);
+
+        /* Placeholder until full session-based auth exists */
+        const volunteerId = localStorage.getItem("volunteer_id");
+
+        if (!volunteerId) {
+            msg.className = "message error";
+            msg.textContent = "Unable to save preferences. Volunteer session is missing.";
+            msg.style.display = "block";
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/volunteers/${volunteerId}/`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({
+                    english_level: englishLevel,
+                    cultural_interests: selected
+                })
+            });
+
+            if (res.ok) {
+                msg.className = "message success";
+                msg.textContent = "Preferences saved successfully.";
+                msg.style.display = "block";
+            } else {
+                msg.className = "message error";
+                msg.textContent = "Error saving preferences.";
+                msg.style.display = "block";
+            }
+
+        } catch (err) {
+            msg.className = "message error";
+            msg.textContent = "Unexpected error occurred.";
+            msg.style.display = "block";
+        }
+    }
+
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + "=")) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    loadInterests();
+</script>
+
+</body>
+</html>

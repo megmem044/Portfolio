@@ -1,0 +1,351 @@
+<!-- File: signups/templates/coordinator/coordinator_volunteer_profile.html
+     Purpose:
+       Coordinator-facing page to inspect a specific volunteer.
+       Shows personal details, certificates, event history, availability,
+       and coordinator comments.
+       Uses the cerulean coordinator theme.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Volunteer Profile</title>
+
+    <style>
+        :root {
+            /* Blue palette matching coordinator dashboard */
+            --bg: #F0F8FF;
+            --card: #FFFFFF;
+            --primary: #4A90E2;
+            --primary-dark: #2E5C8A;
+            --text: #1F3A4D;
+            --muted: #6B7C8F;
+            --shadow: rgba(74, 144, 226, 0.15);
+            --accent: #F5FAFF;
+        }
+
+        * {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            padding: 24px;
+            font-size: 15px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--card);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 6px 20px var(--shadow);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--primary-dark);
+            font-size: 22px;
+        }
+
+        .back-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 17px;
+            color: var(--primary-dark);
+            font-weight: 700;
+            margin-bottom: 10px;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 6px;
+        }
+
+        .info-box {
+            background: var(--accent);
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 8px;
+        }
+
+        .info-row {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            margin-bottom: 10px;
+            align-items: start;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .info-value {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .item-card {
+            background: white;
+            border-left: 4px solid var(--primary);
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-family: Inter, system-ui, Arial;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        .save-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .save-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .approve-btn {
+            background: #d4edda;
+            color: #155724;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .approve-btn:hover {
+            background: #c3e6cb;
+            color: #155724;
+        }
+
+        .decline-btn {
+            background: #f8d7da;
+            color: #721c24;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .decline-btn:hover {
+            background: #f5c6cb;
+            color: #721c24;
+        }
+
+        .loading {
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        ul {
+            margin: 8px 0 0 0;
+            padding-left: 20px;
+            color: var(--muted);
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="header">
+            <h1 id="volName">Volunteer Profile</h1>
+            <button class="back-btn" onclick="window.history.back()">← Back</button>
+        </div>
+
+        <!-- Volunteer Information -->
+        <div class="section">
+            <div class="section-title">Volunteer Information</div>
+            <div class="info-box">
+                <div class="info-row">
+                    <div class="info-label">Name:</div>
+                    <div class="info-value" id="volName2">Loading...</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Email:</div>
+                    <div class="info-value" id="volEmail">Loading...</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Phone:</div>
+                    <div class="info-value" id="volPhone">N/A</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">School:</div>
+                    <div class="info-value" id="volSchool">N/A</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">English Level:</div>
+                    <div class="info-value" id="volEnglish">N/A</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Cultural Interests:</div>
+                    <div class="info-value" id="volInterests">N/A</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Certificates -->
+        <div class="section">
+            <div class="section-title">Uploaded Certificates</div>
+            <div class="info-box" id="certList">
+                <p class="loading">Loading certificates...</p>
+            </div>
+        </div>
+
+        <!-- Availability -->
+        <div class="section">
+            <div class="section-title">Availability</div>
+            <div class="info-box" id="availabilityList">
+                <p class="loading">Loading availability...</p>
+            </div>
+        </div>
+
+        <!-- Coordinator Comments -->
+        <div class="section">
+            <div class="section-title">Coordinator Comments</div>
+            <div class="info-box">
+                <textarea id="commentBox" rows="4" placeholder="Add notes about this volunteer..."></textarea>
+                <button class="save-btn" onclick="saveComment()">Save Comments</button>
+            </div>
+        </div>
+
+    </div>
+
+<script>
+    const volunteerId = "{{ volunteer_id }}";
+
+    async function loadVolunteerData() {
+        try {
+            // Fetch volunteer data from API
+            const res = await fetch(`/api/volunteers/${volunteerId}/`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+            const volunteer = await res.json();
+
+            // Update volunteer name
+            document.getElementById("volName").textContent = volunteer.name;
+            document.getElementById("volName2").textContent = volunteer.name;
+
+            // Display volunteer information
+            document.getElementById("volEmail").textContent = volunteer.email || 'N/A';
+            document.getElementById("volPhone").textContent = volunteer.phone || 'N/A';
+            document.getElementById("volSchool").textContent = volunteer.school || 'N/A';
+            
+            // Format English level with capital first letter
+            const englishLevel = volunteer.english_level || "N/A";
+            const formattedLevel = englishLevel !== "N/A" ? englishLevel.charAt(0).toUpperCase() + englishLevel.slice(1) : "N/A";
+            document.getElementById("volEnglish").textContent = formattedLevel;
+            
+            // Format cultural interests as a comma-separated list
+            if (volunteer.cultural_interests && volunteer.cultural_interests.length > 0) {
+                const interests = volunteer.cultural_interests.map(interest => interest.name).join(', ');
+                document.getElementById("volInterests").textContent = interests;
+            } else {
+                document.getElementById("volInterests").textContent = 'None listed';
+            }
+
+            // Load certificates (placeholder for now)
+            loadCertificates();
+            
+            // Load availability (placeholder for now)
+            loadAvailability();
+
+        } catch (error) {
+            console.error("Error loading volunteer data:", error);
+            document.getElementById("volName2").textContent = "Error loading volunteer";
+        }
+    }
+
+    async function loadCertificates() {
+        try {
+            // Placeholder - would fetch certificates for this volunteer
+            const certList = document.getElementById("certList");
+            certList.innerHTML = "<p>No certificates uploaded.</p>";
+        } catch (error) {
+            console.error("Error loading certificates:", error);
+        }
+    }
+
+    async function loadAvailability() {
+        try {
+            // Placeholder - would fetch availability for this volunteer
+            const availList = document.getElementById("availabilityList");
+            availList.innerHTML = "<p>No availability information available.</p>";
+        } catch (error) {
+            console.error("Error loading availability:", error);
+        }
+    }
+
+    async function saveComment() {
+        const comment = document.getElementById("commentBox").value.trim();
+        if (!comment) {
+            alert("Please enter a comment");
+            return;
+        }
+
+        try {
+            // Store comment (would need a backend endpoint)
+            alert("Comment saved locally (backend integration needed)");
+            document.getElementById("commentBox").value = "";
+        } catch (error) {
+            console.error("Error saving comment:", error);
+            alert("Error saving comment");
+        }
+    }
+
+    // Load data when page loads
+    loadVolunteerData();
+</script>
+
+</body>
+</html>

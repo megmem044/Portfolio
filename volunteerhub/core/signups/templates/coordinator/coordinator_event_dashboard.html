@@ -1,0 +1,366 @@
+<!-- File: signups/templates/coordinator/coordinator_event_dashboard.html
+     Updated to match the new Event model:
+       - start_datetime / end_datetime
+       - coordinator.name
+       - max_volunteers
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Event Dashboard</title>
+
+    <style>
+        :root {
+            /* Blue palette matching coordinator dashboard */
+            --bg: #F0F8FF;
+            --primary: #4A90E2;
+            --primary-dark: #2E5C8A;
+            --card: #ffffff;
+            --text: #1F3A4D;
+            --muted: #6B7C8F;
+            --shadow: rgba(74, 144, 226, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            padding-bottom: 40px;
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 28px;
+            font-size: 22px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            color: var(--primary);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.25s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+            color: white;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 1100px;
+            margin: 40px auto;
+        }
+
+        .section {
+            background: var(--card);
+            padding: 28px;
+            border-radius: 18px;
+            margin-bottom: 26px;
+            box-shadow: 0 6px 18px var(--shadow);
+        }
+
+        .section-title {
+            margin-top: 0;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 16px;
+        }
+
+        .info-row {
+            padding: 12px 0;
+            font-size: 16px;
+            color: var(--text);
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            margin-top: 14px;
+            transition: background 0.2s ease;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .request-card,
+        .vol-card {
+            background: #f4f8fc;
+            padding: 16px;
+            border-radius: 14px;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .card-title {
+            font-size: 17px;
+            color: var(--primary-dark);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .action-row {
+            margin-top: 12px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .approve-btn {
+            background: #3fae4e;
+            color: white;
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .decline-btn {
+            background: #d9534f;
+            color: white;
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .approve-btn:hover {
+            background: #2f8d3e;
+        }
+
+        .decline-btn:hover {
+            background: #b43f3b;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <div class="header-title">Event Dashboard</div>
+</div>
+
+<div class="container">
+
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+        <a class="btn back-btn" href="/coordinator/events/">← Back</a>
+    </div>
+
+    <!-- EVENT SUMMARY -->
+    <div class="section">
+        <h2 class="section-title">Event Summary</h2>
+
+        <div id="eventDetails">
+            <div class="info-row"><strong>Name:</strong> <span id="ev_name"></span></div>
+            <div class="info-row"><strong>Start:</strong> <span id="ev_start"></span></div>
+            <div class="info-row"><strong>End:</strong> <span id="ev_end"></span></div>
+            <div class="info-row"><strong>Location:</strong> <span id="ev_location"></span></div>
+            <div class="info-row"><strong>Coordinator:</strong> <span id="ev_coord"></span></div>
+            <div class="info-row"><strong>Max Volunteers:</strong> <span id="ev_needed"></span></div>
+            <div class="info-row"><strong>Notes:</strong> <span id="ev_notes"></span></div>
+        </div>
+
+        <a class="btn" id="editBtn" href="#">Edit Event</a>
+        <a class="btn" id="ratingsBtn" href="#">View Ratings</a>
+        <a class="btn" href="/coordinator/events/">Back</a>
+    </div>
+
+
+    <!-- VOLUNTEER REQUESTS -->
+    <div class="section">
+        <h2 class="section-title">Volunteer Requests</h2>
+        <div id="requestList"></div>
+    </div>
+
+    <!-- APPROVED VOLUNTEERS -->
+    <div class="section">
+        <h2 class="section-title">Approved Volunteers</h2>
+        <div id="volunteerList"></div>
+    </div>
+
+    <!-- CERTIFICATE REQUIREMENTS -->
+    <div class="section">
+        <h2 class="section-title">Requested Certificates</h2>
+        <div id="certRequirements"></div>
+    </div>
+
+</div>
+
+<script>
+    // Extract event ID from URL path like /coordinator/events/1/dashboard/
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    const eventId = pathParts[pathParts.indexOf("events") + 1];
+    
+    console.log("Extracted Event ID:", eventId);
+    console.log("Full path:", window.location.pathname);
+
+    // Load event summary (updated fields)
+    async function loadEvent() {
+        try {
+            const url = `/api/events/${eventId}/`;
+            console.log("Fetching from URL:", url);
+            
+            const res = await fetch(url);
+            console.log("Response status:", res.status);
+            console.log("Response ok:", res.ok);
+            
+            if (!res.ok) {
+                console.error("HTTP Error:", res.status, res.statusText);
+                document.getElementById("ev_name").textContent = `Error: ${res.status} ${res.statusText}`;
+                return;
+            }
+            
+            const ev = await res.json();
+            
+            console.log("Event data:", ev);
+
+            document.getElementById("ev_name").textContent = ev.name || "N/A";
+            document.getElementById("ev_start").textContent = formatDateTime(ev.start_datetime) || "N/A";
+            document.getElementById("ev_end").textContent = formatDateTime(ev.end_datetime) || "N/A";
+            document.getElementById("ev_location").textContent = ev.location || "N/A";
+            document.getElementById("ev_coord").textContent = ev.coordinator_name || "Unknown";
+            document.getElementById("ev_needed").textContent = ev.max_volunteers || "N/A";
+            document.getElementById("ev_notes").textContent = ev.notes || "(no notes)";
+
+            document.getElementById("editBtn").href = `/coordinator/events/${eventId}/edit/`;
+            document.getElementById("ratingsBtn").href = `/coordinator/events/${eventId}/ratings/`;
+        } catch (err) {
+            console.error("Error loading event:", err);
+            document.getElementById("ev_name").textContent = "Error: " + err.message;
+        }
+    }
+
+    // Format ISO datetime to readable format: "Dec 12, 2025 at 2:00 PM"
+    function formatDateTime(isoString) {
+        if (!isoString) return "";
+        const date = new Date(isoString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        }) + ' at ' + date.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            meridiem: 'short'
+        });
+    }
+
+    // Requests and volunteers will be wired later when we implement the models + API
+    async function loadRequests() {
+        try {
+            const res = await fetch(`/api/requests/?event=${eventId}`);
+            const requests = await res.json();
+            
+            const container = document.getElementById("requestList");
+            
+            if (!requests || requests.length === 0) {
+                container.innerHTML = "<p style='color: var(--muted);'>No volunteer requests yet.</p>";
+                return;
+            }
+            
+            container.innerHTML = "";
+            requests.forEach(req => {
+                const div = document.createElement("div");
+                div.className = "request-card";
+                div.innerHTML = `
+                    <div class="card-title">${req.volunteer_name}</div>
+                    <p style="margin: 4px 0; color: var(--muted);">
+                        <strong>Email:</strong> ${req.volunteer_email}
+                    </p>
+                    <p style="margin: 4px 0; color: var(--muted);">
+                        <strong>Requested At:</strong> ${req.created_at || 'N/A'}
+                    </p>
+                    ${req.message ? `<p style="margin: 4px 0; color: var(--muted);"><strong>Message:</strong> ${req.message}</p>` : ''}
+                    <div class="action-row">
+                        <button class="approve-btn" onclick="approveRequest(${req.id})">Approve</button>
+                        <button class="decline-btn" onclick="declineRequest(${req.id})">Decline</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        } catch (err) {
+            console.error("Error loading requests:", err);
+            document.getElementById("requestList").innerHTML = "<p style='color: red;'>Error loading requests</p>";
+        }
+    }
+
+    async function approveRequest(requestId) {
+        try {
+            const res = await fetch(`/api/requests/${requestId}/approve/`, {
+                method: "POST"
+            });
+            if (res.ok) {
+                loadRequests();
+                loadApproved();
+            } else {
+                alert("Failed to approve request");
+            }
+        } catch (err) {
+            console.error("Error approving request:", err);
+        }
+    }
+
+    async function declineRequest(requestId) {
+        try {
+            const res = await fetch(`/api/requests/${requestId}/decline/`, {
+                method: "POST"
+            });
+            if (res.ok) {
+                loadRequests();
+            } else {
+                alert("Failed to decline request");
+            }
+        } catch (err) {
+            console.error("Error declining request:", err);
+        }
+    }
+
+    function loadApproved() {
+        document.getElementById("volunteerList").innerHTML = "<p>(Volunteer list coming soon)</p>";
+    }
+
+    function loadCertRequirements() {
+        document.getElementById("certRequirements").innerHTML = "<p>(Certificate data coming soon)</p>";
+    }
+
+
+    loadEvent();
+    loadRequests();
+    loadApproved();
+    loadCertRequirements();
+</script>
+
+</body>
+</html>

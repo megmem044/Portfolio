@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Event</title>
+    <style>
+        :root {
+            --bg: #F0F8FF;
+            --primary: #4A90E2;
+            --primary-dark: #2E5C8A;
+            --card: #FFFFFF;
+            --text: #1F3A4D;
+            --muted: #6B7C8F;
+            --shadow: rgba(74, 144, 226, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 28px;
+            font-size: 22px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            color: var(--primary);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.25s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .event-title {
+            font-size: 28px;
+            color: var(--primary-dark);
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .management-card {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 2px 8px var(--shadow);
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .management-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 16px var(--shadow);
+        }
+
+        .management-card h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            color: var(--primary-dark);
+            font-size: 20px;
+        }
+
+        .management-card p {
+            color: var(--muted);
+            margin: 0 0 16px 0;
+            font-size: 14px;
+            flex-grow: 1;
+        }
+
+        .card-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.7;
+        }
+
+        .card-btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.25s ease;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+        }
+
+        .card-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .loading {
+            text-align: center;
+            color: var(--muted);
+            padding: 40px;
+        }
+
+        .error {
+            background: #F8D7DA;
+            color: #721C24;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #F5C6CB;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 id="headerTitle" style="margin: 0; color: white; flex: 1;">Manage Event</h1>
+        <a class="back-btn" href="/coordinator/dashboard/">← Back</a>
+    </div>
+
+    <div class="container">
+        <div id="loadingMessage" class="loading">Loading event management options...</div>
+
+        <div id="errorMessage" class="error" style="display: none;"></div>
+
+        <div id="cardsContainer" class="cards-grid" style="display: none;">
+            <!-- Cards will be inserted here -->
+        </div>
+    </div>
+
+    <script>
+        const eventId = window.location.pathname.split('/')[3];
+
+        async function loadEventInfo() {
+            try {
+                const res = await fetch(`/api/events/${eventId}/`);
+                if (!res.ok) {
+                    throw new Error('Failed to load event');
+                }
+
+                const event = await res.json();
+
+                // Set header title to event name
+                document.getElementById('headerTitle').textContent = event.name;
+
+                // Show management cards
+                displayManagementCards(eventId);
+
+                document.getElementById('loadingMessage').style.display = 'none';
+            } catch (error) {
+                console.error('Error loading event:', error);
+                document.getElementById('errorMessage').textContent = 'Error loading event: ' + error.message;
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('loadingMessage').style.display = 'none';
+            }
+        }
+
+        function displayManagementCards(eventId) {
+            const container = document.getElementById('cardsContainer');
+            container.innerHTML = `
+                <a href="/coordinator/events/${eventId}/signups/" class="management-card">
+                    <h3>Volunteer Requests</h3>
+                    <p>Review and manage volunteer signups for this event</p>
+                    <button class="card-btn">View Requests</button>
+                </a>
+
+                <a href="/coordinator/events/${eventId}/schedule/" class="management-card">
+                    <h3>Event Schedule</h3>
+                    <p>Manage shifts and volunteer assignments</p>
+                    <button class="card-btn">View Schedule</button>
+                </a>
+
+                <a href="/coordinator/events/${eventId}/ratings/" class="management-card">
+                    <h3>Event Feedback</h3>
+                    <p>View volunteer ratings and comments</p>
+                    <button class="card-btn">View Feedback</button>
+                </a>
+            `;
+            container.style.display = 'grid';
+        }
+
+        // Load event info on page load
+        document.addEventListener('DOMContentLoaded', loadEventInfo);
+    </script>
+</body>
+</html>

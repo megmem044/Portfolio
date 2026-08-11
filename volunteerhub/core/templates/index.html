@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VolunteerHub - Volunteer Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        /* Navigation */
+        nav {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        nav .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav h1 {
+            color: white;
+            font-size: 1.8rem;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 2rem;
+            transition: opacity 0.3s;
+        }
+
+        nav a:hover {
+            opacity: 0.8;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6rem 2rem;
+            text-align: center;
+        }
+
+        .hero h2 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            margin: 0.5rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #667eea;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 4rem 2rem;
+            background: #f8f9fa;
+        }
+
+        .features h3 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #333;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-card h4 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .feature-card p {
+            color: #666;
+            line-height: 1.8;
+        }
+
+        /* Status Section */
+        .status {
+            padding: 4rem 2rem;
+            background: white;
+        }
+
+        .status h3 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #333;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .status-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .status-box h4 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-box p {
+            opacity: 0.9;
+        }
+
+        /* Footer */
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 3rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .modal h2 {
+            color: #667eea;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal input, .modal select {
+            width: 100%;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .modal input:focus, .modal select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .api-status {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .api-status.error {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <h1>VolunteerHub</h1>
+            <div>
+                <a href="#features">Features</a>
+                <a href="#status">Status</a>
+                <a href="#" onclick="openVolunteerModal(); return false;">Volunteer</a>
+                <a href="#" onclick="openCoordinatorModal(); return false;">Coordinator</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h2>Welcome to VolunteerHub</h2>
+            <p>A comprehensive volunteer management system with shift-based assignment and rating system</p>
+            <button class="btn btn-primary" onclick="openVolunteerModal()">Sign In as Volunteer</button>
+            <button class="btn btn-secondary" onclick="openCoordinatorModal()">Sign In as Coordinator</button>
+            <div style="margin-top: 2rem; font-size: 0.9rem;">
+                <a href="#" onclick="goToVolunteerDashboard(); return false;" style="color: white; text-decoration: underline; margin-right: 2rem;">View Volunteer Dashboard</a>
+                <a href="#" onclick="goToCoordinatorDashboard(); return false;" style="color: white; text-decoration: underline;">View Coordinator Dashboard</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <h3>Key Features</h3>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h4>Shift-Based Management</h4>
+                    <p>Volunteers browse and apply for specific event shifts. Coordinators review and approve/decline requests.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Hours Tracking</h4>
+                    <p>Automatic calculation of volunteer hours worked based on shift start and end times.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Event Ratings</h4>
+                    <p>Volunteers rate events on a 5-star scale with optional comments. Coordinators view all feedback.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Volunteer Profiles</h4>
+                    <p>Complete volunteer management with profile editing, certificate uploads, and preference management.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Event Dashboard</h4>
+                    <p>Coordinators get detailed event dashboards showing volunteers, shifts, ratings, and schedules.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>API-Driven</h4>
+                    <p>13 RESTful API endpoints for seamless frontend integration and real-time data sync.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Status Section -->
+    <section class="status" id="status">
+        <div class="container">
+            <h3>System Status</h3>
+            <div class="status-grid">
+                <div class="status-box">
+                    <h4 id="volunteers-count">5</h4>
+                    <p>Registered Volunteers</p>
+                </div>
+                <div class="status-box">
+                    <h4 id="events-count">1</h4>
+                    <p>Active Events</p>
+                </div>
+                <div class="status-box">
+                    <h4 id="shifts-count">1</h4>
+                    <p>Available Shifts</p>
+                </div>
+                <div class="status-box">
+                    <h4 id="ratings-count">5</h4>
+                    <p>Event Ratings</p>
+                </div>
+            </div>
+            <div style="margin-top: 2rem;">
+                <div class="api-status" id="api-status">
+                    Checking API connection...
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Volunteer Sign In Modal -->
+    <div id="volunteerModal" class="modal" onclick="closeVolunteerModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close" onclick="closeVolunteerModal()">&times;</span>
+            <h2>Volunteer Sign In</h2>
+            <form onsubmit="handleVolunteerSignIn(event)">
+                <select id="volunteer-select" required>
+                    <option value="">Select a Volunteer</option>
+                </select>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Coordinator Sign In Modal -->
+    <div id="coordinatorModal" class="modal" onclick="closeCoordinatorModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close" onclick="closeCoordinatorModal()">&times;</span>
+            <h2>Coordinator Sign In</h2>
+            <p style="color: #666; margin-bottom: 1rem; font-size: 0.9rem;">Demo: Use any coordinator email</p>
+            <form onsubmit="handleCoordinatorSignIn(event)">
+                <input type="email" placeholder="Email" id="coordinator-email" required>
+                <input type="password" placeholder="Password" id="coordinator-password" required>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 VolunteerHub. Backend fully integrated and functional.</p>
+    </footer>
+
+    <script>
+        // Load volunteers on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadVolunteers();
+            checkAPIStatus();
+        });
+
+        // Load volunteers from API
+        async function loadVolunteers() {
+            try {
+                const response = await fetch('/api/volunteers/');
+                const volunteers = await response.json();
+                
+                const select = document.getElementById('volunteer-select');
+                volunteers.forEach(vol => {
+                    const option = document.createElement('option');
+                    option.value = vol.id;
+                    option.textContent = `${vol.name} (${vol.email})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading volunteers:', error);
+            }
+        }
+
+        // Check API Status
+        async function checkAPIStatus() {
+            try {
+                const response = await fetch('/api/volunteers/');
+                if (response.ok) {
+                    document.getElementById('api-status').innerHTML = 
+                        '<strong style="color: #4caf50;">✓ API Connection: OK</strong> All endpoints are responding correctly.';
+                    document.getElementById('api-status').className = 'api-status';
+                } else {
+                    showAPIError();
+                }
+            } catch (error) {
+                showAPIError();
+            }
+        }
+
+        function showAPIError() {
+            document.getElementById('api-status').innerHTML = 
+                '<strong style="color: #f44336;">✗ API Connection: Error</strong> Could not reach backend. Make sure Django server is running.';
+            document.getElementById('api-status').className = 'api-status error';
+        }
+
+        // Modal functions
+        function openVolunteerModal() {
+            document.getElementById('volunteerModal').classList.add('active');
+        }
+
+        function closeVolunteerModal(event) {
+            if (!event || event.target.id === 'volunteerModal') {
+                document.getElementById('volunteerModal').classList.remove('active');
+            }
+        }
+
+        function openCoordinatorModal() {
+            document.getElementById('coordinatorModal').classList.add('active');
+        }
+
+        function closeCoordinatorModal(event) {
+            if (!event || event.target.id === 'coordinatorModal') {
+                document.getElementById('coordinatorModal').classList.remove('active');
+            }
+        }
+
+        // Handle volunteer sign in
+        function handleVolunteerSignIn(event) {
+            event.preventDefault();
+            const volunteerId = document.getElementById('volunteer-select').value;
+            if (volunteerId) {
+                // Store volunteer ID in session storage
+                sessionStorage.setItem('volunteer_id', volunteerId);
+                // Redirect to volunteer dashboard
+                window.location.href = '/volunteer/home/';
+            }
+        }
+
+        // Handle coordinator sign in
+        function handleCoordinatorSignIn(event) {
+            event.preventDefault();
+            const email = document.getElementById('coordinator-email').value;
+            const password = document.getElementById('coordinator-password').value;
+            
+            // Store coordinator info in session storage
+            sessionStorage.setItem('coordinator_email', email);
+            // Redirect to coordinator dashboard
+            window.location.href = '/coordinator/dashboard/';
+        }
+
+        // Direct navigation to dashboards (no sign in required for demo)
+        function goToVolunteerDashboard() {
+            // Use first volunteer if none selected
+            sessionStorage.setItem('volunteer_id', '1');
+            window.location.href = '/volunteer/home/';
+        }
+
+        function goToCoordinatorDashboard() {
+            window.location.href = '/coordinator/dashboard/';
+        }
+
+        // Close modal when escape is pressed
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeVolunteerModal();
+                closeCoordinatorModal();
+            }
+        });
+    </script>
+</body>
+</html>

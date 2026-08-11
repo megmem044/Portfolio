@@ -1,0 +1,117 @@
+<!-- File: templates/base.html -->
+<!-- Purpose:
+     Base layout for VolunteerHub's front-end pages.
+     Styled with the blush pink palette for a cohesive, warm design.
+     Every page extends this template and fills in the content block.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VolunteerHub</title>
+
+  <style>
+    /* ================================
+       VolunteerHub Color Palette
+       ================================ */
+    :root {
+      --bg: #FFF3F7;
+      --primary: #E46B8C;
+      --primary-dark: #C15575;
+      --accent: #F6B26B;
+      --accent-dark: #D79456;
+      --text: #2E2A2B;
+      --muted: #666666;
+    }
+
+    /* ================================
+       Basic Page Structure
+       ================================ */
+    * {
+      box-sizing: border-box;
+      font-family: Inter, system-ui, Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 18px 30px;
+      box-shadow: 0 2px 8px rgba(228, 107, 140, 0.25);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      letter-spacing: 0.5px;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin-right: 20px;
+      font-weight: 500;
+    }
+
+    nav a:hover {
+      color: var(--accent);
+    }
+
+    main {
+      padding: 40px 60px;
+      min-height: 85vh;
+    }
+
+    footer {
+      background: var(--accent-dark);
+      color: white;
+      text-align: center;
+      padding: 12px 0;
+      font-size: 0.9rem;
+      letter-spacing: 0.3px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>VolunteerHub Dashboard</h1>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/api/volunteers/">Volunteers</a>
+      <a href="/api/roles/">Roles</a>
+    </nav>
+  </header>
+
+  <main>
+    {% block content %}
+    <!-- Each page will inject its own content here -->
+    {% endblock %}
+  </main>
+
+  <footer>
+    <small>VolunteerHub © 2025 — Planner Paco Edition</small>
+  </footer>
+</body>
+</html>

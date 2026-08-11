@@ -1,0 +1,452 @@
+<!-- File: signups/templates/volunteer/volunteer_event_rating.html
+     Purpose:
+       Allows volunteers to rate approved shifts they attended.
+       Shows 1–5 star rating with optional comments.
+       Uses consistent blush-pink theme across volunteer pages.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rate Events</title>
+
+    <style>
+        :root {
+            --bg: #FFEFF3;
+            --primary: #E46B8C;
+            --primary-dark: #C15575;
+            --card: #ffffff;
+            --muted: #6F6A7A;
+            --shadow: rgba(228, 107, 140, 0.18);
+            --star-empty: #d7b6c3;
+            --star-filled: #E46B8C;
+        }
+
+        * {
+            font-family: Inter, system-ui, Arial, sans-serif;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+            padding: 32px;
+            background: var(--card);
+            border-radius: 20px;
+            box-shadow: 0 6px 18px var(--shadow);
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            color: var(--primary-dark);
+            font-size: 24px;
+        }
+
+        .back-btn {
+            background: var(--primary);
+            color: white;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 4px 10px var(--shadow);
+        }
+
+        .back-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .back-link {
+            margin-bottom: 24px;
+        }
+
+        .back-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link a:hover {
+            color: var(--primary-dark);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: var(--primary-dark);
+        }
+
+        .event-card {
+            background: #fff6fa;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .event-card p {
+            margin: 6px 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .event-title {
+            font-weight: 700;
+            color: var(--primary-dark);
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        /* Star rating layout */
+        .star-rating {
+            margin: 16px 0;
+        }
+
+        .star-rating label {
+            display: block;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .stars {
+            display: flex;
+            gap: 8px;
+        }
+
+        .star {
+            font-size: 32px;
+            cursor: pointer;
+            color: var(--star-empty);
+            transition: color 0.2s ease;
+        }
+
+        .star:hover {
+            color: var(--primary);
+        }
+
+        .star.active {
+            color: var(--star-filled);
+        }
+
+        .feedback-section {
+            margin-top: 16px;
+        }
+
+        .feedback-section label {
+            display: block;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        textarea {
+            width: 100%;
+            border-radius: 10px;
+            border: 1.5px solid #d7e7f7;
+            padding: 12px;
+            font-family: Inter, system-ui, Arial, sans-serif;
+            font-size: 14px;
+            resize: vertical;
+            height: 80px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 125, 177, 0.1);
+        }
+
+        .action-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .submit-btn {
+            background: var(--primary);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background 0.2s ease;
+        }
+
+        .submit-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .message {
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: none;
+            margin-top: 12px;
+        }
+
+        .message.success {
+            background: #e4fdee;
+            color: #2d7a42;
+            display: block;
+        }
+
+        .message.error {
+            background: #fde7e7;
+            color: #a94442;
+            display: block;
+        }
+
+        .no-events {
+            text-align: center;
+            color: var(--muted);
+            padding: 40px 20px;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="page-header">
+        <h1>Rate Your Events</h1>
+        <a href="/volunteer/home/" class="back-btn">← Back</a>
+    </div>
+
+    <div id="eventsContainer">
+        <p style="color: var(--muted); text-align: center;">Loading your approved shifts...</p>
+    </div>
+
+</div>
+
+<script>
+    {% if volunteer_id %}
+    const volunteerId = {{ volunteer_id }};
+    {% else %}
+    const volunteerId = null;
+    {% endif %}
+
+    async function loadEvents() {
+        const container = document.getElementById("eventsContainer");
+
+        if (!volunteerId) {
+            container.innerHTML = "<p class='no-events'>Session not found.</p>";
+            return;
+        }
+
+        // Get all shift requests for this volunteer
+        const res = await fetch(`/api/shift-requests/?volunteer=${volunteerId}`);
+        const requests = await res.json();
+
+        // Filter for approved requests only
+        const approvedShifts = requests.filter(req => req.status === 'approved');
+
+        if (approvedShifts.length === 0) {
+            container.innerHTML = "<p class='no-events'>You have not been assigned to any shifts yet.</p>";
+            return;
+        }
+
+        container.innerHTML = "";
+
+        for (const request of approvedShifts) {
+            // Check if already rated
+            const ratingRes = await fetch(`/api/event-ratings/?event_id=${request.event}&volunteer_id=${volunteerId}`);
+            const existingRatings = await ratingRes.json();
+            const alreadyRated = existingRatings.length > 0 ? existingRatings[0] : null;
+
+            const card = document.createElement("div");
+            card.className = "event-card";
+
+            const shiftDate = new Date(request.shift_date).toLocaleDateString('en-US', {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+
+            const ratingId = `rating_${request.event}`;
+            let ratingHTML;
+
+            if (alreadyRated) {
+                ratingHTML = `
+                    <div style="padding: 12px; background: #e4fdee; border-radius: 10px; color: #2d7a42; font-weight: 600;">
+                        ✓ You rated this event ${alreadyRated.rating} stars
+                    </div>
+                `;
+            } else {
+                ratingHTML = `
+                    <div class="star-rating">
+                        <label>Your Rating:</label>
+                        <div class="stars" id="${ratingId}">
+                            <span class="star" data-value="1" title="Poor">★</span>
+                            <span class="star" data-value="2" title="Fair">★</span>
+                            <span class="star" data-value="3" title="Good">★</span>
+                            <span class="star" data-value="4" title="Very Good">★</span>
+                            <span class="star" data-value="5" title="Excellent">★</span>
+                        </div>
+                    </div>
+
+                    <div class="feedback-section">
+                        <label for="comment_${request.event}">Your Feedback (Optional):</label>
+                        <textarea id="comment_${request.event}" placeholder="Share your thoughts about this event..."></textarea>
+                    </div>
+
+                    <div class="action-row">
+                        <button class="submit-btn" onclick="submitRating(${request.event})">
+                            Submit Rating
+                        </button>
+                    </div>
+                `;
+            }
+
+            card.innerHTML = `
+                <div class="event-title">${request.event_name}</div>
+                <p><strong>Shift Date:</strong> ${shiftDate}</p>
+                <p><strong>Shift Time:</strong> ${request.shift_start} - ${request.shift_end}</p>
+                ${ratingHTML}
+                <div id="msg_${request.event}" class="message"></div>
+            `;
+
+            container.appendChild(card);
+
+            if (!alreadyRated) {
+                setupStarBehavior(ratingId);
+            }
+        }
+    }
+
+    function setupStarBehavior(starContainerId) {
+        const starBox = document.getElementById(starContainerId);
+        if (!starBox) return;
+        
+        const stars = starBox.querySelectorAll(".star");
+
+        stars.forEach(star => {
+            star.addEventListener("click", () => {
+                const value = parseInt(star.dataset.value);
+                stars.forEach(s => {
+                    s.classList.toggle("active", parseInt(s.dataset.value) <= value);
+                });
+            });
+
+            star.addEventListener("mouseenter", () => {
+                const hoverValue = parseInt(star.dataset.value);
+                stars.forEach(s => {
+                    s.style.color = parseInt(s.dataset.value) <= hoverValue 
+                        ? 'var(--star-filled)' 
+                        : 'var(--star-empty)';
+                });
+            });
+        });
+
+        starBox.addEventListener("mouseleave", () => {
+            const activeStars = starBox.querySelectorAll(".star.active");
+            stars.forEach(s => {
+                s.style.color = s.classList.contains("active") 
+                    ? 'var(--star-filled)' 
+                    : 'var(--star-empty)';
+            });
+        });
+    }
+
+    async function submitRating(eventId) {
+        const msg = document.getElementById(`msg_${eventId}`);
+        msg.style.display = "none";
+
+        const starBox = document.getElementById(`rating_${eventId}`);
+        if (!starBox) return;
+
+        const activeStars = starBox.querySelectorAll(".star.active");
+        const rating = activeStars.length;
+        const comment = document.getElementById(`comment_${eventId}`)?.value || "";
+
+        if (rating === 0) {
+            msg.className = "message error";
+            msg.textContent = "Please select a star rating.";
+            msg.style.display = "block";
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/event-ratings/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    volunteer: volunteerId,
+                    event: eventId,
+                    rating: rating,
+                    comment: comment
+                })
+            });
+
+            if (res.status === 201) {
+                msg.className = "message success";
+                msg.textContent = "✓ Rating submitted successfully!";
+                msg.style.display = "block";
+                
+                // Reload after 2 seconds
+                setTimeout(() => location.reload(), 2000);
+            } else if (res.status === 400) {
+                const data = await res.json();
+                msg.className = "message error";
+                msg.textContent = data.error || "Error submitting rating";
+                msg.style.display = "block";
+            } else {
+                msg.className = "message error";
+                msg.textContent = "Error submitting rating. Please try again.";
+                msg.style.display = "block";
+            }
+        } catch (error) {
+            console.error("Error submitting rating:", error);
+            msg.className = "message error";
+            msg.textContent = "Error submitting rating. Please try again.";
+            msg.style.display = "block";
+        }
+    }
+
+    function getCookie(name) {
+        let value = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    value = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return value;
+    }
+
+    loadEvents();
+</script>
+
+</body>
+</html>
