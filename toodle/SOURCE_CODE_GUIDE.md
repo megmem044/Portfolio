@@ -81,7 +81,7 @@ Never edit an applied migration for a new schema change. Add the next numbered m
 
 `backend/src/test/java/com/toodle/TaskControllerTest.java` exercises registration, authentication failures, malformed input, owner isolation, schedule validation, category integrity, and task/category CRUD through the HTTP layer with an H2 test database. `JwtServiceTest` verifies expired-token rejection. The backend currently has 12 passing tests.
 
-The test commands are wired into the CI workflow, but CI must not be described as verified until an end-to-end GitHub Actions run has been observed passing.
+The test commands are wired into the CI workflow. Frontend tests/build, BFF tests/type-checking, backend tests, and production container builds completed successfully end-to-end on GitHub Actions for commit `51d17d6`.
 
 ## Legacy code
 
@@ -99,6 +99,6 @@ The repository commits source, lockfiles, configuration, migrations, tests, and 
 
 ## Current phase and next boundaries
 
-Implemented now: React/TypeScript migration, the updated Toodle visual system, Tasks and Calendar feature boundaries, a Node/Express BFF, Spring Boot REST persistence, PostgreSQL, hardened JWT authentication and owner isolation, structured API errors, schedule/category integrity rules, Docker packaging, readiness/liveness monitoring, correlation IDs, and initial GitHub Actions CI.
+Implemented now: React/TypeScript migration, the updated Toodle visual system, Tasks and Calendar feature boundaries, a Node/Express BFF, Spring Boot REST persistence, PostgreSQL, hardened JWT authentication and owner isolation, structured API errors, schedule/category integrity rules, focused testing across all three application layers, Docker packaging, readiness/liveness monitoring, correlation IDs, and verified GitHub Actions CI.
 
-The immediate priority is executing the complete local suite and observing a successful end-to-end GitHub Actions run. Backend feature development is otherwise frozen; cloud deployment remains optional and must not be presented as completed until the application has genuinely been deployed and tested.
+Backend feature development is now frozen. Future work should focus on defects, UI refinement, documentation, and optional deployment; cloud deployment must not be presented as completed until the application has genuinely been deployed and tested.
