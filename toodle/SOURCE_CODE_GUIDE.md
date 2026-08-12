@@ -31,7 +31,7 @@ The browser stores the JWT and basic display identity. Tasks, categories, users,
 - `src/features/tasks/api.ts` is the only browser HTTP boundary. It attaches the bearer token and maps domain objects to API requests.
 - `src/features/tasks/taskUtils.ts` contains pure date, filtering, matching, and sorting helpers.
 - `src/features/tasks/storage.ts` contains legacy local-storage helpers. It is not the active task source of truth and can be removed once migration compatibility is no longer required.
-- `src/styles.css` is the original Toodle design system promoted from the vanilla prototype.
+- `src/styles.css` defines the current Toodle palette, responsive layouts, editorial typography, and lightweight CSS illustrations.
 - `public/icons/` contains static assets copied directly into the Vite build.
 
 Keep network logic in `api.ts`, pure transformations in utilities, and view-specific markup in components/views. `App.tsx` remains the shell and shared-state owner. The Tasks and Calendar boundaries are composed modules within one Vite application, not independently deployed micro-frontends.
@@ -59,10 +59,12 @@ It should not own database persistence or duplicate Spring business rules. Futur
 - `repository/` defines Spring Data queries, including owner-scoped lookups;
 - `model/` contains JPA entities and the priority enum;
 - `dto/` defines validated request and stable response records;
-- `security/` configures stateless Spring Security, JWT creation, and request authentication;
-- `exception/` converts domain and validation failures into API responses.
+- `security/` configures stateless Spring Security, JWT creation, request authentication, and correlation IDs;
+- `exception/` converts domain, security, malformed-request, and validation failures into the stable `ApiError` response.
 
 `CurrentUserService` resolves the authenticated identity. Services and repositories must continue using owner-scoped operations so one account cannot access another account's tasks or categories.
+
+`TaskService` validates schedules before persistence. `CategoryService` normalizes names, prevents case-insensitive duplicates per owner, and clears task associations before category deletion. These rules belong on the server even when the frontend also performs validation.
 
 ## Persistence
 
@@ -75,7 +77,7 @@ Never edit an applied migration for a new schema change. Add the next numbered m
 
 ## Tests
 
-`backend/src/test/java/com/toodle/TaskControllerTest.java` exercises registration, authentication requirements, and task/category CRUD through the HTTP layer with an H2 test database.
+`backend/src/test/java/com/toodle/TaskControllerTest.java` exercises registration, authentication failures, malformed input, owner isolation, schedule validation, category integrity, and task/category CRUD through the HTTP layer with an H2 test database. `JwtServiceTest` verifies expired-token rejection. The backend currently has 12 passing tests.
 
 Current test gaps are frontend component/unit coverage and BFF route coverage. Those belong to the next CI-focused phase; the README does not claim they already exist.
 
@@ -95,6 +97,6 @@ The repository commits source, lockfiles, configuration, migrations, tests, and 
 
 ## Current phase and next boundaries
 
-Implemented now: React/TypeScript migration, Tasks and Calendar feature boundaries, a Node/Express BFF, Spring Boot REST persistence, PostgreSQL, JWT authentication and authorization, Docker packaging, health monitoring, correlation IDs, and initial GitHub Actions CI.
+Implemented now: React/TypeScript migration, the updated Toodle visual system, Tasks and Calendar feature boundaries, a Node/Express BFF, Spring Boot REST persistence, PostgreSQL, hardened JWT authentication and owner isolation, structured API errors, schedule/category integrity rules, Docker packaging, readiness/liveness monitoring, correlation IDs, and initial GitHub Actions CI.
 
-The immediate priorities are backend hardening, broader automated testing, consistent error responses, and CI verification. Cloud deployment remains optional and must not be presented as completed until the application has genuinely been deployed and tested.
+The immediate priorities are frontend and BFF automated tests plus CI verification. Cloud deployment remains optional and must not be presented as completed until the application has genuinely been deployed and tested.

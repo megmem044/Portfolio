@@ -20,6 +20,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${apiUrl}${path}`, { headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options?.headers }, ...options });
   if (!response.ok) {
     const body = await response.json().catch(() => ({ message: 'Request failed' }));
+    // An invalid or expired token must not leave the client in a false signed-in state.
+    if (response.status === 401 || response.status === 403) authApi.logout();
     throw new Error(body.message ?? 'Request failed');
   }
   return response.status === 204 ? undefined as T : response.json() as Promise<T>;
@@ -31,7 +33,15 @@ export const authApi = {
   getSession: () => {
     const token = localStorage.getItem(tokenKey);
     const user = localStorage.getItem('currentUser');
-    return token && user ? { token, ...JSON.parse(user) as Omit<AuthSession, 'token'> } : null;
+    if (!token || !user) return null;
+    try {
+      return { token, ...JSON.parse(user) as Omit<AuthSession, 'token'> };
+    } catch {
+      // Clear partial/corrupt browser state rather than crashing during the first render.
+      localStorage.removeItem(tokenKey);
+      localStorage.removeItem('currentUser');
+      return null;
+    }
   },
   saveSession: (session: AuthSession) => {
     localStorage.setItem(tokenKey, session.token);

@@ -20,12 +20,22 @@ export function AuthForm({ onAuthenticated }: AuthFormProps) {
       onAuthenticated(session);
     } catch (requestError) { setError(requestError instanceof Error ? requestError.message : 'Unable to authenticate'); }
   };
-  return <main className="app-container"><header className="app-header"><h1>Toodle</h1></header><div className="modal-overlay show"><form onSubmit={submit} className="modal" aria-label="Authentication form"><div className="modal-header"><h2>{isRegistering ? 'Create account' : 'Welcome back'}</h2></div><div className="modal-content">
-    {isRegistering && <div className="form-group"><label htmlFor="name">Name</label><input id="name" value={name} onChange={(event) => setName(event.target.value)} required /></div>}
-    <div className="form-group"><label htmlFor="email">Email</label><input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></div>
-    <div className="form-group"><label htmlFor="password">Password</label><input id="password" type="password" minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} required /></div>
-    {error && <p role="alert">{error}</p>}
-    <div className="form-actions"><button className="btn btn-primary" type="submit">{isRegistering ? 'Create account' : 'Sign in'}</button></div>
-    <button className="header-btn" type="button" onClick={() => { setIsRegistering((current) => !current); setError(undefined); }}>{isRegistering ? 'I already have an account' : 'Create account'}</button>
-  </div></form></div></main>;
+  return <main className="auth-page">
+    <section className="auth-story" aria-label="Toodle introduction">
+      <div className="brand-lockup auth-brand"><span className="brand-mark" aria-hidden="true"><span /></span><h1>Toodle</h1></div>
+      <div className="auth-shapes" aria-hidden="true"><span className="auth-star" /><span className="auth-arch" /><span className="auth-cloud" /><span className="auth-dot" /></div>
+      <div className="auth-story-copy"><p className="welcome-eyebrow">A BRIGHTER WAY TO PLAN</p><h2>Make a little space for what matters.</h2><p>Tasks, time, and tiny wins—organized with less noise and more personality.</p></div>
+    </section>
+    <section className="auth-panel">
+      <form onSubmit={submit} className="auth-form" aria-label="Authentication form">
+        <div className="auth-heading"><p className="welcome-eyebrow">{isRegistering ? 'JOIN TOODLE' : 'WELCOME BACK'}</p><h2>{isRegistering ? 'Create your space' : 'Pick up where you left off'}</h2></div>
+        {isRegistering && <div className="form-group"><label htmlFor="name">Name</label><input id="name" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} required /></div>}
+        <div className="form-group"><label htmlFor="email">Email</label><input id="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></div>
+        <div className="form-group"><label htmlFor="password">Password</label><input id="password" type="password" autoComplete={isRegistering ? 'new-password' : 'current-password'} minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} required /></div>
+        {error && <p className="auth-error" role="alert">{error}</p>}
+        <button className="btn btn-primary auth-submit" type="submit">{isRegistering ? 'Create account' : 'Sign in'}</button>
+        <p className="auth-switch-copy">{isRegistering ? 'Already have an account?' : 'New to Toodle?'} <button type="button" onClick={() => { setIsRegistering((current) => !current); setError(undefined); }}>{isRegistering ? 'Sign in' : 'Create an account'}</button></p>
+      </form>
+    </section>
+  </main>;
 }

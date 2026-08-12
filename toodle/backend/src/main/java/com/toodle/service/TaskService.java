@@ -9,7 +9,9 @@ import com.toodle.repository.CategoryRepository;
 import com.toodle.repository.TaskRepository;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 /** Applies task operations while enforcing the authenticated owner boundary. */
 @Service
@@ -33,13 +35,15 @@ public class TaskService {
     }
 
     public Task create(TaskRequest request) {
+        validateSchedule(request);
         AppUser owner = currentUserService.get();
-        return taskRepository.save(new Task(request.title(), request.description(), request.startDate(), request.startTime(), request.dueDate(), request.dueTime(), request.priority(), findCategory(request.categoryId(), owner), owner, request.completed()));
+        return taskRepository.save(new Task(request.title().trim(), normalize(request.description()), request.startDate(), request.startTime(), request.dueDate(), request.dueTime(), request.priority(), findCategory(request.categoryId(), owner), owner, request.completed()));
     }
 
     public Task update(UUID id, TaskRequest request) {
+        validateSchedule(request);
         Task task = findById(id);
-        task.update(request.title(), request.description(), request.startDate(), request.startTime(), request.dueDate(), request.dueTime(), request.priority(), findCategory(request.categoryId(), currentUserService.get()), request.completed());
+        task.update(request.title().trim(), normalize(request.description()), request.startDate(), request.startTime(), request.dueDate(), request.dueTime(), request.priority(), findCategory(request.categoryId(), currentUserService.get()), request.completed());
         return taskRepository.save(task);
     }
 
@@ -50,5 +54,26 @@ public class TaskService {
     private Category findCategory(UUID categoryId, AppUser owner) {
         if (categoryId == null) return null;
         return categoryRepository.findByIdAndOwner(categoryId, owner).orElseThrow(() -> new ResourceNotFoundException("Category", categoryId));
+    }
+
+    private void validateSchedule(TaskRequest request) {
+        if (request.startTime() != null && request.startDate() == null) badRequest("Start time requires a start date");
+        if (request.dueTime() != null && request.dueDate() == null) badRequest("Due time requires a due date");
+        if (request.startDate() != null && request.dueDate() != null) {
+            if (request.dueDate().isBefore(request.startDate())) badRequest("Due date cannot be before start date");
+            if (request.dueDate().isEqual(request.startDate()) && request.startTime() != null && request.dueTime() != null && request.dueTime().isBefore(request.startTime())) {
+                badRequest("Due time cannot be before start time on the same date");
+            }
+        }
+    }
+
+    private void badRequest(String message) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+    }
+
+    private String normalize(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

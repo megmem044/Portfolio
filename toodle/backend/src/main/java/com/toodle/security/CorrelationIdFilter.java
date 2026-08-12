@@ -9,11 +9,14 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /** Propagates a request correlation ID through response headers and structured logs. */
 @Component
+@Order(Ordered.HIGHEST_PRECEDENCE + 1)
 public class CorrelationIdFilter extends OncePerRequestFilter {
     private static final Logger LOGGER = LoggerFactory.getLogger(CorrelationIdFilter.class);
     private static final String HEADER = "X-Correlation-Id";

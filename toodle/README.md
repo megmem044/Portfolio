@@ -24,12 +24,14 @@ The active code lives in `frontend/`, `bff/`, and `backend/`. Earlier vanilla we
 ## Implemented
 
 - React and TypeScript task UI with day, week, and month views
+- Responsive visual system using the Toodle palette, editorial typography, and code-drawn decorative graphics
 - Task search, status filters, categories, and CRUD workflows
 - Node/Express BFF, including a composed bootstrap response
 - Spring Boot REST endpoints for authentication, tasks, and categories
 - PostgreSQL persistence with Flyway migrations
 - JWT authentication and owner-scoped server-side data access
-- Spring integration tests for core authenticated API workflows
+- Standard API error responses with status, code, message, path, timestamp, and correlation ID
+- Owner-isolation, authentication, schedule-validation, and CRUD integration coverage
 - Tasks and Calendar feature domains composed by the React shell
 - GitHub Actions verification for frontend, BFF, backend, and production image builds
 - Production Docker Compose stack with Nginx routing browser `/api` requests to the BFF
@@ -38,10 +40,8 @@ The active code lives in `frontend/`, `bff/`, and `backend/`. Earlier vanilla we
 ## Roadmap
 
 - Add frontend and BFF automated tests
-- Expand backend authentication, authorization, and validation tests
-- Standardize API error responses
-- Separate readiness and liveness checks
 - Verify the complete GitHub Actions workflow
+- Add any remaining database constraints through new Flyway migrations
 - Consider cloud deployment after the local and CI workflows are stable
 
 The goal is architectural modernization, not expanding the product with unrelated features.
@@ -116,10 +116,20 @@ Do not commit real secrets. Local defaults are for development only.
 
 ## Observability
 
-- Spring Boot exposes unauthenticated liveness at `/actuator/health` and `/actuator/health/liveness`.
+- Spring Boot exposes unauthenticated liveness at `/actuator/health/liveness` and database-aware readiness at `/actuator/health/readiness`.
 - The BFF exposes `/health`, which reports its Spring API dependency state.
 - The BFF and Spring API accept and return `X-Correlation-Id`; when absent, the BFF generates one. Completion logs include that ID, request method/path, and status.
-- Docker Compose uses these endpoints as health checks so dependent services wait for readiness.
+- Docker Compose uses readiness checks so dependent services wait for the API and database.
+- The production Spring profile keeps operational logs while suppressing verbose framework and SQL output.
+
+## Backend guarantees
+
+- Missing, invalid, and expired authentication tokens are rejected.
+- Task and category access is scoped to the authenticated owner; inaccessible IDs return `404` without revealing another user's data.
+- Task schedules reject times without dates and due values before their corresponding start values.
+- Category names are trimmed and must be unique per user, ignoring case.
+- Deleting a category clears its task associations without deleting the tasks.
+- API failures follow one structured error contract and include a correlation ID.
 
 ## Verify
 
@@ -133,6 +143,8 @@ npm run build
 cd ../backend
 mvn -s maven-settings.xml test
 ```
+
+The backend suite currently contains 12 passing tests across web integration and JWT-expiration coverage.
 
 ## Repository map
 

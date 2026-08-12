@@ -22,6 +22,14 @@ management:
     health:
       probes:
         enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+
+info:
+  app:
+    name: Toodle API
+    version: "@project.version@"
 
 logging:
   pattern:

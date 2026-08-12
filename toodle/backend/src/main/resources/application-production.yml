@@ -1,0 +1,11 @@
+# Production profile keeps operational request summaries while suppressing framework and SQL debug noise.
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN
+
+spring:
+  jpa:
+    show-sql: false

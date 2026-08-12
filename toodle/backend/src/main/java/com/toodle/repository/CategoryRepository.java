@@ -10,4 +10,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface CategoryRepository extends JpaRepository<Category, UUID> {
 	List<Category> findAllByOwner(AppUser owner);
 	Optional<Category> findByIdAndOwner(UUID id, AppUser owner);
+	boolean existsByNameIgnoreCaseAndOwner(String name, AppUser owner);
+	boolean existsByNameIgnoreCaseAndOwnerAndIdNot(String name, AppUser owner, UUID id);
 }
