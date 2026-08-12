@@ -1,48 +1,16 @@
-<!-- Custom instructions for GitHub Copilot in this iOS To-Do List project -->
+# Toodle contributor instructions
 
-# To-Do List App - Copilot Instructions
+Toodle is being modernized from a browser-only prototype into a full-stack application.
 
-## Project Overview
-This is an iOS to-do list application built with Swift and SwiftUI following MVVM architecture.
+## Active stack
 
-## Technology Stack
-- **Language**: Swift 5.9+
-- **UI Framework**: SwiftUI
-- **Minimum iOS**: 17.0
-- **Architecture**: MVVM (Model-View-ViewModel)
-- **Persistence**: UserDefaults (can be upgraded to SwiftData)
+- `frontend/`: React, TypeScript, and Vite
+- `bff/`: Node.js and Express backend-for-frontend
+- `backend/`: Java 17, Spring Boot, Spring Security, JPA, Flyway, and PostgreSQL
+- `legacy/`: reference prototypes only; do not add active features here
 
-## Coding Conventions
+Preserve the existing product behavior and visual design while improving architecture. Keep browser requests in the frontend API adapter, UI-specific aggregation in the BFF, business/authorization rules in Spring services, and persistence in repositories/Flyway migrations.
 
-### Swift Style
-- Use Swift's modern concurrency features when needed
-- Prefer `let` over `var` when possible
-- Use descriptive variable and function names
-- Follow Apple's Swift API Design Guidelines
+All task and category access must remain scoped to the authenticated owner. Do not commit secrets, dependencies, caches, or build output. Add focused comments for security boundaries, mapping logic, and non-obvious calendar calculations; avoid comments that restate syntax.
 
-### SwiftUI Patterns
-- Use `@StateObject` for view model ownership
-- Use `@EnvironmentObject` to share view models
-- Extract reusable components into separate views
-- Use `#Preview` macros for SwiftUI previews
-
-### Architecture Guidelines
-- Keep Views focused on UI only
-- Place business logic in ViewModels
-- Models should be simple data containers
-- Use Codable for persistence
-
-## File Organization
-```
-Models/          - Data models (Task.swift)
-ViewModels/      - Business logic (TaskViewModel.swift)
-Views/           - SwiftUI views
-```
-
-## Key Components
-- `Task`: Core data model with id, title, description, dueDate, isCompleted, priority
-- `TaskViewModel`: ObservableObject managing task state and persistence
-- `ContentView`: Main navigation and layout
-- `TaskListView`: Displays filtered task list
-- `TaskRowView`: Individual task display
-- `AddEditTaskView`: Form for creating/editing tasks
+Before submitting changes, run the frontend and BFF TypeScript builds and the backend Maven tests described in the root README.

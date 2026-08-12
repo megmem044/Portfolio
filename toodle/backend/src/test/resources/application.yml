@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:toodle-test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+toodle:
+  jwt:
+    secret: test-jwt-signing-secret-that-is-long-enough-for-hmac-sha-256
+    expiration-minutes: 60

@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/toodle}
+    username: ${DATABASE_USERNAME:toodle}
+    password: ${DATABASE_PASSWORD:toodle}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+toodle:
+  jwt:
+    secret: ${JWT_SECRET:toodle-local-development-secret-key-change-before-production-2026}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}

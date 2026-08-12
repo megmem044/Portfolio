@@ -1,681 +1,98 @@
-# Toodle - Source Code Guide
+# Toodle source code guide
 
-A comprehensive developer guide for the Toodle To-Do List application, covering both the **iOS/SwiftUI** and **Web/JavaScript** implementations.
+This guide describes the repository at its current modernization phase. It separates production-path code from retained prototypes and records the main ownership boundaries for future contributors.
 
----
+## Request flow
 
-## Project Structure Overview
-
-```
-To-Do List App/
-├── ToDoListApp.swift          # iOS app entry point
-├── Models/
-│   └── Task.swift             # Core data model
-├── ViewModels/
-│   └── TaskViewModel.swift    # Business logic & state management
-├── Views/
-│   ├── ContentView.swift      # Main container view
-│   ├── TaskListView.swift     # Task list display
-│   ├── TaskRowView.swift      # Individual task row
-│   └── AddEditTaskView.swift  # Task creation/editing form
-├── web/
-│   ├── index.html             # Main web app page
-│   ├── app.js                 # Core JavaScript logic
-│   ├── styles.css             # Main stylesheet
-│   ├── auth.js                # Authentication logic
-│   ├── auth.css               # Auth page styles
-│   ├── login.html             # Login page
-│   ├── signup.html            # Registration page
-│   ├── forgot-password.html   # Password recovery
-│   ├── reset-password.html    # Password reset
-│   ├── manifest.json          # PWA manifest
-│   ├── sw.js                  # Service worker
-│   └── icons/                 # App icons
-└── README.md                  # Project documentation
+```text
+frontend/src
+  -> HTTP /api
+bff/src/server.ts
+  -> authenticated proxy/composed responses
+backend/src/main/java/com/toodle
+  -> controllers -> services -> repositories
+backend/src/main/resources/db/migration
+  -> PostgreSQL schema
 ```
 
----
+The browser stores the JWT and basic display identity. Tasks, categories, users, and authorization decisions are owned by the server.
 
-## iOS/SwiftUI Implementation
+## Frontend
 
-### Architecture: MVVM (Model-View-ViewModel)
+`frontend/` is the active React/TypeScript client built by Vite.
 
-The iOS app follows the MVVM pattern for clean separation of concerns:
-- **Model**: Data structures (`Task`)
-- **View**: SwiftUI views (UI only)
-- **ViewModel**: Business logic and state (`TaskViewModel`)
+- `src/main.tsx` is the browser entry point and loads the shared design stylesheet.
+- `src/app/App.tsx` is the current application shell. It coordinates authentication, remote state, filters, calendar navigation, and modal workflows.
+- `src/components/` contains reusable UI controls: authentication, task cards/forms, categories, and statistics.
+- `src/views/` contains day, week, and month calendar projections.
+- `src/features/tasks/types.ts` defines the client domain contracts.
+- `src/features/tasks/api.ts` is the only browser HTTP boundary. It attaches the bearer token and maps domain objects to API requests.
+- `src/features/tasks/taskUtils.ts` contains pure date, filtering, matching, and sorting helpers.
+- `src/features/tasks/storage.ts` contains legacy local-storage helpers. It is not the active task source of truth and can be removed once migration compatibility is no longer required.
+- `src/styles.css` is the original Toodle design system promoted from the vanilla prototype.
+- `public/icons/` contains static assets copied directly into the Vite build.
 
----
+Keep network logic in `api.ts`, pure transformations in utilities, and view-specific markup in components/views. `App.tsx` is intentionally still a consolidation point during migration; later refactoring should reduce its coordination responsibilities without changing product behavior.
 
-### Entry Point: `ToDoListApp.swift`
+## Backend-for-frontend
 
-```swift
-@main
-struct ToDoListApp: App {
-    @StateObject private var taskViewModel = TaskViewModel()
-    
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .environmentObject(taskViewModel)
-        }
-    }
-}
-```
+`bff/src/server.ts` is the active Express BFF.
 
-**Key Concepts:**
-- `@main` marks the app entry point
-- `@StateObject` creates and owns the `TaskViewModel` instance
-- `.environmentObject()` injects the view model into the view hierarchy
-- All child views can access it via `@EnvironmentObject`
+Responsibilities:
 
----
+- expose the browser-facing `/api` contract;
+- require bearer authentication for protected routes;
+- forward authentication, task, and category operations to Spring;
+- compose tasks and categories into `/api/bootstrap`;
+- translate an unavailable upstream service into a `502` response.
 
-### Model Layer: `Models/Task.swift`
+It should not own database persistence or duplicate Spring business rules. Future frontend-specific aggregation belongs here.
 
-#### Task Struct
+## Spring Boot API
 
-```swift
-struct Task: Identifiable, Codable, Equatable {
-    var id: UUID
-    var title: String
-    var description: String
-    var dueDate: Date
-    var isCompleted: Bool
-    var createdAt: Date
-    var priority: Priority
-}
-```
+`backend/src/main/java/com/toodle/` follows conventional Spring layers:
 
-**Protocol Conformance:**
-| Protocol | Purpose |
-|----------|---------|
-| `Identifiable` | Enables use in `ForEach` without explicit id |
-| `Codable` | JSON encoding/decoding for persistence |
-| `Equatable` | Comparison for SwiftUI diffing and animations |
+- `controller/` defines REST routes and response status codes;
+- `service/` owns business operations and applies the current user boundary;
+- `repository/` defines Spring Data queries, including owner-scoped lookups;
+- `model/` contains JPA entities and the priority enum;
+- `dto/` defines validated request and stable response records;
+- `security/` configures stateless Spring Security, JWT creation, and request authentication;
+- `exception/` converts domain and validation failures into API responses.
 
-#### Priority Enum
+`CurrentUserService` resolves the authenticated identity. Services and repositories must continue using owner-scoped operations so one account cannot access another account's tasks or categories.
 
-```swift
-enum Priority: String, Codable, CaseIterable {
-    case low = "Low"
-    case medium = "Medium"
-    case high = "High"
-    
-    var color: String {
-        switch self {
-        case .low: return "green"
-        case .medium: return "orange"
-        case .high: return "red"
-        }
-    }
-}
-```
+## Persistence
 
-**Features:**
-- `CaseIterable` enables iteration for UI pickers
-- `rawValue` provides human-readable strings
-- Computed `color` property for consistent styling
+PostgreSQL is defined for local development in `backend/compose.yaml`. Flyway migrations in `backend/src/main/resources/db/migration/` are the schema history:
 
-#### Sample Data
+- `V1__create_task_schema.sql` creates the original task/category tables;
+- `V2__create_user_schema.sql` adds users and ownership relationships.
 
-```swift
-extension Task {
-    static let sampleTasks: [Task] = [
-        Task(title: "Buy groceries", ...),
-        // More samples for previews and testing
-    ]
-}
-```
+Never edit an applied migration for a new schema change. Add the next numbered migration instead.
 
----
+## Tests
 
-### ViewModel Layer: `ViewModels/TaskViewModel.swift`
+`backend/src/test/java/com/toodle/TaskControllerTest.java` exercises registration, authentication requirements, and task/category CRUD through the HTTP layer with an H2 test database.
 
-#### Class Declaration
+Current test gaps are frontend component/unit coverage and BFF route coverage. Those belong to the next CI-focused phase; the README does not claim they already exist.
 
-```swift
-class TaskViewModel: ObservableObject {
-    @Published var tasks: [Task] = [] {
-        didSet { saveTasks() }
-    }
-    @Published var selectedFilter: TaskFilter = .all
-    @Published var searchText: String = ""
-}
-```
+## Legacy code
 
-**Key Patterns:**
-- `ObservableObject` enables SwiftUI observation
-- `@Published` triggers view updates on change
-- `didSet` observer auto-saves on any task modification
+`legacy/web/` is the original vanilla JavaScript PWA and `legacy/ios/` is the SwiftUI prototype. Neither directory is part of the active build. They are retained to show product history and support behavior comparisons during modernization. See `legacy/README.md`.
 
-#### Filter Enum
+## Commenting convention
 
-```swift
-enum TaskFilter: String, CaseIterable {
-    case all = "All"
-    case active = "Active"
-    case completed = "Completed"
-}
-```
+Authored source files should start with a short comment that states their responsibility when the filename and framework structure are not already sufficient. Add inline comments for security boundaries, non-obvious date calculations, protocol mapping, and intentional compatibility behavior.
 
-#### Computed Properties
+Avoid comments that merely restate syntax. JSON manifests, lockfiles, generated output, compiled classes, and third-party dependencies should not receive comments.
 
-```swift
-// Filtered and sorted task list
-var filteredTasks: [Task] {
-    var result = tasks
-    
-    // Apply filter (all/active/completed)
-    switch selectedFilter { ... }
-    
-    // Apply search text
-    if !searchText.isEmpty { ... }
-    
-    // Sort by: incomplete first, then due date, then priority
-    return result.sorted { ... }
-}
+## Git hygiene
 
-// Statistics
-var completedCount: Int { tasks.filter { $0.isCompleted }.count }
-var activeCount: Int { tasks.filter { !$0.isCompleted }.count }
-var totalCount: Int { tasks.count }
-```
+The repository commits source, lockfiles, configuration, migrations, tests, and documentation. `.gitignore` excludes dependency trees, local Maven caches, build output, logs, editor state, and environment files. Never force-add ignored generated files or secrets.
 
-#### CRUD Operations
+## Current phase and next boundaries
 
-| Method | Description |
-|--------|-------------|
-| `addTask(_ task:)` | Appends new task to array |
-| `updateTask(_ task:)` | Finds by ID and replaces |
-| `deleteTask(_ task:)` | Removes matching task |
-| `deleteTasks(at:)` | Batch delete by IndexSet |
-| `toggleCompletion(for:)` | Toggles `isCompleted` flag |
-| `clearCompleted()` | Removes all completed tasks |
+Implemented now: React migration, Spring REST persistence, PostgreSQL, JWT authentication/authorization, and an initial Node BFF.
 
-#### Persistence (UserDefaults)
-
-```swift
-private let tasksKey = "savedTasks"
-
-private func saveTasks() {
-    if let encoded = try? JSONEncoder().encode(tasks) {
-        UserDefaults.standard.set(encoded, forKey: tasksKey)
-    }
-}
-
-private func loadTasks() {
-    if let data = UserDefaults.standard.data(forKey: tasksKey),
-       let decoded = try? JSONDecoder().decode([Task].self, from: data) {
-        tasks = decoded
-    }
-}
-```
-
----
-
-### View Layer
-
-#### `Views/ContentView.swift`
-
-The main container view with navigation and layout.
-
-**Structure:**
-```
-NavigationStack
-├── VStack
-│   ├── StatisticsHeaderView     # Task counts
-│   ├── FilterPickerView         # All/Active/Completed
-│   └── TaskListView             # Task list
-├── .navigationTitle("My Tasks")
-├── .searchable(...)             # Search bar
-├── .toolbar { ... }             # Add & menu buttons
-└── .sheet { ... }               # Modal presentations
-```
-
-**Key Components:**
-
-1. **StatisticsHeaderView** - Displays task counts
-   ```swift
-   HStack {
-       StatCard(title: "Total", count: viewModel.totalCount, color: .blue)
-       StatCard(title: "Active", count: viewModel.activeCount, color: .orange)
-       StatCard(title: "Done", count: viewModel.completedCount, color: .green)
-   }
-   ```
-
-2. **FilterPickerView** - Segmented control for filtering
-   ```swift
-   Picker("Filter", selection: $viewModel.selectedFilter) {
-       ForEach(TaskFilter.allCases, id: \.self) { filter in
-           Text(filter.rawValue).tag(filter)
-       }
-   }
-   .pickerStyle(.segmented)
-   ```
-
-3. **Sheet Presentations**
-   ```swift
-   .sheet(isPresented: $showingAddTask) {
-       AddEditTaskView(mode: .add)
-   }
-   .sheet(item: $selectedTask) { task in
-       AddEditTaskView(mode: .edit(task))
-   }
-   ```
-
----
-
-#### `Views/TaskListView.swift`
-
-Displays the filtered task list with swipe actions.
-
-**Key Features:**
-
-1. **Empty State Handling**
-   ```swift
-   if viewModel.filteredTasks.isEmpty {
-       EmptyStateView()
-   } else {
-       ForEach(viewModel.filteredTasks) { task in ... }
-   }
-   ```
-
-2. **Swipe Actions**
-   ```swift
-   .swipeActions(edge: .trailing) {
-       Button(role: .destructive) { viewModel.deleteTask(task) }
-   }
-   .swipeActions(edge: .leading) {
-       Button { viewModel.toggleCompletion(for: task) }
-   }
-   ```
-
-3. **Dynamic Empty State** - Different messages based on filter and search state
-
----
-
-#### `Views/TaskRowView.swift`
-
-Individual task row with all details.
-
-**Layout:**
-```
-HStack
-├── Completion Button (circle/checkmark)
-├── VStack (Task Details)
-│   ├── HStack
-│   │   ├── Title (with strikethrough if completed)
-│   │   └── PriorityBadge
-│   ├── Description (if present)
-│   └── Due Date with icon
-└── Chevron indicator
-```
-
-**Smart Date Formatting:**
-```swift
-private var formattedDueDate: String {
-    if calendar.isDateInToday(task.dueDate) { return "Today" }
-    else if calendar.isDateInTomorrow(task.dueDate) { return "Tomorrow" }
-    else if calendar.isDateInYesterday(task.dueDate) { return "Yesterday" }
-    else { return dateFormatter.string(from: task.dueDate) }
-}
-```
-
-**Due Date Color Logic:**
-```swift
-private var dueDateColor: Color {
-    if task.isCompleted { return .secondary }
-    if task.dueDate < Date() { return .red }      // Overdue
-    if calendar.isDateInToday(task.dueDate) { return .orange }
-    return .secondary
-}
-```
-
----
-
-#### `Views/AddEditTaskView.swift`
-
-Form for creating and editing tasks.
-
-**Mode Enum:**
-```swift
-enum TaskEditMode: Identifiable {
-    case add
-    case edit(Task)
-}
-```
-
-**Form Sections:**
-1. **Title** - Required text field
-2. **Description** - Optional TextEditor
-3. **Schedule** - DatePicker with date and time
-4. **Priority** - Segmented picker with color indicators
-5. **Delete** - Only shown in edit mode
-
-**Key Patterns:**
-
-1. **State Initialization on Appear**
-   ```swift
-   .onAppear { loadExistingTask() }
-   
-   private func loadExistingTask() {
-       if let task = existingTask {
-           title = task.title
-           description = task.description
-           // ... load other fields
-       }
-   }
-   ```
-
-2. **Unified Save Logic**
-   ```swift
-   private func saveTask() {
-       if let existingTask = existingTask {
-           // Update existing
-           var updatedTask = existingTask
-           updatedTask.title = trimmedTitle
-           viewModel.updateTask(updatedTask)
-       } else {
-           // Create new
-           let newTask = Task(title: trimmedTitle, ...)
-           viewModel.addTask(newTask)
-       }
-       dismiss()
-   }
-   ```
-
-3. **Delete Confirmation**
-   ```swift
-   .alert("Delete Task", isPresented: $showingDeleteAlert) {
-       Button("Cancel", role: .cancel) { }
-       Button("Delete", role: .destructive) { ... }
-   }
-   ```
-
----
-
-## Web Implementation
-
-### Architecture: Class-Based JavaScript
-
-The web app uses a single `TaskManager` class to handle all functionality.
-
----
-
-### Core Class: `web/app.js`
-
-```javascript
-class TaskManager {
-    constructor() {
-        this.tasks = this.loadTasks();
-        this.categories = this.loadCategories();
-        this.currentFilter = 'all';
-        this.currentView = 'day';       // day, week, month
-        this.currentDate = new Date();
-        this.searchQuery = '';
-        this.editingTaskId = null;
-        
-        this.initializeElements();
-        this.bindEvents();
-        this.renderCategories();
-        this.render();
-    }
-}
-```
-
-**Initialization Flow:**
-1. Load persisted data from localStorage
-2. Cache DOM element references
-3. Bind event listeners
-4. Render initial UI
-
----
-
-### Data Persistence
-
-```javascript
-loadTasks() {
-    const saved = localStorage.getItem('toodle_tasks');
-    return saved ? JSON.parse(saved) : [];
-}
-
-saveTasks() {
-    localStorage.setItem('toodle_tasks', JSON.stringify(this.tasks));
-}
-
-loadCategories() {
-    const saved = localStorage.getItem('toodle_categories');
-    return saved ? JSON.parse(saved) : [];
-}
-```
-
----
-
-### Key Features
-
-#### 1. Calendar Views
-
-| View | Description |
-|------|-------------|
-| **Day** | List of tasks for selected date |
-| **Week** | 7-day grid with time slots |
-| **Month** | Calendar grid with task dots |
-
-#### 2. Category System
-
-- User-defined categories with names
-- 10-color palette for visual distinction
-- Categories stored separately in localStorage
-
-#### 3. Task Properties
-
-```javascript
-{
-    id: uniqueId,
-    title: "Task name",
-    description: "Optional details",
-    startDate: "2026-01-29",
-    startTime: "09:00",
-    dueDate: "2026-01-29",
-    dueTime: "17:00",
-    priority: "medium",     // low, medium, high
-    categoryId: "uuid",     // optional
-    completed: false,
-    createdAt: timestamp
-}
-```
-
----
-
-### HTML Structure: `web/index.html`
-
-```
-app-container
-├── app-header
-│   ├── Logo ("Toodle")
-│   ├── View dropdown (Day/Week/Month)
-│   ├── Add Task button
-│   └── Profile icon
-├── stats-container
-│   ├── Total count
-│   ├── Active count
-│   └── Completed count
-├── date-navigation
-│   ├── Previous button
-│   ├── Current date label
-│   └── Next button
-├── filter-container (All/Active/Completed)
-├── day-view (task list)
-├── week-view (time grid)
-├── month-view (calendar)
-├── empty-state
-└── task-modal (add/edit form)
-```
-
----
-
-### Authentication: `web/auth.js`
-
-Handles user registration, login, and password recovery.
-
-**Pages:**
-- `login.html` - User sign-in
-- `signup.html` - New user registration
-- `forgot-password.html` - Password recovery request
-- `reset-password.html` - Password reset form
-
-**Session Management:**
-```javascript
-// Check authentication on main page
-if (!localStorage.getItem('currentUser')) {
-    window.location.href = 'login.html';
-}
-
-// Logout
-localStorage.removeItem('currentUser');
-window.location.href = 'login.html';
-```
-
----
-
-### PWA Support
-
-#### `web/manifest.json`
-- App name and icons
-- Theme colors
-- Display mode (standalone)
-
-#### `web/sw.js`
-- Service worker for offline support
-- Asset caching strategy
-
----
-
-## Data Flow Comparison
-
-### iOS (SwiftUI)
-
-```
-User Action
-    ↓
-View (e.g., TaskRowView)
-    ↓
-ViewModel Method (e.g., toggleCompletion)
-    ↓
-@Published property updates
-    ↓
-didSet triggers saveTasks()
-    ↓
-SwiftUI re-renders affected views
-```
-
-### Web (JavaScript)
-
-```
-User Action
-    ↓
-Event Listener
-    ↓
-TaskManager Method
-    ↓
-this.tasks array updated
-    ↓
-this.saveTasks() called
-    ↓
-this.render() updates DOM
-```
-
----
-
-## Design System
-
-### Color Palette
-
-| Purpose | iOS (SwiftUI) | Web (CSS) |
-|---------|---------------|-----------|
-| Low Priority | `.green` | `#4CAF50` / `green` |
-| Medium Priority | `.orange` | `#FF9800` / `orange` |
-| High Priority | `.red` | `#F44336` / `red` |
-| Background | `.systemGroupedBackground` | Warm palette |
-
-### Category Colors (Web)
-
-```javascript
-const CATEGORY_COLORS = [
-    '#FFDA03', // Sunflower
-    '#FF8243', // Mango
-    '#EC5800', // Persimmon
-    '#E34234', // Vermillion
-    '#FD4659', // Watermelon
-    '#FF6FD8', // Bubblegum
-    '#DA70D6', // Orchid
-    '#F75394', // Strawberry
-    '#E0115F', // Ruby
-    '#800020'  // Burgundy
-];
-```
-
----
-
-## SwiftUI Best Practices Used
-
-| Practice | Example |
-|----------|---------|
-| `@StateObject` for ownership | App entry point owns ViewModel |
-| `@EnvironmentObject` for sharing | Views access shared ViewModel |
-| `@State` for local state | Form field values |
-| `@Binding` for child-to-parent | Selected task in list |
-| Computed properties | `filteredTasks`, `formattedDueDate` |
-| `#Preview` macros | Each view has preview variants |
-
----
-
-## Future Enhancements
-
-### iOS
-- [ ] SwiftData migration (from UserDefaults)
-- [ ] CloudKit sync
-- [ ] Widget support
-- [ ] Notifications for due dates
-
-### Web
-- [ ] Backend API integration
-- [ ] Real-time sync
-- [ ] Drag-and-drop task ordering
-- [ ] Dark mode toggle
-
----
-
-## Quick Reference
-
-### Add a New Task (iOS)
-
-```swift
-let task = Task(
-    title: "New Task",
-    description: "Details here",
-    dueDate: Date().addingTimeInterval(86400),
-    priority: .high
-)
-viewModel.addTask(task)
-```
-
-### Filter Tasks (iOS)
-
-```swift
-viewModel.selectedFilter = .active
-viewModel.searchText = "groceries"
-// filteredTasks computed property auto-updates
-```
-
-### Toggle Completion (iOS)
-
-```swift
-viewModel.toggleCompletion(for: task)
-// Animates with .spring(response: 0.3)
-```
-
----
-
-*Last Updated: January 29, 2026*
+Still planned: broader automated tests, GitHub Actions, container/deployment packaging, Azure hosting, health/monitoring, and a possible Tasks/Calendar micro-frontend split. Stabilize and test the current monolithic React application before splitting it.
