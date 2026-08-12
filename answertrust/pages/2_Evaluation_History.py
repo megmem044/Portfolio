@@ -7,6 +7,7 @@ import streamlit as st
 from src.config import DATABASE_PATH
 from src.database import get_evaluation_runs, get_evaluations
 from src.models import Decision
+from src.ui import apply_workspace_theme
 
 
 st.set_page_config(
@@ -14,6 +15,8 @@ st.set_page_config(
     page_icon="📋",
     layout="wide",
 )
+
+apply_workspace_theme()
 
 st.title("Evaluation History")
 st.write(

@@ -6,6 +6,7 @@ from src.config import DATABASE_PATH
 from src.database import get_evaluation_runs, get_evaluations
 from src.models import RunState
 from src.review import ReviewDecision, resolve_human_review
+from src.ui import apply_workspace_theme
 
 
 st.set_page_config(
@@ -54,6 +55,8 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+apply_workspace_theme()
 
 st.markdown(
     '<p class="review-eyebrow">Human-in-the-loop decision queue</p>',

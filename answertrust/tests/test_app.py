@@ -8,7 +8,11 @@ from streamlit.testing.v1 import AppTest
 
 from src import database
 
-APP_PATH = Path(__file__).resolve().parent.parent / "app.py"
+APP_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "pages"
+    / "1_New_Evaluation.py"
+)
 
 
 @pytest.fixture(autouse=True)
@@ -44,13 +48,12 @@ def submit_evaluation(
 def test_app_renders_evaluation_form():
     app = load_app()
 
-    assert app.title[0].value == "AnswerTrust"
     assert [field.label for field in app.text_area] == [
-        "Question",
-        "Reference information",
-        "AI-generated answer",
+        "Verification question",
+        "Trusted reference",
+        "Information to verify",
     ]
-    assert app.button[0].label == "Evaluate Answer"
+    assert app.button[0].label == "Verify information"
     assert app.checkbox[0].label == "Use optional local transformer explanation"
     assert app.selectbox[0].label == "Transformer prompt"
     assert app.selectbox[0].value == "baseline"

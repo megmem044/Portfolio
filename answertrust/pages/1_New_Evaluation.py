@@ -8,6 +8,7 @@ from src.transformer_evaluator import (
     LocalTransformerEvaluator,
     PROMPT_VERSIONS,
 )
+from src.ui import apply_workspace_theme
 from src.workflow import execute_evaluation_run
 
 
@@ -169,6 +170,68 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+apply_workspace_theme()
+
+
+st.markdown(
+    """
+    <style>
+        :root { --ink:#2c2c34; --coral:#ff7d59; --pink:#ffbde8;
+            --periwinkle:#9980ed; --sky:#cddbf9; --paper:#fffdf8;
+            --muted:#62616e; }
+        .stApp { background:var(--sky)!important; background-image:none!important; }
+        [data-testid="stHeader"] { background:rgba(205,219,249,.94)!important; }
+        [data-testid="stHeader"]::before { background:var(--coral)!important; }
+        [data-testid="stSidebar"] { background:var(--ink)!important;
+            border-right:0!important; }
+        [data-testid="stSidebar"] > div, [data-testid="stSidebarNav"] {
+            background:var(--ink)!important; }
+        [data-testid="stSidebarNav"]::before {
+            background:transparent!important; color:var(--paper)!important;
+            content:"AnswerTrust"!important; display:block!important;
+            font-family:Georgia,"Times New Roman",serif!important;
+            font-size:2rem!important; font-weight:700!important;
+            letter-spacing:-.04em!important; line-height:1!important;
+            padding:2.1rem 1.5rem .55rem!important;
+        }
+        [data-testid="stSidebarNav"] ul {
+            margin-top:0!important; padding-top:0!important;
+        }
+        [data-testid="stSidebar"] * { color:var(--paper)!important; }
+        [data-testid="stSidebarNav"] a[aria-current="page"] {
+            background:var(--coral)!important; }
+        [data-testid="stSidebarNav"] a:hover { background:#44434d!important; }
+        .block-container { max-width:1120px; padding-top:2.25rem; }
+        h1,h2,h3 { color:var(--ink)!important; }
+        .app-heading-row h1 { font-family:Georgia,"Times New Roman",serif;
+            font-size:2.2rem; letter-spacing:-.04em; }
+        .app-breadcrumb { color:var(--periwinkle); }
+        .app-description { color:var(--muted); margin-bottom:1.35rem; }
+        .app-status { background:var(--paper); border:1px solid var(--ink);
+            color:var(--ink); letter-spacing:.06em; }
+        div[data-testid="stForm"] { background:var(--paper);
+            border:2px solid var(--ink); border-top:2px solid var(--ink);
+            border-radius:20px; box-shadow:10px 10px 0 var(--periwinkle);
+            padding:1.45rem 1.5rem 1.5rem; }
+        div[data-testid="stForm"]:hover { box-shadow:10px 10px 0 var(--periwinkle); }
+        .section-label { color:var(--coral); }
+        div[data-testid="stTextArea"] textarea { background:#fff;
+            border:1px solid #cac8d2; color:var(--ink); }
+        div[data-testid="stTextArea"] textarea:focus { border-color:var(--periwinkle);
+            box-shadow:0 0 0 1px var(--periwinkle); }
+        div[data-testid="stFormSubmitButton"] button { background:var(--coral);
+            border:2px solid var(--coral); border-radius:12px; color:#fff; }
+        div[data-testid="stFormSubmitButton"] button:hover {
+            background:var(--periwinkle); border-color:var(--periwinkle); }
+        div[data-testid="stExpander"] { background:#fff; border-color:#cac8d2;
+            border-radius:10px; }
+        div[data-testid="stMetric"] { background:var(--paper);
+            border:2px solid var(--ink); border-radius:14px; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 @st.cache_resource
 def get_transformer_evaluator() -> LocalTransformerEvaluator:
@@ -263,27 +326,30 @@ st.markdown(
 )
 with st.form("evaluation_form"):
     st.markdown(
-        '<div class="section-label">Evaluation input</div>',
+        '<div class="section-label">What do you want to verify?</div>',
         unsafe_allow_html=True,
     )
     question = st.text_area(
-        "Question",
-        placeholder="Enter the question being answered.",
+        "Verification question",
+        placeholder="Example: Does this response correctly explain the refund policy?",
         height=120,
+        help="State the specific question the information should answer.",
     )
 
     reference_column, answer_column = st.columns(2)
     with reference_column:
         reference = st.text_area(
-            "Reference information",
-            placeholder="Paste the trusted source material.",
+            "Trusted reference",
+            placeholder="Paste the policy, document excerpt, notes, or other source you trust.",
             height=230,
+            help="AnswerTrust treats this as the evidence for the check.",
         )
     with answer_column:
         answer = st.text_area(
-            "AI-generated answer",
-            placeholder="Paste the answer to evaluate.",
+            "Information to verify",
+            placeholder="Paste the claim, response, summary, or generated text you want to check.",
             height=230,
+            help="This text will be compared with the trusted reference.",
         )
 
     with st.expander("Advanced options"):
@@ -301,7 +367,7 @@ with st.form("evaluation_form"):
         )
 
     submitted = st.form_submit_button(
-        "Evaluate Answer",
+        "Verify information",
         type="primary",
         use_container_width=True,
     )
@@ -337,4 +403,3 @@ if submitted:
     )
     if is_valid_evaluation:
         st.caption("Evaluation saved to local history.")
-

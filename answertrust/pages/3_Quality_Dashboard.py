@@ -12,6 +12,7 @@ from src.config import (
     PROMPT_COMPARISON_RESULTS_PATH,
 )
 from src.experiments import calculate_prompt_comparison_metrics
+from src.ui import apply_workspace_theme
 
 
 st.set_page_config(
@@ -24,6 +25,8 @@ st.title("Quality Dashboard")
 st.write(
     "Monitor locally saved evaluations and measured offline experiment results."
 )
+
+apply_workspace_theme()
 
 st.header("Local evaluation history")
 try:
