@@ -28,12 +28,12 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: maven
-      - name: Build frontend
+      - name: Test and build frontend
         working-directory: toodle/frontend
-        run: npm ci && npm run build
-      - name: Type-check BFF
+        run: npm ci && npm test && npm run build
+      - name: Test and type-check BFF
         working-directory: toodle/bff
-        run: npm ci && npm run build
+        run: npm ci && npm test && npm run build
       - name: Test backend
         working-directory: toodle/backend
         run: mvn -s maven-settings.xml test

@@ -28,7 +28,7 @@ export function CategoryPicker({ categories, selectedCategoryId, onSelect, onCre
       <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Enter category name" />
       <label className="color-label">Pick a color:</label>
       <div className="color-picker-container">{Array.from({ length: 10 }, (_, index) => String(index)).map((colorIndex) => <button aria-label={`Select color ${colorIndex}`} type="button" key={colorIndex} className={`color-option color-${colorIndex} ${color === colorIndex ? 'selected' : ''}`} onClick={() => setColor(colorIndex)} />)}</div>
-      <div className="category-actions"><button type="button" id="saveCategoryBtn" onClick={saveCategory}>Save</button><button type="button" id="cancelCategoryBtn" onClick={() => setIsAdding(false)}>Cancel</button></div>
+      <div className="category-actions"><button type="button" id="saveCategoryBtn" onClick={saveCategory}>Save category</button><button type="button" id="cancelCategoryBtn" onClick={() => setIsAdding(false)}>Cancel category</button></div>
     </div>
   </div>;
 }

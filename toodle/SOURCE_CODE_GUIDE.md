@@ -38,7 +38,7 @@ Keep network logic in `api.ts`, pure transformations in utilities, and view-spec
 
 ## Backend-for-frontend
 
-`bff/src/server.ts` is the active Express BFF.
+`bff/src/app.ts` defines the testable Express application and `bff/src/server.ts` is the process entry point that opens the configured port.
 
 Responsibilities:
 
@@ -77,9 +77,11 @@ Never edit an applied migration for a new schema change. Add the next numbered m
 
 ## Tests
 
+`frontend/src/**/*.test.tsx` provides focused component coverage for login success/failure, task creation/editing, and view-aware calendar navigation. `bff/src/app.test.ts` covers health reporting, bootstrap composition, authentication and correlation-ID forwarding, Spring error pass-through, and unavailable-upstream handling.
+
 `backend/src/test/java/com/toodle/TaskControllerTest.java` exercises registration, authentication failures, malformed input, owner isolation, schedule validation, category integrity, and task/category CRUD through the HTTP layer with an H2 test database. `JwtServiceTest` verifies expired-token rejection. The backend currently has 12 passing tests.
 
-Current test gaps are frontend component/unit coverage and BFF route coverage. Those belong to the next CI-focused phase; the README does not claim they already exist.
+The test commands are wired into the CI workflow, but CI must not be described as verified until an end-to-end GitHub Actions run has been observed passing.
 
 ## Legacy code
 
@@ -99,4 +101,4 @@ The repository commits source, lockfiles, configuration, migrations, tests, and 
 
 Implemented now: React/TypeScript migration, the updated Toodle visual system, Tasks and Calendar feature boundaries, a Node/Express BFF, Spring Boot REST persistence, PostgreSQL, hardened JWT authentication and owner isolation, structured API errors, schedule/category integrity rules, Docker packaging, readiness/liveness monitoring, correlation IDs, and initial GitHub Actions CI.
 
-The immediate priorities are frontend and BFF automated tests plus CI verification. Cloud deployment remains optional and must not be presented as completed until the application has genuinely been deployed and tested.
+The immediate priority is executing the complete local suite and observing a successful end-to-end GitHub Actions run. Backend feature development is otherwise frozen; cloud deployment remains optional and must not be presented as completed until the application has genuinely been deployed and tested.

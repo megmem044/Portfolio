@@ -2,7 +2,7 @@
 
 Toodle is an in-progress modernization of a browser-only task manager into a maintainable full-stack application. The current phase connects a React/TypeScript frontend to a Node.js backend-for-frontend (BFF), a secured Spring Boot API, and PostgreSQL.
 
-> Project status: active development. The integrated stack includes automated CI verification, production container definitions, health monitoring, and deployment-ready architecture. A cloud deployment has not yet been completed.
+> Project status: active development. The integrated stack includes an automated CI workflow, production container definitions, health monitoring, and deployment-ready architecture. The workflow still requires an observed end-to-end pass on GitHub, and a cloud deployment has not been completed.
 
 ## Current architecture
 
@@ -33,13 +33,12 @@ The active code lives in `frontend/`, `bff/`, and `backend/`. Earlier vanilla we
 - Standard API error responses with status, code, message, path, timestamp, and correlation ID
 - Owner-isolation, authentication, schedule-validation, and CRUD integration coverage
 - Tasks and Calendar feature domains composed by the React shell
-- GitHub Actions verification for frontend, BFF, backend, and production image builds
+- GitHub Actions workflow for frontend, BFF, backend, and production image builds (end-to-end GitHub verification pending)
 - Production Docker Compose stack with Nginx routing browser `/api` requests to the BFF
 - Health endpoints, container health checks, and request correlation IDs
 
 ## Roadmap
 
-- Add frontend and BFF automated tests
 - Verify the complete GitHub Actions workflow
 - Add any remaining database constraints through new Flyway migrations
 - Consider cloud deployment after the local and CI workflows are stable
@@ -135,16 +134,18 @@ Do not commit real secrets. Local defaults are for development only.
 
 ```powershell
 cd frontend
+npm test
 npm run build
 
 cd ../bff
+npm test
 npm run build
 
 cd ../backend
 mvn -s maven-settings.xml test
 ```
 
-The backend suite currently contains 12 passing tests across web integration and JWT-expiration coverage.
+The repository includes focused frontend component tests, BFF route/forwarding tests, and 12 backend tests across web integration and JWT-expiration coverage. Run the commands above locally before relying on the suite; the CI workflow is not considered verified until the same checks complete successfully on GitHub.
 
 ## Repository map
 
