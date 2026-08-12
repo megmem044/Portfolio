@@ -1,0 +1,12 @@
+.git
+.github
+.m2
+**/.m2
+**/node_modules
+**/target
+**/dist
+**/.vite
+*.log
+.env
+.env.*
+legacy

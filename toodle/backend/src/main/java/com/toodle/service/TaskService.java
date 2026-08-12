@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 
+/** Applies task operations while enforcing the authenticated owner boundary. */
 @Service
 public class TaskService {
     private final TaskRepository taskRepository;

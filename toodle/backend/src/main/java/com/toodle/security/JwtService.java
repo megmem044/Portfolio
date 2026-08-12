@@ -10,6 +10,7 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+/** Creates and verifies the signed JWTs used by the stateless API. */
 @Service
 public class JwtService {
     private final SecretKey signingKey;

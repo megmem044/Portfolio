@@ -1,3 +1,4 @@
+// Reusable task summary card with completion, edit, and delete actions.
 import { formatTimeRange } from '../features/tasks/taskUtils';
 import type { Task } from '../features/tasks/types';
 

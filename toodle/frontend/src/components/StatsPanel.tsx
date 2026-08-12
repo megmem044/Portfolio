@@ -1,3 +1,4 @@
+// Presentational task totals for the selected calendar period.
 interface StatsPanelProps {
   total: number;
   active: number;

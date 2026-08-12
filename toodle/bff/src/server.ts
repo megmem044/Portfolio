@@ -1,13 +1,22 @@
 // Backend-for-frontend: proxies the browser contract to the authenticated Spring API.
 import cors from 'cors';
 import express, { type Request, type Response } from 'express';
+import { randomUUID } from 'node:crypto';
 
 const app = express();
 const port = Number(process.env.PORT ?? 3000);
 const springApiUrl = process.env.SPRING_API_URL ?? 'http://127.0.0.1:8080/api';
+const springHealthUrl = process.env.SPRING_HEALTH_URL ?? 'http://127.0.0.1:8080/actuator/health';
+const frontendOrigins = process.env.FRONTEND_ORIGIN?.split(',').map((origin) => origin.trim()).filter(Boolean) ?? ['http://127.0.0.1:5173', 'http://localhost:5173'];
 
-app.use(cors({ origin: ['http://127.0.0.1:5173', 'http://localhost:5173'] }));
+app.use(cors({ origin: frontendOrigins }));
 app.use(express.json());
+app.use((request, response, next) => {
+  const correlationId = request.header('x-correlation-id') ?? randomUUID();
+  response.setHeader('X-Correlation-Id', correlationId);
+  response.on('finish', () => console.info(JSON.stringify({ correlationId, method: request.method, path: request.path, status: response.statusCode })));
+  next();
+});
 
 function authorization(request: Request) {
   return request.header('authorization');
@@ -17,6 +26,8 @@ async function springRequest(path: string, request: Request, body?: unknown) {
   const headers = new Headers();
   const token = authorization(request);
   if (token) headers.set('Authorization', token);
+  const correlationId = request.header('x-correlation-id');
+  if (correlationId) headers.set('X-Correlation-Id', correlationId);
   if (body !== undefined) headers.set('Content-Type', 'application/json');
   return fetch(`${springApiUrl}${path}`, { method: request.method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
 }
@@ -40,6 +51,15 @@ app.post('/api/auth/:action', async (request, response, next) => {
   try {
     await forward(response, await springRequest(`/auth/${action}`, request, request.body));
   } catch (error) { next(error); }
+});
+
+app.get('/health', async (_request, response) => {
+  try {
+    const upstream = await fetch(springHealthUrl);
+    response.status(upstream.ok ? 200 : 503).json({ status: upstream.ok ? 'UP' : 'DOWN', upstream: await upstream.json() });
+  } catch {
+    response.status(503).json({ status: 'DOWN' });
+  }
 });
 
 app.get('/api/bootstrap', async (request, response, next) => {

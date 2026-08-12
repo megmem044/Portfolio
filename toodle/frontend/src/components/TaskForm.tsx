@@ -1,3 +1,4 @@
+// Controlled create/edit dialog that converts form state into a typed task draft.
 import { useEffect, useState } from 'react';
 import { CategoryPicker } from './CategoryPicker';
 import type { Category, Priority, Task, TaskDraft } from '../features/tasks/types';

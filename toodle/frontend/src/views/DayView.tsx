@@ -1,3 +1,4 @@
+// Renders task cards for the currently selected day.
 import { TaskCard } from '../components/TaskCard';
 import type { Filter, Task } from '../features/tasks/types';
 

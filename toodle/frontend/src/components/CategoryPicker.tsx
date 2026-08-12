@@ -1,3 +1,4 @@
+// Category selector with inline category creation for the task form.
 import { useState } from 'react';
 import type { Category } from '../features/tasks/types';
 

@@ -2,7 +2,7 @@
 
 Toodle is an in-progress modernization of a browser-only task manager into a maintainable full-stack application. The current phase connects a React/TypeScript frontend to a Node.js backend-for-frontend (BFF), a secured Spring Boot API, and PostgreSQL.
 
-> Project status: active development. The integrated local stack exists; automated CI/CD, Azure deployment, monitoring, and a micro-frontend split are planned and are not represented as complete.
+> Project status: active development. The integrated stack includes automated CI verification, production container definitions, health monitoring, and deployment-ready architecture. A cloud deployment has not yet been completed.
 
 ## Current architecture
 
@@ -30,14 +30,19 @@ The active code lives in `frontend/`, `bff/`, and `backend/`. Earlier vanilla we
 - PostgreSQL persistence with Flyway migrations
 - JWT authentication and owner-scoped server-side data access
 - Spring integration tests for core authenticated API workflows
+- Tasks and Calendar feature domains composed by the React shell
+- GitHub Actions verification for frontend, BFF, backend, and production image builds
+- Production Docker Compose stack with Nginx routing browser `/api` requests to the BFF
+- Health endpoints, container health checks, and request correlation IDs
 
 ## Roadmap
 
 - Add frontend and BFF automated tests
-- Add GitHub Actions type-check, test, and build jobs
-- Add service health checks and structured observability
-- Containerize and deploy the stack to Azure
-- Evaluate a two-domain Tasks/Calendar micro-frontend split after the monolithic React app is stable
+- Expand backend authentication, authorization, and validation tests
+- Standardize API error responses
+- Separate readiness and liveness checks
+- Verify the complete GitHub Actions workflow
+- Consider cloud deployment after the local and CI workflows are stable
 
 The goal is architectural modernization, not expanding the product with unrelated features.
 
@@ -81,6 +86,17 @@ The goal is architectural modernization, not expanding the product with unrelate
 
 Open `http://127.0.0.1:5173`.
 
+## Run the production-shaped container stack
+
+1. Copy `.env.example` to `.env` and replace the password and JWT secret.
+2. Run:
+
+   ```powershell
+   docker compose -f compose.production.yaml up --build
+   ```
+
+Open `http://127.0.0.1:8088`. Nginx serves the frontend and routes `/api` to the BFF internally.
+
 ## Configuration
 
 | Variable | Service | Default | Purpose |
@@ -93,8 +109,17 @@ Open `http://127.0.0.1:5173`.
 | `DATABASE_PASSWORD` | backend | `toodle` | Database password |
 | `JWT_SECRET` | backend | local-only fallback | JWT signing secret; replace outside local development |
 | `JWT_EXPIRATION_MINUTES` | backend | `120` | Token lifetime |
+| `SPRING_HEALTH_URL` | bff | `http://127.0.0.1:8080/actuator/health` | Upstream health endpoint |
+| `FRONTEND_ORIGIN` | bff | local Vite origins | Comma-separated CORS allowlist |
 
 Do not commit real secrets. Local defaults are for development only.
+
+## Observability
+
+- Spring Boot exposes unauthenticated liveness at `/actuator/health` and `/actuator/health/liveness`.
+- The BFF exposes `/health`, which reports its Spring API dependency state.
+- The BFF and Spring API accept and return `X-Correlation-Id`; when absent, the BFF generates one. Completion logs include that ID, request method/path, and status.
+- Docker Compose uses these endpoints as health checks so dependent services wait for readiness.
 
 ## Verify
 
@@ -106,7 +131,7 @@ cd ../bff
 npm run build
 
 cd ../backend
-mvn test
+mvn -s maven-settings.xml test
 ```
 
 ## Repository map

@@ -1,14 +1,12 @@
 // Application shell: coordinates authentication, remote task state, navigation, and modal workflows.
 import { useEffect, useState } from 'react';
-import { StatsPanel } from '../components/StatsPanel';
 import { TaskForm } from '../components/TaskForm';
 import { AuthForm } from '../components/AuthForm';
 import { authApi, bffApi, categoryApi, taskApi, type AuthSession } from '../features/tasks/api';
-import { calendarLabel, dateToKey, isTaskInView, matchesTask, sortTasks } from '../features/tasks/taskUtils';
+import { dateToKey, isTaskInView, matchesTask, sortTasks } from '../features/tasks/taskUtils';
 import type { CalendarView, Category, Filter, Task, TaskDraft } from '../features/tasks/types';
-import { DayView } from '../views/DayView';
-import { MonthView } from '../views/MonthView';
-import { WeekView } from '../views/WeekView';
+import { CalendarMfe, CalendarViewSwitcher } from '../mfe/calendar/CalendarMfe';
+import { TasksMfe } from '../mfe/tasks/TasksMfe';
 
 type NewTaskDefaults = { date: string; time?: string };
 
@@ -21,7 +19,6 @@ export function App() {
   const [filter, setFilter] = useState<Filter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentDate, setCurrentDate] = useState(() => new Date());
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task>();
   const [newTaskDefaults, setNewTaskDefaults] = useState<NewTaskDefaults>();
   const [deletingTaskId, setDeletingTaskId] = useState<string>();
@@ -39,8 +36,7 @@ export function App() {
   }, []);
 
   const viewTasks = tasks.filter((task) => isTaskInView(task, currentDate, view));
-  const displayedTasks = sortTasks(viewTasks.filter((task) => matchesTask(task, filter, searchQuery)));
-  const completed = viewTasks.filter((task) => task.isCompleted).length;
+  const filteredTasks = sortTasks(tasks.filter((task) => matchesTask(task, filter, searchQuery)));
   const isFormOpen = editingTask !== undefined || newTaskDefaults !== undefined;
 
   const openNewTask = (date = dateToKey(currentDate), time?: string) => {
@@ -72,40 +68,21 @@ export function App() {
     setCategories((currentCategories) => [...currentCategories, category]);
     return category;
   };
-  const navigate = (direction: number) => setCurrentDate((date) => {
-    const nextDate = new Date(date);
-    if (view === 'day') nextDate.setDate(nextDate.getDate() + direction);
-    if (view === 'week') nextDate.setDate(nextDate.getDate() + direction * 7);
-    if (view === 'month') nextDate.setMonth(nextDate.getMonth() + direction);
-    return nextDate;
-  });
-  const selectView = (selectedView: CalendarView) => { setView(selectedView); setIsMenuOpen(false); };
-
   if (!session) return <AuthForm onAuthenticated={setSession} />;
 
   return <main className="app-container">
     <header className="app-header">
       <h1>Toodle</h1>
       <div className="header-actions">
-        <div className="view-dropdown-container">
-          <button className="header-btn" type="button" onClick={() => setIsMenuOpen((open) => !open)}>View</button>
-          <div className={`dropdown-menu ${isMenuOpen ? 'show' : ''}`}>
-            <div className="dropdown-section">{(['day', 'week', 'month'] as CalendarView[]).map((option) => <button key={option} className={`view-option ${view === option ? 'active' : ''}`} type="button" onClick={() => selectView(option)}><i className={`fas fa-calendar-${option === 'day' ? 'day' : option === 'week' ? 'week' : 'alt'}`} /> {option[0].toUpperCase() + option.slice(1)}</button>)}</div>
-          </div>
-        </div>
+        <CalendarViewSwitcher view={view} onViewChange={setView} />
         <button className="header-btn" type="button" onClick={() => openNewTask()}>Add Task</button>
         <button className="profile-icon" type="button" title={`Sign out ${session.email}`} onClick={() => { authApi.logout(); setSession(null); }}> {session.name.charAt(0).toUpperCase()} </button>
       </div>
     </header>
 
-    <StatsPanel total={viewTasks.length} active={viewTasks.length - completed} completed={completed} />
-    <section className="date-navigation"><button className="nav-btn" type="button" aria-label="Previous period" onClick={() => navigate(-1)}><i className="fas fa-chevron-left" /></button><h2 className="current-date">{calendarLabel(currentDate, view)}</h2><button className="nav-btn" type="button" aria-label="Next period" onClick={() => navigate(1)}><i className="fas fa-chevron-right" /></button></section>
-    <section className="filter-container">{(['all', 'active', 'completed'] as Filter[]).map((option) => <button key={option} className={`filter-btn ${filter === option ? 'active' : ''}`} type="button" onClick={() => setFilter(option)}>{option[0].toUpperCase() + option.slice(1)}</button>)}</section>
-    <div className="search-container"><i className="fas fa-search" /><input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search tasks" aria-label="Search tasks" /></div>
     {error && <p role="alert">{error}</p>}
-    {view === 'day' && <DayView tasks={displayedTasks} filter={filter} searchQuery={searchQuery} onToggleComplete={async (taskId) => { const task = tasks.find((item) => item.id === taskId); if (task) { try { const updatedTask = await taskApi.update({ ...task, isCompleted: !task.isCompleted }); setTasks((currentTasks) => currentTasks.map((item) => item.id === taskId ? updatedTask : item)); } catch (requestError) { setError(requestError instanceof Error ? requestError.message : 'Unable to update task'); } } }} onEdit={openTask} onDelete={setDeletingTaskId} />}
-    {view === 'week' && <WeekView date={currentDate} tasks={displayedTasks} onSelectTask={openTask} onCreateAt={openNewTask} />}
-    {view === 'month' && <MonthView date={currentDate} tasks={displayedTasks} onSelectTask={openTask} onSelectDate={(date) => { setCurrentDate(date); setView('day'); }} />}
+    <TasksMfe tasks={viewTasks} filter={filter} searchQuery={searchQuery} onFilterChange={setFilter} onSearchQueryChange={setSearchQuery} />
+    <CalendarMfe tasks={filteredTasks} currentDate={currentDate} view={view} onViewChange={setView} onDateChange={setCurrentDate} onEditTask={openTask} onCreateTask={openNewTask} filter={filter} searchQuery={searchQuery} onToggleComplete={async (taskId) => { const task = tasks.find((item) => item.id === taskId); if (task) { try { const updatedTask = await taskApi.update({ ...task, isCompleted: !task.isCompleted }); setTasks((currentTasks) => currentTasks.map((item) => item.id === taskId ? updatedTask : item)); } catch (requestError) { setError(requestError instanceof Error ? requestError.message : 'Unable to update task'); } } }} onDeleteTask={setDeletingTaskId} />
     {isFormOpen && <TaskForm task={editingTask} defaultDate={newTaskDefaults?.date ?? dateToKey(currentDate)} defaultStartTime={newTaskDefaults?.time} categories={categories} onCreateCategory={createCategory} onSave={saveTask} onDelete={editingTask ? () => setDeletingTaskId(editingTask.id) : undefined} onClose={closeForm} />}
     {deletingTaskId && <div className="modal-overlay show" role="presentation"><div className="modal modal-small" role="dialog" aria-modal="true"><div className="modal-content"><h3>Delete Task</h3><p>Are you sure you want to delete this task? This action cannot be undone.</p><div className="form-actions"><button className="btn btn-secondary" type="button" onClick={() => setDeletingTaskId(undefined)}>Cancel</button><button className="btn btn-danger" type="button" onClick={() => deleteTask(deletingTaskId)}>Delete</button></div></div></div></div>}
   </main>;

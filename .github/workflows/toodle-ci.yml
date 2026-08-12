@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - "toodle/**"
+      - ".github/workflows/toodle-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "toodle/**"
+      - ".github/workflows/toodle-ci.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            toodle/frontend/package-lock.json
+            toodle/bff/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: Build frontend
+        working-directory: toodle/frontend
+        run: npm ci && npm run build
+      - name: Type-check BFF
+        working-directory: toodle/bff
+        run: npm ci && npm run build
+      - name: Test backend
+        working-directory: toodle/backend
+        run: mvn -s maven-settings.xml test
+      - name: Build production images
+        working-directory: toodle
+        run: docker compose -f compose.production.yaml build

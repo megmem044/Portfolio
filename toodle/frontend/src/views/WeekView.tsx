@@ -1,3 +1,4 @@
+// Projects tasks into the seven-day calendar grid.
 import { dateToKey, getWeekStart, isSameDay } from '../features/tasks/taskUtils';
 import type { Task } from '../features/tasks/types';
 

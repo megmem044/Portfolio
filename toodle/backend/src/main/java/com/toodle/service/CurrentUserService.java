@@ -5,6 +5,7 @@ import com.toodle.repository.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+/** Resolves the authenticated principal to the persisted owner used by scoped queries. */
 @Service
 public class CurrentUserService {
     private final UserRepository userRepository;
