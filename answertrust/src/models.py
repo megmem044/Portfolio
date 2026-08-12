@@ -18,10 +18,22 @@ class RunState(str, Enum):
 
     RECEIVED = "RECEIVED"
     EVALUATING = "EVALUATING"
+    RETRYING = "RETRYING"
     HUMAN_REVIEW = "HUMAN_REVIEW"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
     FAILED = "FAILED"
+
+
+class FailureType(str, Enum):
+    """Known reasons an evaluation run may fail or need intervention."""
+
+    MODEL_UNAVAILABLE = "MODEL_UNAVAILABLE"
+    MODEL_TIMEOUT = "MODEL_TIMEOUT"
+    INVALID_OUTPUT = "INVALID_OUTPUT"
+    LOW_CONFIDENCE = "LOW_CONFIDENCE"
+    INSUFFICIENT_SUPPORT = "INSUFFICIENT_SUPPORT"
+    EVALUATION_ERROR = "EVALUATION_ERROR"
 
 
 @dataclass

@@ -1,139 +1,132 @@
-# AnswerTrust Project Roadmap
+# AnswerTrust Roadmap
 
-AnswerTrust will be built in 12 small phases. Each phase adds one clear part of
-the product and includes a check before work continues.
+This file tracks work that is finished, in progress, and still worth doing. It
+is not a list of hypothetical features.
 
-The finished application will evaluate an AI-generated answer against a
-question and reference, score five quality areas, and recommend `PUBLISH`,
-`REVIEW`, or `REJECT`.
+## Finished
 
-## 1. Project setup
+### Evaluation
 
-Create the folder structure, README, MIT licence, dependency list, shared
-settings, and basic data structures.
+- Validate the question, reference, and answer.
+- Score relevance, source support, completeness, clarity, and uncertainty.
+- Calculate a weighted overall score.
+- Return `PUBLISH`, `REVIEW`, or `REJECT` from visible decision rules.
+- Report concerns, recommended action, and latency.
 
-**Check:** Confirm the required files exist and Python can import the project.
+### Local model
 
-## 2. Input validation
+- Support an optional cached `google/flan-t5-small` model.
+- Keep deterministic scoring as the source of truth.
+- Handle missing files, malformed output, and model errors without blocking the
+  deterministic result.
+- Compare baseline and safety prompts offline.
 
-Define the information used in an evaluation and reject empty, meaningless, or
-excessively long input with clear messages.
+### Persistence and workflow
 
-**Check:** Test valid input, missing fields, whitespace, meaningless text, and
-length limits.
+- Save evaluations in SQLite.
+- Create a persistent run for each submission.
+- Move runs through `RECEIVED`, `EVALUATING`, `APPROVED`, `HUMAN_REVIEW`,
+  `REJECTED`, and `FAILED`.
+- Store the evaluation linked to a run.
+- Let a reviewer approve or reject runs in `HUMAN_REVIEW`.
+- Classify failures and intervention reasons.
+- Store failure type, failure message, and attempt count.
+- Migrate existing local databases without deleting records.
 
-## 3. Five quality checks
+### Interface and reporting
 
-Build separate checks for:
+- Provide pages for new evaluations, human review, history, and quality metrics.
+- Show workflow state and run ID in history.
+- Show failure reasons and deterministic fallback use.
+- Keep the interface usable when there is no saved data.
 
-- **Relevance:** Does the answer respond to the question?
-- **Source support:** Are its claims supported by the supplied reference?
-- **Completeness:** Does it address the full request?
-- **Clarity:** Is it readable, focused, and well organized?
-- **Uncertainty:** Does its confidence match the available evidence?
+### Verification
 
-Each check will return a score, explanation, and specific concerns.
+- Maintain unit tests for scoring, decisions, persistence, workflow, review,
+  failure classification, retry policy, experiments, and dashboard summaries.
+- Maintain Streamlit interaction tests for each implemented page.
+- Keep the core evaluator usable without network access or model files.
 
-**Check:** Use self-authored examples covering relevant, irrelevant, supported,
-unsupported, incomplete, unclear, and overly confident answers.
+## In progress
 
-## 4. Scoring and decisions
+### Automatic retry execution
 
-Combine the five scores into an overall score from 0 to 100. Use visible rules
-to recommend `PUBLISH`, `REVIEW`, or `REJECT`, identify the main concern, and
-suggest the next action.
+The retry policy currently allows another attempt after `MODEL_TIMEOUT` or
+`EVALUATION_ERROR`. The database can store attempt counts and the `RETRYING`
+state exists. The workflow still needs to execute the second attempt.
 
-**Check:** Test score calculations, exact decision boundaries, and serious
-concerns that must prevent publication.
+Work remaining:
 
-## 5. Evaluation history
+1. loop over attempts in `src/workflow.py`;
+2. move the run to `RETRYING` before a later attempt;
+3. save the final attempt count;
+4. stop after the configured limit;
+5. test recovery and exhausted retries.
 
-Use SQLite, Python's built-in local database, to save evaluations and retrieve
-them by decision, score, or problem type.
+## Next
 
-**Check:** Test database creation, saving, reading, filtering, empty history,
-and database errors using temporary test files.
+### Run event history
 
-## 6. Main application page
+The run table stores the latest state. Add an append-only event table so the
+application can show how a run reached that state.
 
-Build the Streamlit Evaluate Answer page. Show the decision and overall score
-first, followed by quality scores, explanation, concerns, next action, and
-evaluation time.
+Suggested event fields:
 
-**Check:** Try valid and invalid submissions, confirm results are saved once,
-and verify that the application starts successfully.
+- event ID;
+- run ID;
+- timestamp;
+- previous and next state;
+- attempt number;
+- failure type; and
+- short message.
 
-## 7. Optional local AI model
+### Review notes
 
-Add a small local model to improve short explanations and compare a basic
-prompt with a more detailed safety-focused prompt. The rule-based evaluator
-will remain the official decision maker.
+Store the reviewer decision, note, and timestamp. Reviewer identity can remain
+optional while the application is local and single-user.
 
-**Check:** Use simulated model responses to test success, missing model files,
-bad output, and model failure. The application must still work without the
-model.
+### Operational dashboard
 
-## 8. Labelled example set
+Add run-focused metrics:
 
-Write at least 20 original examples across five groups: supported, partially
-supported, unsupported, irrelevant, and insufficient reference information.
-Each example will include its expected decision and a short reason.
+- current state counts;
+- review queue size;
+- failed-run count;
+- retry and recovery counts;
+- failure-type distribution; and
+- approval and rejection rates.
 
-**Check:** Confirm the file is valid, IDs are unique, required fields are
-present, and each group contains at least four examples.
+### Configurable rules
 
-## 9. Offline experiments
+Move decision thresholds and retry limits into a small validated configuration
+object. Show the active configuration in the interface, but do not allow silent
+changes to old run results.
 
-Run the labelled examples through the evaluator and both model prompts. Measure
-decision accuracy, unsupported-answer detection, false-publish rate, review
-rate, processing time, and disagreement between the evaluator and model.
+## Later improvements
 
-The main safety measure is **false-publish rate**: how often an unsafe or
-unsupported answer is incorrectly recommended for publication.
+- Filter history by workflow state and failure type.
+- Add pagination once local history becomes large.
+- Export selected run records without exposing the whole database.
+- Add reviewer notes to the history view.
+- Add structured logging for local debugging.
+- Improve source-support checks for paraphrases and contradictions.
+- Add more labelled examples around policy exceptions and multi-part answers.
 
-**Check:** Verify sample calculations by hand and save the actual results as
-CSV tables. Missing model results must be marked unavailable, never invented.
+## Release checks
 
-## 10. History and dashboard pages
+Before calling a version complete:
 
-Build an Evaluation History page with filters and a Quality Dashboard showing
-decision counts, average scores, speed, common concerns, experiment results,
-and prompt comparison.
+- run the full test suite;
+- open every Streamlit page;
+- test a publish, review, reject, failure, retry, and fallback path;
+- reproduce any metrics quoted in the README;
+- confirm the evaluator works with model files removed;
+- confirm an older database upgrades without data loss;
+- check that local databases, cached models, virtual environments, and generated
+  result files are not staged in Git; and
+- follow the setup instructions from a clean Python 3.11 environment.
 
-**Check:** Compare displayed values with the saved data and test empty,
-single-record, and populated views.
+## Project boundary
 
-## 11. Complete product testing
-
-Test the full workflow with supported, partial, unsupported, irrelevant, and
-insufficient-reference answers. Also test model and database failures, remove
-unused code, and improve unclear messages.
-
-**Check:** Run all automated tests, open every Streamlit page, run the full
-experiment, and confirm the main evaluator works without internet access.
-
-## 12. Portfolio preparation
-
-Complete the README with screenshots, architecture, actual experiment results,
-setup instructions, limitations, privacy and licensing notes, resume bullets,
-and a short interview explanation.
-
-**Check:** Follow the setup instructions on a clean computer, rerun every
-reported test and experiment, verify links, and check that no private or
-generated files are included.
-
-## Completion checklist
-
-The project is complete when:
-
-- All three Streamlit pages work locally with Python 3.11.
-- The evaluator works when the optional model is unavailable.
-- At least 20 self-authored labelled examples are included.
-- Real experiment results and false-publish rate are reported.
-- SQLite history and filters work.
-- All automated tests pass.
-- No paid service, API key, copied Quora content, model files, local database,
-  virtual environment, cache, or private file is committed.
-
-AnswerTrust checks whether an answer is supported by the supplied reference. It
-does not determine whether a statement is universally true.
+AnswerTrust measures support against supplied reference material. It is not an
+independent fact-checker or a production moderation service.

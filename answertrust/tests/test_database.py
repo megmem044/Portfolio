@@ -16,7 +16,7 @@ from src.database import (
     update_evaluation_run_state,
 )
 from src.evaluator import evaluate_answer
-from src.models import Decision, EvaluationInput, RunState
+from src.models import Decision, EvaluationInput, FailureType, RunState
 
 
 def supported_input(answer: str = "Paris") -> EvaluationInput:
@@ -181,3 +181,53 @@ def test_updating_unknown_evaluation_run_raises_key_error(tmp_path):
             RunState.FAILED,
             database_path,
         )
+
+
+def test_update_evaluation_run_saves_failure_details(tmp_path):
+    database_path = tmp_path / "answertrust.db"
+    run_id = create_evaluation_run(supported_input(), database_path)
+
+    update_evaluation_run_state(
+        run_id,
+        RunState.FAILED,
+        database_path,
+        failure_type=FailureType.MODEL_TIMEOUT,
+        failure_message="The model exceeded its deadline.",
+    )
+    run = get_evaluation_run(run_id, database_path)
+
+    assert run is not None
+    assert run["failure_type"] == FailureType.MODEL_TIMEOUT.value
+    assert run["failure_message"] == "The model exceeded its deadline."
+
+
+def test_initialize_database_adds_failure_columns_to_existing_runs(tmp_path):
+    database_path = tmp_path / "answertrust.db"
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            """
+            CREATE TABLE evaluation_runs (
+                run_id TEXT PRIMARY KEY,
+                evaluation_id TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                state TEXT NOT NULL,
+                question TEXT NOT NULL,
+                reference TEXT NOT NULL,
+                answer TEXT NOT NULL,
+                prompt_version TEXT NOT NULL
+            )
+            """
+        )
+
+    initialize_database(database_path)
+
+    with sqlite3.connect(database_path) as connection:
+        columns = {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(evaluation_runs)"
+            ).fetchall()
+        }
+    assert "failure_type" in columns
+    assert "failure_message" in columns

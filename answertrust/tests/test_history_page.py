@@ -140,3 +140,81 @@ def test_decision_filter_is_passed_to_database(monkeypatch):
 
     assert not page.exception
     assert get_mock.call_args.args[1] == Decision.REJECT
+
+
+def classified_record():
+    return {
+        "evaluation_id": "evaluation-1",
+        "timestamp": "2026-08-06T19:00:00+00:00",
+        "question": "What does the policy allow?",
+        "reference": "The policy allows returns within 30 days.",
+        "answer": "Returns may be allowed.",
+        "overall_score": 70,
+        "final_decision": "REVIEW",
+        "dimension_scores": [],
+        "main_concern": "The answer is incomplete.",
+        "recommended_action": "Review before publishing.",
+    }
+
+
+def test_failure_classification_and_reason_are_rendered(monkeypatch):
+    run = {
+        "run_id": "run-1",
+        "evaluation_id": "evaluation-1",
+        "state": "HUMAN_REVIEW",
+        "failure_type": "LOW_CONFIDENCE",
+        "failure_message": "The answer is incomplete.",
+    }
+    monkeypatch.setattr(
+        database,
+        "get_evaluations",
+        Mock(return_value=[classified_record()]),
+    )
+    monkeypatch.setattr(
+        database,
+        "get_evaluation_runs",
+        Mock(return_value=[run]),
+    )
+
+    page = AppTest.from_file(str(PAGE_PATH)).run()
+
+    assert not page.exception
+    assert any(
+        warning.value == "**Run classification:** Low confidence"
+        for warning in page.warning
+    )
+    assert any(
+        markdown.value
+        == "**Classification reason:** The answer is incomplete."
+        for markdown in page.markdown
+    )
+
+
+def test_model_unavailable_shows_fallback_notice(monkeypatch):
+    record = classified_record()
+    record["final_decision"] = "PUBLISH"
+    run = {
+        "run_id": "run-2",
+        "evaluation_id": "evaluation-1",
+        "state": "APPROVED",
+        "failure_type": "MODEL_UNAVAILABLE",
+        "failure_message": "Deterministic evaluation was used.",
+    }
+    monkeypatch.setattr(
+        database,
+        "get_evaluations",
+        Mock(return_value=[record]),
+    )
+    monkeypatch.setattr(
+        database,
+        "get_evaluation_runs",
+        Mock(return_value=[run]),
+    )
+
+    page = AppTest.from_file(str(PAGE_PATH)).run()
+
+    assert not page.exception
+    assert any(
+        "Deterministic fallback used" in info.value
+        for info in page.info
+    )

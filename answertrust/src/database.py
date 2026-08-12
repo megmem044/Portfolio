@@ -9,7 +9,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from src.models import Decision, EvaluationInput, EvaluationResult, RunState
+from src.models import (
+    Decision,
+    EvaluationInput,
+    EvaluationResult,
+    FailureType,
+    RunState,
+)
 
 
 CREATE_EVALUATIONS_TABLE = """
@@ -40,6 +46,9 @@ CREATE TABLE IF NOT EXISTS evaluation_runs (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     state TEXT NOT NULL,
+    attempt_count INTEGER NOT NULL DEFAULT 0,
+    failure_type TEXT,
+    failure_message TEXT,
     question TEXT NOT NULL,
     reference TEXT NOT NULL,
     answer TEXT NOT NULL,
@@ -62,6 +71,25 @@ def initialize_database(database_path: Path) -> None:
     with _connect(database_path) as connection:
         connection.execute(CREATE_EVALUATIONS_TABLE)
         connection.execute(CREATE_EVALUATION_RUNS_TABLE)
+        run_columns = {
+            row["name"]
+            for row in connection.execute(
+                "PRAGMA table_info(evaluation_runs)"
+            ).fetchall()
+        }
+        if "failure_type" not in run_columns:
+            connection.execute(
+                "ALTER TABLE evaluation_runs ADD COLUMN failure_type TEXT"
+            )
+        if "failure_message" not in run_columns:
+            connection.execute(
+                "ALTER TABLE evaluation_runs ADD COLUMN failure_message TEXT"
+            )
+        if "attempt_count" not in run_columns:
+            connection.execute(
+                "ALTER TABLE evaluation_runs "
+                "ADD COLUMN attempt_count INTEGER NOT NULL DEFAULT 0"
+            )
 
 
 def save_evaluation(
@@ -191,6 +219,9 @@ def update_evaluation_run_state(
     state: RunState,
     database_path: Path,
     evaluation_id: str | None = None,
+    failure_type: FailureType | None = None,
+    failure_message: str | None = None,
+    attempt_count: int | None = None,
 ) -> None:
     """Persist a run's current state and optional completed evaluation ID."""
     initialize_database(database_path)
@@ -200,10 +231,23 @@ def update_evaluation_run_state(
         cursor = connection.execute(
             """
             UPDATE evaluation_runs
-            SET state = ?, updated_at = ?, evaluation_id = COALESCE(?, evaluation_id)
+            SET state = ?,
+                updated_at = ?,
+                evaluation_id = COALESCE(?, evaluation_id),
+                failure_type = COALESCE(?, failure_type),
+                failure_message = COALESCE(?, failure_message),
+                attempt_count = COALESCE(?, attempt_count)
             WHERE run_id = ?
             """,
-            (state.value, timestamp, evaluation_id, run_id),
+            (
+                state.value,
+                timestamp,
+                evaluation_id,
+                failure_type.value if failure_type else None,
+                failure_message,
+                attempt_count,
+                run_id,
+            ),
         )
         if cursor.rowcount == 0:
             raise KeyError(f"Unknown evaluation run: {run_id}")

@@ -21,3 +21,4 @@ cache/
 *.DS_Store
 model_cache/
 results/*.csv
+.streamlit-profile/

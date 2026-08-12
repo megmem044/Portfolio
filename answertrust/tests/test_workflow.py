@@ -6,7 +6,7 @@ import pytest
 
 from src import database
 from src.evaluator import evaluate_answer
-from src.models import Decision, EvaluationInput, RunState
+from src.models import Decision, EvaluationInput, FailureType, RunState
 from src.workflow import execute_evaluation_run
 
 
@@ -56,21 +56,69 @@ def test_review_decision_finishes_in_human_review(tmp_path):
     assert run is not None
     assert run["state"] == RunState.HUMAN_REVIEW.value
     assert run["evaluation_id"] == result.evaluation_id
+    assert run["failure_type"] == FailureType.LOW_CONFIDENCE.value
+    assert run["failure_message"] == result.main_concern
 
 
 def test_reject_decision_finishes_as_rejected(tmp_path):
     database_path = tmp_path / "answertrust.db"
 
+    def insufficient_support_evaluator(
+        evaluation_input,
+        transformer_evaluator=None,
+    ):
+        result = evaluate_answer(evaluation_input)
+        weak_scores = [
+            replace(dimension, score=20)
+            if dimension.name == "Source support"
+            else dimension
+            for dimension in result.dimension_scores
+        ]
+        return replace(
+            result,
+            final_decision=Decision.REJECT,
+            dimension_scores=weak_scores,
+        )
+
     run_id, result = execute_evaluation_run(
         supported_input(),
         database_path,
-        evaluator=evaluator_with_decision(Decision.REJECT),
+        evaluator=insufficient_support_evaluator,
     )
     run = database.get_evaluation_run(run_id, database_path)
 
     assert run is not None
     assert run["state"] == RunState.REJECTED.value
     assert run["evaluation_id"] == result.evaluation_id
+    assert (
+        run["failure_type"]
+        == FailureType.INSUFFICIENT_SUPPORT.value
+    )
+
+
+def test_model_unavailable_records_deterministic_fallback(tmp_path):
+    database_path = tmp_path / "answertrust.db"
+
+    def unavailable_model_evaluator(
+        evaluation_input,
+        transformer_evaluator=None,
+    ):
+        return replace(
+            evaluate_answer(evaluation_input),
+            model_status="unavailable",
+        )
+
+    run_id, _ = execute_evaluation_run(
+        supported_input(),
+        database_path,
+        evaluator=unavailable_model_evaluator,
+    )
+    run = database.get_evaluation_run(run_id, database_path)
+
+    assert run is not None
+    assert run["state"] == RunState.APPROVED.value
+    assert run["failure_type"] == FailureType.MODEL_UNAVAILABLE.value
+    assert "deterministic evaluation" in run["failure_message"]
 
 
 def test_evaluator_exception_finishes_as_failed(tmp_path, monkeypatch):
@@ -103,3 +151,5 @@ def test_evaluator_exception_finishes_as_failed(tmp_path, monkeypatch):
     assert run is not None
     assert run["state"] == RunState.FAILED.value
     assert run["evaluation_id"] is None
+    assert run["failure_type"] == FailureType.EVALUATION_ERROR.value
+    assert run["failure_message"] == "evaluation unavailable"

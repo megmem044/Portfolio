@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Callable
 
 from src import database
 from src.evaluator import evaluate_answer
+from src.failure_classifier import classify_exception, classify_result
 from src.models import (
     Decision,
     EvaluationInput,
@@ -53,11 +54,13 @@ def execute_evaluation_run(
             evaluation_input,
             transformer_evaluator=transformer_evaluator,
         )
-    except Exception:
+    except Exception as error:
         database.update_evaluation_run_state(
             run_id,
             RunState.FAILED,
             database_path,
+            failure_type=classify_exception(error),
+            failure_message=str(error) or type(error).__name__,
         )
         raise
 
@@ -69,10 +72,30 @@ def execute_evaluation_run(
             database_path,
         )
 
+    failure_type = classify_result(result)
+    failure_message = None
+    if failure_type is not None:
+        failure_message = {
+            "MODEL_UNAVAILABLE": (
+                "The optional model was unavailable; deterministic "
+                "evaluation was used."
+            ),
+            "INVALID_OUTPUT": (
+                "The submitted input or optional model output was invalid."
+            ),
+            "LOW_CONFIDENCE": result.main_concern,
+            "INSUFFICIENT_SUPPORT": result.main_concern,
+            "EVALUATION_ERROR": (
+                "The optional model encountered an evaluation error."
+            ),
+        }.get(failure_type.value, result.main_concern)
+
     database.update_evaluation_run_state(
         run_id,
         _final_state(result),
         database_path,
         evaluation_id=result.evaluation_id if is_valid else None,
+        failure_type=failure_type,
+        failure_message=failure_message,
     )
     return run_id, result

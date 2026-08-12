@@ -48,6 +48,15 @@ run_by_evaluation_id = {
     if run["evaluation_id"] is not None
 }
 
+FAILURE_LABELS = {
+    "MODEL_UNAVAILABLE": "Model unavailable",
+    "MODEL_TIMEOUT": "Model timeout",
+    "INVALID_OUTPUT": "Invalid output",
+    "LOW_CONFIDENCE": "Low confidence",
+    "INSUFFICIENT_SUPPORT": "Insufficient support",
+    "EVALUATION_ERROR": "Evaluation error",
+}
+
 if not evaluations:
     st.info("No saved evaluations match this filter.")
 
@@ -65,6 +74,23 @@ for evaluation in evaluations:
         st.write(f"**Workflow state:** {workflow_state}")
         if run:
             st.caption(f'Run ID: {run["run_id"]}')
+            failure_type = run.get("failure_type")
+            failure_message = run.get("failure_message")
+            if failure_type == "MODEL_UNAVAILABLE":
+                st.info(
+                    "**Deterministic fallback used** — the optional model "
+                    "was unavailable, so the rule-based evaluation "
+                    "completed the run."
+                )
+            elif failure_type:
+                failure_label = FAILURE_LABELS.get(
+                    failure_type,
+                    failure_type.replace("_", " ").title(),
+                )
+                st.warning(f"**Run classification:** {failure_label}")
+
+            if failure_message:
+                st.write(f"**Classification reason:** {failure_message}")
         else:
             st.caption(
                 "This evaluation predates persistent workflow runs."
