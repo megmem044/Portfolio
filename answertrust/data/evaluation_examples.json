@@ -1,272 +1,56 @@
 [
-  {
-    "id": "supported-001",
-    "category": "supported",
-    "question": "At what temperature does pure water freeze at standard atmospheric pressure?",
-    "reference": "Pure water freezes at 0 degrees Celsius at standard atmospheric pressure.",
-    "answer": "Pure water freezes at 0 degrees Celsius at standard atmospheric pressure.",
-    "expected_decision": "PUBLISH",
-    "reason": "The answer directly and completely matches the supplied reference."
-  },
-  {
-    "id": "supported-002",
-    "category": "supported",
-    "question": "Which planet is the largest in the Solar System?",
-    "reference": "Jupiter is the largest planet in the Solar System.",
-    "answer": "Jupiter is the largest planet in the Solar System.",
-    "expected_decision": "PUBLISH",
-    "reason": "The answer is relevant and fully supported by the reference."
-  },
-  {
-    "id": "supported-003",
-    "category": "supported",
-    "question": "What do plants use sunlight for?",
-    "reference": "Plants use sunlight to produce energy-rich sugars during photosynthesis.",
-    "answer": "Plants use sunlight to produce energy-rich sugars during photosynthesis.",
-    "expected_decision": "PUBLISH",
-    "reason": "The answer states the same supported information without adding a claim."
-  },
-  {
-    "id": "supported-004",
-    "category": "supported",
-    "question": "What is one purpose of a seat belt?",
-    "reference": "A seat belt helps restrain a vehicle occupant during a sudden stop or collision.",
-    "answer": "A seat belt helps restrain a vehicle occupant during a sudden stop or collision.",
-    "expected_decision": "PUBLISH",
-    "reason": "The response directly answers the question using the supplied evidence."
-  },
-  {
-    "id": "partial-001",
-    "category": "partially_supported",
-    "question": "Summarize the supplied information about honeybees.",
-    "reference": "Honeybees communicate through waggle dances and collect nectar to make honey.",
-    "answer": "Honeybees communicate through waggle dances.",
-    "expected_decision": "REVIEW",
-    "reason": "The answer is supported but omits the reference's second central detail."
-  },
-  {
-    "id": "partial-002",
-    "category": "partially_supported",
-    "question": "Describe the two stated benefits of urban trees.",
-    "reference": "Urban trees provide shade and can reduce local air temperatures.",
-    "answer": "Urban trees provide shade.",
-    "expected_decision": "REVIEW",
-    "reason": "The answer gives only one of the two requested benefits."
-  },
-  {
-    "id": "partial-003",
-    "category": "partially_supported",
-    "question": "What does the reference say about sleep and memory?",
-    "reference": "Sleep supports memory consolidation and helps maintain attention the next day.",
-    "answer": "Sleep supports memory consolidation.",
-    "expected_decision": "REVIEW",
-    "reason": "The claim is supported but does not cover the full supplied explanation."
-  },
-  {
-    "id": "partial-004",
-    "category": "partially_supported",
-    "question": "List the stated functions of wetlands.",
-    "reference": "Wetlands can store floodwater, filter pollutants, and provide wildlife habitat.",
-    "answer": "Wetlands can store floodwater.",
-    "expected_decision": "REVIEW",
-    "reason": "The answer is accurate but incomplete for a request to list multiple functions."
-  },
-  {
-    "id": "unsupported-001",
-    "category": "unsupported",
-    "question": "Does the reference establish that the supplement cures migraines?",
-    "reference": "A small pilot study found that some participants reported fewer headaches.",
-    "answer": "The supplement definitely cures migraines for everyone.",
-    "expected_decision": "REJECT",
-    "reason": "The universal cure claim is much stronger than the preliminary evidence."
-  },
-  {
-    "id": "unsupported-002",
-    "category": "unsupported",
-    "question": "How long did the bridge project take?",
-    "reference": "Construction began in April 2019. The provided record does not state a completion date.",
-    "answer": "The bridge took exactly eighteen months to complete.",
-    "expected_decision": "REJECT",
-    "reason": "The answer invents a duration that is absent from the reference."
-  },
-  {
-    "id": "unsupported-003",
-    "category": "unsupported",
-    "question": "What caused the power interruption?",
-    "reference": "The utility reported that the cause remained under investigation.",
-    "answer": "A lightning strike certainly caused the interruption.",
-    "expected_decision": "REJECT",
-    "reason": "The answer asserts a specific cause that the reference does not identify."
-  },
-  {
-    "id": "unsupported-004",
-    "category": "unsupported",
-    "question": "Was the software update responsible for the failure?",
-    "reference": "The failure occurred after an update, but no causal link has been established.",
-    "answer": "The update was proven to be the sole cause of the failure.",
-    "expected_decision": "REJECT",
-    "reason": "Sequence alone does not support the claimed proven causal relationship."
-  },
-  {
-    "id": "irrelevant-001",
-    "category": "irrelevant",
-    "question": "Why do leaves appear green?",
-    "reference": "Chlorophyll absorbs much of the red and blue light and reflects more green light.",
-    "answer": "Dolphins communicate using whistles and clicks.",
-    "expected_decision": "REJECT",
-    "reason": "The answer is unrelated to the question and reference."
-  },
-  {
-    "id": "irrelevant-002",
-    "category": "irrelevant",
-    "question": "What is the purpose of a smoke alarm?",
-    "reference": "A smoke alarm detects smoke and warns occupants of a possible fire.",
-    "answer": "A bicycle chain transfers force from the pedals to the rear wheel.",
-    "expected_decision": "REJECT",
-    "reason": "The response discusses a different object and does not answer the question."
-  },
-  {
-    "id": "irrelevant-003",
-    "category": "irrelevant",
-    "question": "How does compost benefit garden soil?",
-    "reference": "Compost adds organic matter and can improve soil structure and water retention.",
-    "answer": "The Moon completes an orbit around Earth in roughly one month.",
-    "expected_decision": "REJECT",
-    "reason": "The answer contains no information about compost or soil."
-  },
-  {
-    "id": "irrelevant-004",
-    "category": "irrelevant",
-    "question": "Why is handwashing recommended before preparing food?",
-    "reference": "Handwashing can reduce the transfer of harmful microorganisms to food.",
-    "answer": "Solar panels convert light energy into electrical energy.",
-    "expected_decision": "REJECT",
-    "reason": "The response is off topic despite being a coherent statement."
-  },
-  {
-    "id": "insufficient-001",
-    "category": "insufficient_reference",
-    "question": "Which candidate received the most votes?",
-    "reference": "The election was held on Tuesday, but the supplied notice contains no vote totals.",
-    "answer": "The reference does not provide enough information to identify which candidate received the most votes.",
-    "expected_decision": "REVIEW",
-    "reason": "The answer appropriately identifies that the supplied evidence is insufficient."
-  },
-  {
-    "id": "insufficient-002",
-    "category": "insufficient_reference",
-    "question": "What was the company's annual profit?",
-    "reference": "The summary reports annual revenue but does not include expenses or profit.",
-    "answer": "Annual profit cannot be determined from the supplied reference.",
-    "expected_decision": "REVIEW",
-    "reason": "The cautious answer correctly avoids inventing a missing financial value."
-  },
-  {
-    "id": "insufficient-003",
-    "category": "insufficient_reference",
-    "question": "Will the medication work for this specific patient?",
-    "reference": "The document describes average trial results and provides no information about the individual patient.",
-    "answer": "The reference is insufficient to predict whether the medication will work for this patient.",
-    "expected_decision": "REVIEW",
-    "reason": "The response is appropriately cautious about applying group evidence to an individual."
-  },
-  {
-    "id": "insufficient-004",
-    "category": "insufficient_reference",
-    "question": "What time will the delayed train arrive?",
-    "reference": "The service notice says the train is delayed but gives no revised arrival time.",
-    "answer": "The revised arrival time is not available in the supplied notice.",
-    "expected_decision": "REVIEW",
-    "reason": "The answer accurately communicates the limit of the reference information."
-  },
-  {
-    "id": "supported-005",
-    "category": "supported",
-    "question": "Which is Earth's largest ocean?",
-    "reference": "The Pacific Ocean is Earth's largest ocean.",
-    "answer": "Earth's largest ocean is the Pacific Ocean.",
-    "expected_decision": "PUBLISH",
-    "reason": "The answer is a faithful paraphrase of the reference."
-  },
-  {
-    "id": "supported-006",
-    "category": "supported",
-    "question": "What happens to liquid water during evaporation?",
-    "reference": "Evaporation changes liquid water into water vapor.",
-    "answer": "Liquid water becomes water vapor through evaporation.",
-    "expected_decision": "PUBLISH",
-    "reason": "The wording changes, but the answer preserves the supported meaning."
-  },
-  {
-    "id": "partial-005",
-    "category": "partially_supported",
-    "question": "Summarize the stated effects of the community garden.",
-    "reference": "The community garden supplied fresh produce and created a shared gathering space.",
-    "answer": "The community garden supplied fresh produce and probably reduced neighborhood crime.",
-    "expected_decision": "REVIEW",
-    "reason": "One claim is supported while the added crime claim is not established."
-  },
-  {
-    "id": "partial-006",
-    "category": "partially_supported",
-    "question": "What does the report say about the new bus route?",
-    "reference": "The new route shortened average travel time and added stops near the hospital.",
-    "answer": "The new route shortened average travel time but the answer does not mention the hospital stops.",
-    "expected_decision": "REVIEW",
-    "reason": "The response acknowledges but does not clearly deliver the second requested detail."
-  },
-  {
-    "id": "unsupported-005",
-    "category": "unsupported",
-    "question": "By what percentage did energy use decline?",
-    "reference": "The facility reported a 12 percent decline in annual energy use.",
-    "answer": "The facility's annual energy use declined by 20 percent.",
-    "expected_decision": "REJECT",
-    "reason": "The answer changes the central numerical value from 12 to 20 percent."
-  },
-  {
-    "id": "unsupported-006",
-    "category": "unsupported",
-    "question": "Did the audit conclude that fraud caused the discrepancy?",
-    "reference": "The audit found a discrepancy but did not determine that fraud caused it.",
-    "answer": "The audit concluded that fraud caused the discrepancy.",
-    "expected_decision": "REJECT",
-    "reason": "The answer reverses the reference's explicit negation."
-  },
-  {
-    "id": "irrelevant-005",
-    "category": "irrelevant",
-    "question": "How does insulation reduce heat loss from a building?",
-    "reference": "Insulation slows heat transfer through walls, roofs, and floors.",
-    "answer": "The building has three floors and a blue roof.",
-    "expected_decision": "REJECT",
-    "reason": "Shared building words do not make the answer responsive to heat loss."
-  },
-  {
-    "id": "irrelevant-006",
-    "category": "irrelevant",
-    "question": "Why did the library extend its weekend hours?",
-    "reference": "The library extended weekend hours after surveys showed strong community demand.",
-    "answer": "Weekend weather is often warmer than weekday weather.",
-    "expected_decision": "REJECT",
-    "reason": "The answer shares a time-related word but does not address the library decision."
-  },
-  {
-    "id": "insufficient-005",
-    "category": "insufficient_reference",
-    "question": "Which repair option will last the longest?",
-    "reference": "The document lists three repair options and their prices but provides no durability data.",
-    "answer": "The longest-lasting option cannot be determined because durability information is not provided.",
-    "expected_decision": "REVIEW",
-    "reason": "The answer correctly identifies the missing comparison evidence."
-  },
-  {
-    "id": "insufficient-006",
-    "category": "insufficient_reference",
-    "question": "Was customer satisfaction higher this year than last year?",
-    "reference": "This year's satisfaction score is reported, but last year's score is absent.",
-    "answer": "The year-over-year change cannot be established without last year's score.",
-    "expected_decision": "REVIEW",
-    "reason": "The answer appropriately refuses a comparison that the reference cannot support."
-  }
+  {"id":"sup-01","category":"supported","question":"Did walking lower blood pressure?","paper_text":"METHODS\nAdults walked daily for eight weeks.\nRESULTS\nDaily walking lowered blood pressure.","answer":"Daily walking lowered blood pressure.","expected_claim_label":"SUPPORTED","expected_decision":"PUBLISH"},
+  {"id":"sup-02","category":"supported","question":"Did therapy improve sleep?","paper_text":"METHODS\nAdults received therapy.\nRESULTS\nTherapy improved sleep quality.","answer":"Therapy improved sleep quality.","expected_claim_label":"SUPPORTED","expected_decision":"PUBLISH"},
+  {"id":"sup-03","category":"supported","question":"Was vaccination associated with fewer infections?","paper_text":"RESULTS\nVaccination was associated with fewer infections.","answer":"Vaccination was associated with fewer infections.","expected_claim_label":"SUPPORTED","expected_decision":"PUBLISH"},
+  {"id":"sup-04","category":"supported","question":"Did students recall more words?","paper_text":"RESULTS\nStudents recalled more words after sleep.","answer":"Students recalled more words after sleep.","expected_claim_label":"SUPPORTED","expected_decision":"PUBLISH"},
+  {"id":"sup-05","category":"supported","question":"Did the intervention reduce pain?","paper_text":"RESULTS\nThe intervention reduced reported pain.","answer":"The intervention reduced reported pain.","expected_claim_label":"SUPPORTED","expected_decision":"PUBLISH"},
+  {"id":"sup-06","category":"supported","question":"Was exercise linked to mood?","paper_text":"RESULTS\nExercise was associated with improved mood.","answer":"Exercise was associated with improved mood.","expected_claim_label":"SUPPORTED","expected_decision":"PUBLISH"},
+  {"id":"sup-07","category":"supported","question":"Did tutoring raise scores?","paper_text":"RESULTS\nTutoring raised average mathematics scores.","answer":"Tutoring raised average mathematics scores.","expected_claim_label":"SUPPORTED","expected_decision":"PUBLISH"},
+  {"id":"sup-08","category":"supported","question":"Did the drug reduce symptoms?","paper_text":"RESULTS\nThe drug reduced symptoms in the treatment group.","answer":"The drug reduced symptoms in the treatment group.","expected_claim_label":"SUPPORTED","expected_decision":"PUBLISH"},
+  {"id":"sup-09","category":"supported","question":"Was air pollution associated with asthma?","paper_text":"RESULTS\nAir pollution was associated with asthma incidence.","answer":"Air pollution was associated with asthma incidence.","expected_claim_label":"SUPPORTED","expected_decision":"PUBLISH"},
+  {"id":"sup-10","category":"supported","question":"Did reminders improve attendance?","paper_text":"RESULTS\nText reminders improved clinic attendance.","answer":"Text reminders improved clinic attendance.","expected_claim_label":"SUPPORTED","expected_decision":"PUBLISH"},
+
+  {"id":"part-01","category":"overstated","question":"Did treatment improve outcomes?","paper_text":"RESULTS\nTreatment improved outcomes in some participants.","answer":"Treatment improved outcomes for all participants.","expected_claim_label":"PARTIALLY_SUPPORTED","expected_decision":"REVIEW"},
+  {"id":"part-02","category":"overstated","question":"Did therapy help patients?","paper_text":"RESULTS\nTherapy helped some patients.","answer":"Therapy always helped patients.","expected_claim_label":"PARTIALLY_SUPPORTED","expected_decision":"REVIEW"},
+  {"id":"part-03","category":"causation","question":"Did screen time cause insomnia?","paper_text":"METHODS\nThis was an observational survey.\nRESULTS\nScreen time was associated with insomnia.","answer":"Screen time caused insomnia.","expected_claim_label":"PARTIALLY_SUPPORTED","expected_decision":"REVIEW"},
+  {"id":"part-04","category":"causation","question":"Did diet cause depression?","paper_text":"RESULTS\nDiet was correlated with depression.","answer":"Diet caused depression.","expected_claim_label":"PARTIALLY_SUPPORTED","expected_decision":"REVIEW"},
+  {"id":"part-05","category":"overstated","question":"Did exercise improve mood?","paper_text":"RESULTS\nExercise improved mood among some adults.","answer":"Exercise improved mood for everyone.","expected_claim_label":"PARTIALLY_SUPPORTED","expected_decision":"REVIEW"},
+  {"id":"part-06","category":"overstated","question":"Did the vaccine prevent disease?","paper_text":"RESULTS\nThe vaccine prevented disease in some participants.","answer":"The vaccine prevented disease in all participants.","expected_claim_label":"PARTIALLY_SUPPORTED","expected_decision":"REVIEW"},
+  {"id":"part-07","category":"causation","question":"Did income cause health?","paper_text":"RESULTS\nIncome was associated with better health.","answer":"Income caused better health.","expected_claim_label":"PARTIALLY_SUPPORTED","expected_decision":"REVIEW"},
+  {"id":"part-08","category":"overstated","question":"Did tutoring improve grades?","paper_text":"RESULTS\nTutoring improved grades for some students.","answer":"Tutoring improved grades for every student.","expected_claim_label":"PARTIALLY_SUPPORTED","expected_decision":"REVIEW"},
+  {"id":"part-09","category":"causation","question":"Did coffee cause alertness?","paper_text":"RESULTS\nCoffee intake was correlated with alertness.","answer":"Coffee caused alertness.","expected_claim_label":"PARTIALLY_SUPPORTED","expected_decision":"REVIEW"},
+  {"id":"part-10","category":"overstated","question":"Did training increase strength?","paper_text":"RESULTS\nTraining increased strength among some participants.","answer":"Training increased strength among all participants.","expected_claim_label":"PARTIALLY_SUPPORTED","expected_decision":"REVIEW"},
+
+  {"id":"unsup-01","category":"unsupported","question":"Did the supplement cure migraines?","paper_text":"RESULTS\nHeadache frequency was measured.","answer":"The supplement cures migraines.","expected_claim_label":"UNSUPPORTED","expected_decision":"REJECT"},
+  {"id":"unsup-02","category":"unsupported","question":"Did music improve memory?","paper_text":"METHODS\nMemory was tested in a quiet room.","answer":"Music improved memory.","expected_claim_label":"UNSUPPORTED","expected_decision":"REJECT"},
+  {"id":"unsup-03","category":"unsupported","question":"Did tea prevent cancer?","paper_text":"RESULTS\nTea consumption was recorded.","answer":"Tea prevented cancer.","expected_claim_label":"UNSUPPORTED","expected_decision":"REJECT"},
+  {"id":"unsup-04","category":"unsupported","question":"Did masks improve grades?","paper_text":"METHODS\nStudents completed questionnaires.","answer":"Masks improved grades.","expected_claim_label":"UNSUPPORTED","expected_decision":"REJECT"},
+  {"id":"unsup-05","category":"unsupported","question":"Did exercise cure diabetes?","paper_text":"RESULTS\nExercise adherence was reported.","answer":"Exercise cured diabetes.","expected_claim_label":"UNSUPPORTED","expected_decision":"REJECT"},
+  {"id":"unsup-06","category":"unsupported","question":"Did meditation prevent infection?","paper_text":"METHODS\nParticipants practiced meditation.","answer":"Meditation prevented infection.","expected_claim_label":"UNSUPPORTED","expected_decision":"REJECT"},
+  {"id":"unsup-07","category":"unsupported","question":"Did tutoring reduce anxiety?","paper_text":"RESULTS\nAttendance at tutoring was high.","answer":"Tutoring reduced anxiety.","expected_claim_label":"UNSUPPORTED","expected_decision":"REJECT"},
+  {"id":"unsup-08","category":"unsupported","question":"Did the app increase lifespan?","paper_text":"METHODS\nApp usage was logged for one month.","answer":"The app increased lifespan.","expected_claim_label":"UNSUPPORTED","expected_decision":"REJECT"},
+  {"id":"unsup-09","category":"unsupported","question":"Did vitamins prevent fractures?","paper_text":"RESULTS\nVitamin levels were recorded.","answer":"Vitamins prevented fractures.","expected_claim_label":"UNSUPPORTED","expected_decision":"REJECT"},
+  {"id":"unsup-10","category":"unsupported","question":"Did lighting improve productivity?","paper_text":"METHODS\nOffice lighting was documented.","answer":"Lighting improved productivity.","expected_claim_label":"UNSUPPORTED","expected_decision":"REJECT"},
+
+  {"id":"contra-01","category":"contradicted","question":"Did treatment lower mortality?","paper_text":"RESULTS\nTreatment did not lower mortality.","answer":"Treatment lowered mortality.","expected_claim_label":"CONTRADICTED","expected_decision":"REJECT"},
+  {"id":"contra-02","category":"contradicted","question":"Did therapy improve sleep?","paper_text":"RESULTS\nTherapy did not improve sleep.","answer":"Therapy improved sleep.","expected_claim_label":"CONTRADICTED","expected_decision":"REJECT"},
+  {"id":"contra-03","category":"contradicted","question":"Did scores increase?","paper_text":"RESULTS\nScores did not increase after training.","answer":"Scores increased after training.","expected_claim_label":"CONTRADICTED","expected_decision":"REJECT"},
+  {"id":"contra-04","category":"contradicted","question":"Did symptoms decline?","paper_text":"RESULTS\nSymptoms did not decline.","answer":"Symptoms declined.","expected_claim_label":"CONTRADICTED","expected_decision":"REJECT"},
+  {"id":"contra-05","category":"contradicted","question":"Was adherence higher?","paper_text":"RESULTS\nAdherence was not higher in the intervention group.","answer":"Adherence was higher in the intervention group.","expected_claim_label":"CONTRADICTED","expected_decision":"REJECT"},
+  {"id":"contra-06","category":"contradicted","question":"Did pollution decrease?","paper_text":"RESULTS\nPollution did not decrease.","answer":"Pollution decreased.","expected_claim_label":"CONTRADICTED","expected_decision":"REJECT"},
+  {"id":"contra-07","category":"contradicted","question":"Did attendance improve?","paper_text":"RESULTS\nAttendance did not improve.","answer":"Attendance improved.","expected_claim_label":"CONTRADICTED","expected_decision":"REJECT"},
+  {"id":"contra-08","category":"contradicted","question":"Did pain fall?","paper_text":"RESULTS\nPain did not fall after treatment.","answer":"Pain fell after treatment.","expected_claim_label":"CONTRADICTED","expected_decision":"REJECT"},
+  {"id":"contra-09","category":"contradicted","question":"Did errors decrease?","paper_text":"RESULTS\nErrors did not decrease.","answer":"Errors decreased.","expected_claim_label":"CONTRADICTED","expected_decision":"REJECT"},
+  {"id":"contra-10","category":"contradicted","question":"Did recovery accelerate?","paper_text":"RESULTS\nRecovery did not accelerate.","answer":"Recovery accelerated.","expected_claim_label":"CONTRADICTED","expected_decision":"REJECT"},
+
+  {"id":"insuf-01","category":"insufficient","question":"Does treatment work for children?","paper_text":"METHODS\nOnly adults were enrolled.","answer":"The treatment may work for children.","expected_claim_label":"INSUFFICIENT_EVIDENCE","expected_decision":"REVIEW"},
+  {"id":"insuf-02","category":"insufficient","question":"Does therapy work long term?","paper_text":"LIMITATIONS\nFollow-up lasted one week.","answer":"Therapy might work long term.","expected_claim_label":"INSUFFICIENT_EVIDENCE","expected_decision":"REVIEW"},
+  {"id":"insuf-03","category":"insufficient","question":"Does the drug help elderly patients?","paper_text":"METHODS\nParticipants were young adults.","answer":"The drug may help elderly patients.","expected_claim_label":"INSUFFICIENT_EVIDENCE","expected_decision":"REVIEW"},
+  {"id":"insuf-04","category":"insufficient","question":"Will results generalize nationally?","paper_text":"LIMITATIONS\nThe sample came from one clinic.","answer":"Results might generalize nationally.","expected_claim_label":"INSUFFICIENT_EVIDENCE","expected_decision":"REVIEW"},
+  {"id":"insuf-05","category":"insufficient","question":"Does intervention prevent death?","paper_text":"METHODS\nMortality was not measured.","answer":"The intervention may prevent death.","expected_claim_label":"INSUFFICIENT_EVIDENCE","expected_decision":"REVIEW"},
+  {"id":"insuf-06","category":"insufficient","question":"Does exercise benefit women?","paper_text":"METHODS\nOnly men were enrolled.","answer":"Exercise may benefit women.","expected_claim_label":"INSUFFICIENT_EVIDENCE","expected_decision":"REVIEW"},
+  {"id":"insuf-07","category":"insufficient","question":"Does the app reduce depression?","paper_text":"METHODS\nDepression was not assessed.","answer":"The app might reduce depression.","expected_claim_label":"INSUFFICIENT_EVIDENCE","expected_decision":"REVIEW"},
+  {"id":"insuf-08","category":"insufficient","question":"Is the treatment safe in pregnancy?","paper_text":"METHODS\nPregnant patients were excluded.","answer":"The treatment may be safe in pregnancy.","expected_claim_label":"INSUFFICIENT_EVIDENCE","expected_decision":"REVIEW"},
+  {"id":"insuf-09","category":"insufficient","question":"Does tutoring work online?","paper_text":"METHODS\nTutoring occurred in person.","answer":"Tutoring might work online.","expected_claim_label":"INSUFFICIENT_EVIDENCE","expected_decision":"REVIEW"},
+  {"id":"insuf-10","category":"insufficient","question":"Will benefits persist for years?","paper_text":"LIMITATIONS\nOutcomes were measured for one month.","answer":"Benefits may persist for years.","expected_claim_label":"INSUFFICIENT_EVIDENCE","expected_decision":"REVIEW"}
 ]

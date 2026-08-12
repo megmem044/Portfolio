@@ -1,10 +1,18 @@
-"""Typed data structures shared across AnswerTrust components."""
+"""Domain types for research-grounded answer evaluation."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+
+
+class ClaimLabel(str, Enum):
+    SUPPORTED = "SUPPORTED"
+    PARTIALLY_SUPPORTED = "PARTIALLY_SUPPORTED"
+    UNSUPPORTED = "UNSUPPORTED"
+    CONTRADICTED = "CONTRADICTED"
+    INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
 
 
 class Decision(str, Enum):
@@ -14,8 +22,6 @@ class Decision(str, Enum):
 
 
 class RunState(str, Enum):
-    """Durable lifecycle states for one answer evaluation run."""
-
     RECEIVED = "RECEIVED"
     EVALUATING = "EVALUATING"
     RETRYING = "RETRYING"
@@ -26,22 +32,36 @@ class RunState(str, Enum):
 
 
 class FailureType(str, Enum):
-    """Known reasons an evaluation run may fail or need intervention."""
-
-    MODEL_UNAVAILABLE = "MODEL_UNAVAILABLE"
     MODEL_TIMEOUT = "MODEL_TIMEOUT"
-    INVALID_OUTPUT = "INVALID_OUTPUT"
-    LOW_CONFIDENCE = "LOW_CONFIDENCE"
-    INSUFFICIENT_SUPPORT = "INSUFFICIENT_SUPPORT"
     EVALUATION_ERROR = "EVALUATION_ERROR"
+    INVALID_INPUT = "INVALID_INPUT"
 
 
 @dataclass
 class EvaluationInput:
     question: str
-    reference: str
+    paper_text: str
     answer: str
-    prompt_version: str = "baseline"
+
+    @property
+    def reference(self) -> str:  # compatibility for callers using the old name
+        return self.paper_text
+
+
+@dataclass
+class Evidence:
+    section: str
+    passage: str
+    similarity: float
+
+
+@dataclass
+class ClaimResult:
+    claim: str
+    label: ClaimLabel
+    evidence: list[Evidence]
+    explanation: str
+    failure_types: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -53,34 +73,15 @@ class DimensionScore:
 
 
 @dataclass
-class TransformerResult:
-    """Supplemental output from the optional local transformer."""
-
-    explanation: str
-    suggested_decision: Decision | None
-    prompt_version: str
-    model_name: str
-    status: str
-    latency_ms: int
-    raw_output: str = ""
-
-
-@dataclass
 class EvaluationResult:
     evaluation_id: str
     timestamp: datetime
     overall_score: int
     final_decision: Decision
+    claim_results: list[ClaimResult]
     dimension_scores: list[DimensionScore]
     main_concern: str
     explanation: str
     recommended_action: str
-    # Time used by AnswerTrust's rule-based scoring, measured in milliseconds.
-    deterministic_latency_ms: int
-    # Time used by the optional local AI model, measured in milliseconds.
-    transformer_latency_ms: int
-    # Total time for the complete evaluation, measured in milliseconds.
     total_latency_ms: int
-    prompt_version: str
-    model_status: str
-
+    deterministic_latency_ms: int = 0

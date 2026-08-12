@@ -1,101 +1,32 @@
-"""Coordinate persistent run state with AnswerTrust evaluations."""
-
-from __future__ import annotations
+"""Persistent evaluation execution with automatic retry."""
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable
+from typing import Callable
 
 from src import database
 from src.evaluator import evaluate_answer
-from src.failure_classifier import classify_exception, classify_result
-from src.models import (
-    Decision,
-    EvaluationInput,
-    EvaluationResult,
-    RunState,
-)
+from src.models import Decision, EvaluationInput, EvaluationResult, FailureType, RunState
+from src.retry_policy import DEFAULT_RETRY_POLICY, RetryPolicy
 
-if TYPE_CHECKING:
-    from src.transformer_evaluator import LocalTransformerEvaluator
+Evaluator=Callable[...,EvaluationResult]
 
 
-Evaluator = Callable[..., EvaluationResult]
-
-
-def _final_state(result: EvaluationResult) -> RunState:
-    """Map an evaluation decision to its workflow state."""
-    states = {
-        Decision.PUBLISH: RunState.APPROVED,
-        Decision.REVIEW: RunState.HUMAN_REVIEW,
-        Decision.REJECT: RunState.REJECTED,
-    }
-    return states[result.final_decision]
-
-
-def execute_evaluation_run(
-    evaluation_input: EvaluationInput,
-    database_path: Path,
-    transformer_evaluator: "LocalTransformerEvaluator | None" = None,
-    evaluator: Evaluator = evaluate_answer,
-) -> tuple[str, EvaluationResult]:
-    """Evaluate an answer while persisting its current workflow state."""
-    run_id = database.create_evaluation_run(
-        evaluation_input,
-        database_path,
-    )
-    database.update_evaluation_run_state(
-        run_id,
-        RunState.EVALUATING,
-        database_path,
-    )
-
-    try:
-        result = evaluator(
-            evaluation_input,
-            transformer_evaluator=transformer_evaluator,
-        )
-    except Exception as error:
-        database.update_evaluation_run_state(
-            run_id,
-            RunState.FAILED,
-            database_path,
-            failure_type=classify_exception(error),
-            failure_message=str(error) or type(error).__name__,
-        )
-        raise
-
-    is_valid = result.dimension_scores[0].name != "Validation"
-    if is_valid:
-        database.save_evaluation(
-            evaluation_input,
-            result,
-            database_path,
-        )
-
-    failure_type = classify_result(result)
-    failure_message = None
-    if failure_type is not None:
-        failure_message = {
-            "MODEL_UNAVAILABLE": (
-                "The optional model was unavailable; deterministic "
-                "evaluation was used."
-            ),
-            "INVALID_OUTPUT": (
-                "The submitted input or optional model output was invalid."
-            ),
-            "LOW_CONFIDENCE": result.main_concern,
-            "INSUFFICIENT_SUPPORT": result.main_concern,
-            "EVALUATION_ERROR": (
-                "The optional model encountered an evaluation error."
-            ),
-        }.get(failure_type.value, result.main_concern)
-
-    database.update_evaluation_run_state(
-        run_id,
-        _final_state(result),
-        database_path,
-        evaluation_id=result.evaluation_id if is_valid else None,
-        failure_type=failure_type,
-        failure_message=failure_message,
-    )
-    return run_id, result
+def execute_evaluation_run(item: EvaluationInput, database_path: Path, evaluator: Evaluator=evaluate_answer, retry_policy: RetryPolicy=DEFAULT_RETRY_POLICY, **kwargs: object) -> tuple[str,EvaluationResult]:
+    run_id=database.create_evaluation_run(item,database_path)
+    for attempt in range(1,retry_policy.max_attempts+1):
+        state=RunState.EVALUATING if attempt==1 else RunState.RETRYING
+        database.update_evaluation_run_state(run_id,state,database_path,attempt_count=attempt)
+        try:
+            result=evaluator(item,**kwargs)
+            database.save_evaluation(item,result,database_path)
+            final={Decision.PUBLISH:RunState.APPROVED,Decision.REVIEW:RunState.HUMAN_REVIEW,Decision.REJECT:RunState.REJECTED}[result.final_decision]
+            database.update_evaluation_run_state(run_id,final,database_path,evaluation_id=result.evaluation_id,attempt_count=attempt,system_decision=result.final_decision)
+            return run_id,result
+        except Exception as error:
+            failure=FailureType.INVALID_INPUT if isinstance(error,ValueError) else (FailureType.MODEL_TIMEOUT if isinstance(error,TimeoutError) else FailureType.EVALUATION_ERROR)
+            if retry_policy.should_retry(failure,attempt):
+                database.update_evaluation_run_state(run_id,RunState.RETRYING,database_path,failure_type=failure,failure_message=str(error),attempt_count=attempt)
+                continue
+            database.update_evaluation_run_state(run_id,RunState.FAILED,database_path,failure_type=failure,failure_message=str(error),attempt_count=attempt)
+            raise
+    raise RuntimeError("Retry loop ended unexpectedly")
