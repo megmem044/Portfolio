@@ -17,10 +17,16 @@ benchmarks, not estimates of general model performance.
 
 ## Next measured step
 
-Integrate a natural-language-inference cross-encoder for entailment,
-contradiction, and neutral predictions. Before it can affect publication
-decisions, add a dedicated labelled benchmark, confidence thresholds, offline
-fallback behavior, and comparison against the deterministic baseline.
+The confidence-gated natural-language-inference cross-encoder is integrated
+with offline fallback. Its dedicated 30-pair balanced benchmark currently
+measures 93.33% overall accuracy, 100% entailment recall, 100% contradiction
+recall, 80% neutral recall, and 93.33% coverage at the 65% threshold. The next
+step is error analysis and threshold calibration, especially for neutral pairs,
+before expanding the model's authority.
+
+The resulting safety policy routes NLI-only contradictions to `REVIEW` and
+reserves automatic `REJECT` for contradictions independently confirmed by the
+deterministic checks.
 
 ## Boundary
 

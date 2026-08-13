@@ -5,12 +5,13 @@ from src.academic import extract_claims,match_evidence,split_sections
 from src.database import get_evaluation_run
 from src.evaluator import evaluate_answer
 from src.example_data import load_examples,validate_examples
-from src.experiments import run_experiment,run_matcher_comparison
+from src.experiments import calculate_nli_metrics,nli_threshold_sweep,run_experiment,run_matcher_comparison,run_nli_benchmark
 from src.models import ClaimLabel,Decision,EvaluationInput,RunState
-from src.nli import NLIClassifier,NLIPrediction,apply_nli
+from src.nli import LABELS,NLIClassifier,NLIPrediction,apply_nli
 from src.review import ReviewDecision,resolve_human_review
 from src.semantic import SemanticMatcher,cosine_similarity
 from src.workflow import execute_evaluation_run
+from src.config import MODEL_CACHE_DIR,configure_model_cache
 
 PAPER="METHODS\nAdults were randomly assigned.\nRESULTS\nTreatment improved outcomes in some participants.\nLIMITATIONS\nChildren were not studied."
 
@@ -128,12 +129,22 @@ def test_nli_predicts_entailment_and_confidence():
     assert prediction.confidence>0.9
 
 
-def test_confident_nli_contradiction_overrides_heuristic():
+def test_nli_only_contradiction_routes_to_review():
     result=evaluate_answer(
         EvaluationInput("Did treatment improve sleep?","RESULTS\nTreatment improved sleep.","Treatment improved sleep."),
         nli_classifier=NLIClassifier(model=FakeNLIModel([5.0,0.0,0.0])),
     )
     assert result.claim_results[0].label==ClaimLabel.CONTRADICTED
+    assert "NLI_ONLY_CONTRADICTION" in result.claim_results[0].failure_types
+    assert result.final_decision==Decision.REVIEW
+
+
+def test_confirmed_contradiction_still_rejects_with_nli():
+    result=evaluate_answer(
+        EvaluationInput("Did treatment improve sleep?","RESULTS\nTreatment did not improve sleep.","Treatment improved sleep."),
+        nli_classifier=NLIClassifier(model=FakeNLIModel([5.0,0.0,0.0])),
+    )
+    assert "NLI_ONLY_CONTRADICTION" not in result.claim_results[0].failure_types
     assert result.final_decision==Decision.REJECT
 
 
@@ -163,6 +174,53 @@ def test_participants_does_not_trigger_patients_scope_flag():
         )
     )
     assert "OUTSIDE_STUDIED_SCOPE" not in result.claim_results[0].failure_types
+
+
+def test_nli_metrics_report_recall_coverage_and_abstention():
+    rows=[
+        {"expected_label":"entailment","actual_label":"entailment","confidence":0.9},
+        {"expected_label":"contradiction","actual_label":"contradiction","confidence":0.8},
+        {"expected_label":"neutral","actual_label":"entailment","confidence":0.5},
+    ]
+    metrics=calculate_nli_metrics(rows)
+    assert metrics["accuracy_pct"]==66.67
+    assert metrics["coverage_pct"]==66.67
+    assert metrics["covered_accuracy_pct"]==100.0
+    assert metrics["neutral_recall_pct"]==0.0
+    assert metrics["false_entailment_rate_pct"]==50.0
+    assert metrics["false_contradiction_rate_pct"]==0.0
+
+
+def test_nli_threshold_sweep_trades_coverage_for_abstention():
+    rows=[
+        {"expected_label":"entailment","actual_label":"entailment","confidence":0.96},
+        {"expected_label":"neutral","actual_label":"neutral","confidence":0.6},
+    ]
+    sweep=nli_threshold_sweep(rows)
+    assert sweep[0]["coverage_pct"]==100.0
+    assert sweep[-1]["coverage_pct"]==50.0
+    assert sweep[-1]["abstention_rate_pct"]==50.0
+
+
+def test_nli_benchmark_loads_balanced_dataset():
+    class ExpectedClassifier:
+        def predict(self,evidence,claim):
+            if "not " in evidence or any(word in evidence for word in ("increased reported pain","equal infection","did not change","raised systolic","reduced clinic attendance","worse mood","fewer words","increased symptoms","not associated")):
+                return NLIPrediction("contradiction",0.9)
+            if any(phrase in claim for phrase in ("blood pressure","employment","mathematical ability","asthma incidence","influenza","pain severity","household income","air pollution","school attendance","memory recall")) and not any(term in evidence for term in claim.split()[-2:]):
+                return NLIPrediction("neutral",0.9)
+            return NLIPrediction("entailment",0.9)
+    rows,metrics=run_nli_benchmark(classifier=ExpectedClassifier())
+    assert len(rows)==30
+    assert {row["expected_label"] for row in rows}==set(LABELS)
+    assert "abstention_rate_pct" in metrics
+
+
+def test_model_cache_environment_is_project_local(monkeypatch):
+    monkeypatch.delenv("HF_HOME",raising=False)
+    configure_model_cache()
+    import os
+    assert os.environ["HF_HOME"]==str(MODEL_CACHE_DIR)
 
 
 def test_cosine_similarity_handles_zero_vector():

@@ -34,6 +34,16 @@ The separate 10-example paraphrase benchmark measures evidence retrieval:
 These results describe small, deliberately constructed project benchmarks and
 must not be interpreted as general performance on academic literature.
 
+The balanced 30-pair NLI benchmark currently measures 93.33% accuracy, 100%
+entailment recall, 100% contradiction recall, 80% neutral recall, and 93.33%
+coverage at the 65% confidence threshold. Errors and below-threshold predictions
+remain visible rather than being silently counted as successful decisions.
+The error analysis also separates unsafe false-entailment errors from
+conservative false-contradiction errors and reports a threshold sweep.
+Because the measured false-contradiction rate is 10%, contradictions detected
+only by NLI are routed to human `REVIEW`; deterministic and NLI-confirmed
+contradictions remain automatic `REJECT` decisions.
+
 The evaluator is deliberately deterministic and inspectable. It is a portfolio MVP, not a clinical fact-checker, and it makes no claims beyond the supplied paper.
 
 ## Run
@@ -44,6 +54,8 @@ python -m pip install -r requirements.txt
 python -m pytest -q
 python -m src.experiments
 python -m src.experiments --compare-matchers
+python -m src.experiments --benchmark-nli
+python -m src.experiments --analyze-nli
 .\run.ps1
 ```
 

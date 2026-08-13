@@ -7,7 +7,7 @@ from math import exp
 import warnings
 from pathlib import Path
 
-from src.config import MODEL_CACHE_DIR
+from src.config import MODEL_CACHE_DIR, configure_model_cache
 from src.models import ClaimLabel, ClaimResult
 
 LABELS = ("contradiction", "entailment", "neutral")
@@ -29,6 +29,7 @@ class NLIClassifier:
         allow_download: bool = False,
     ) -> None:
         if model is None:
+            configure_model_cache()
             from sentence_transformers import CrossEncoder
 
             model_source: str | Path = model_name
@@ -82,8 +83,17 @@ def apply_nli(
     if prediction.confidence < threshold:
         return result
     if prediction.label == "contradiction":
+        nli_only = result.label != ClaimLabel.CONTRADICTED
         result.label = ClaimLabel.CONTRADICTED
-        result.explanation = "The NLI model found that the evidence contradicts this claim."
+        if nli_only:
+            if "NLI_ONLY_CONTRADICTION" not in result.failure_types:
+                result.failure_types.append("NLI_ONLY_CONTRADICTION")
+            result.explanation = (
+                "The NLI model found a contradiction that the deterministic "
+                "checks did not confirm; human review is required."
+            )
+        else:
+            result.explanation = "The NLI model found that the evidence contradicts this claim."
     elif prediction.label == "entailment":
         result.label = (
             ClaimLabel.PARTIALLY_SUPPORTED

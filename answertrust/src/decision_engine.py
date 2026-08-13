@@ -7,8 +7,16 @@ def make_decision(claims: list[ClaimResult], completeness: int, relevance: int) 
     labels = [claim.label for claim in claims]
     if not claims or relevance < 35:
         return Decision.REJECT
-    if ClaimLabel.CONTRADICTED in labels:
+    confirmed_contradictions = [
+        claim
+        for claim in claims
+        if claim.label == ClaimLabel.CONTRADICTED
+        and "NLI_ONLY_CONTRADICTION" not in claim.failure_types
+    ]
+    if confirmed_contradictions:
         return Decision.REJECT
+    if any("NLI_ONLY_CONTRADICTION" in claim.failure_types for claim in claims):
+        return Decision.REVIEW
     unsupported = labels.count(ClaimLabel.UNSUPPORTED)
     if unsupported and unsupported / len(labels) >= 0.5:
         return Decision.REJECT

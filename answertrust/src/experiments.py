@@ -4,10 +4,11 @@ import csv
 import json
 from pathlib import Path
 from src.academic import match_evidence, split_sections
-from src.config import EXPERIMENT_RESULTS_PATH, SEMANTIC_EXAMPLES_PATH
+from src.config import EXPERIMENT_RESULTS_PATH, NLI_EXAMPLES_PATH, SEMANTIC_EXAMPLES_PATH
 from src.evaluator import evaluate_answer
 from src.example_data import load_examples,validate_examples
 from src.models import EvaluationInput
+from src.nli import LABELS, NLIClassifier
 from src.semantic import SemanticMatcher
 
 def calculate_metrics(rows:list[dict])->dict:
@@ -74,11 +75,94 @@ def run_matcher_comparison(
     )
     return rows, metrics
 
+
+def calculate_nli_metrics(rows: list[dict], threshold: float = 0.65) -> dict:
+    """Measure accuracy, class recall, and confidence-gated coverage."""
+    total = len(rows)
+    covered = [row for row in rows if row["confidence"] >= threshold]
+    percent = lambda count, size: round(100 * count / size, 2) if size else 0.0
+    metrics = {
+        "total_examples": total,
+        "accuracy_pct": percent(
+            sum(row["actual_label"] == row["expected_label"] for row in rows), total
+        ),
+        "coverage_pct": percent(len(covered), total),
+        "abstention_rate_pct": percent(total - len(covered), total),
+        "covered_accuracy_pct": percent(
+            sum(row["actual_label"] == row["expected_label"] for row in covered),
+            len(covered),
+        ),
+        "false_entailment_rate_pct": percent(
+            sum(row["actual_label"] == "entailment" for row in rows if row["expected_label"] != "entailment"),
+            sum(row["expected_label"] != "entailment" for row in rows),
+        ),
+        "false_contradiction_rate_pct": percent(
+            sum(row["actual_label"] == "contradiction" for row in rows if row["expected_label"] != "contradiction"),
+            sum(row["expected_label"] != "contradiction" for row in rows),
+        ),
+    }
+    for label in LABELS:
+        expected = [row for row in rows if row["expected_label"] == label]
+        metrics[f"{label}_recall_pct"] = percent(
+            sum(row["actual_label"] == label for row in expected), len(expected)
+        )
+    return metrics
+
+
+def nli_threshold_sweep(rows: list[dict]) -> list[dict]:
+    """Show coverage and covered accuracy across candidate thresholds."""
+    summaries = []
+    for threshold in (0.5, 0.65, 0.75, 0.85, 0.9, 0.95):
+        metrics = calculate_nli_metrics(rows, threshold)
+        summaries.append({
+            "threshold": threshold,
+            "coverage_pct": metrics["coverage_pct"],
+            "abstention_rate_pct": metrics["abstention_rate_pct"],
+            "covered_accuracy_pct": metrics["covered_accuracy_pct"],
+        })
+    return summaries
+
+
+def run_nli_benchmark(
+    classifier: NLIClassifier | None = None,
+    examples_path: Path = NLI_EXAMPLES_PATH,
+    threshold: float = 0.65,
+) -> tuple[list[dict], dict]:
+    """Run a balanced, labelled evidence/claim NLI benchmark."""
+    with examples_path.open(encoding="utf-8") as handle:
+        examples = json.load(handle)
+    classifier = classifier or NLIClassifier()
+    rows = []
+    for example in examples:
+        prediction = classifier.predict(example["evidence"], example["claim"])
+        rows.append(
+            {
+                "id": example["id"],
+                "expected_label": example["expected_label"],
+                "actual_label": prediction.label,
+                "confidence": prediction.confidence,
+                "above_threshold": prediction.confidence >= threshold,
+            }
+        )
+    return rows, calculate_nli_metrics(rows, threshold)
+
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--compare-matchers", action="store_true")
+    parser.add_argument("--benchmark-nli", action="store_true")
+    parser.add_argument("--analyze-nli", action="store_true")
     arguments = parser.parse_args()
-    if arguments.compare_matchers:
+    if arguments.analyze_nli:
+        rows, metrics = run_nli_benchmark()
+        for row in rows:
+            if row["actual_label"] != row["expected_label"] or not row["above_threshold"]:
+                print(f'{row["id"]}: expected={row["expected_label"]}, actual={row["actual_label"]}, confidence={row["confidence"]:.2%}')
+        print("threshold_sweep:")
+        for summary in nli_threshold_sweep(rows): print(summary)
+        print("metrics:")
+    elif arguments.benchmark_nli:
+        _, metrics = run_nli_benchmark()
+    elif arguments.compare_matchers:
         _, metrics = run_matcher_comparison()
     else:
         _,metrics=run_experiment()

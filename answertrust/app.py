@@ -83,7 +83,13 @@ if submitted:
                         f"{claim.nli_confidence:.0%}"
                     )
                 if claim.failure_types:
-                    st.warning("Failure types: " + ", ".join(claim.failure_types))
+                    visible_failures = [
+                        "NLI contradiction requires confirmation"
+                        if failure == "NLI_ONLY_CONTRADICTION"
+                        else failure
+                        for failure in claim.failure_types
+                    ]
+                    st.warning("Failure types: " + ", ".join(visible_failures))
                 for evidence in claim.evidence:
                     st.markdown(f"**{evidence.section}** · match {evidence.similarity:.0%}")
                     st.info(evidence.passage)

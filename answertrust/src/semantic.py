@@ -7,7 +7,7 @@ from math import sqrt
 from typing import Protocol
 import warnings
 
-from src.config import MODEL_CACHE_DIR
+from src.config import MODEL_CACHE_DIR, configure_model_cache
 
 
 class Encoder(Protocol):
@@ -36,6 +36,7 @@ class SemanticMatcher:
         allow_download: bool = False,
     ) -> None:
         if encoder is None:
+            configure_model_cache()
             from sentence_transformers import SentenceTransformer
 
             MODEL_CACHE_DIR.mkdir(parents=True, exist_ok=True)
