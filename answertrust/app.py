@@ -4,6 +4,7 @@ import streamlit as st
 
 from src.config import DATABASE_PATH
 from src.models import EvaluationInput
+from src.nli import NLIClassifier
 from src.semantic import SemanticMatcher
 from src.workflow import execute_evaluation_run
 
@@ -17,6 +18,11 @@ def load_semantic_matcher() -> SemanticMatcher:
     """Load the local embedding model once per Streamlit process."""
     return SemanticMatcher()
 
+
+@st.cache_resource
+def load_nli_classifier() -> NLIClassifier:
+    return NLIClassifier()
+
 with st.form("evaluation"):
     question = st.text_input("Research question", placeholder="What did the study find about the treatment?")
     paper = st.text_area("Paper or selected paper text", height=300, placeholder="METHODS\n...\n\nRESULTS\n...\n\nLIMITATIONS\n...")
@@ -25,6 +31,11 @@ with st.form("evaluation"):
         "Use ML semantic evidence matching",
         value=True,
         help="Uses the local all-MiniLM-L6-v2 model to match paraphrased claims.",
+    )
+    use_nli = st.checkbox(
+        "Use ML entailment and contradiction classification",
+        value=True,
+        help="Uses a local NLI cross-encoder with a confidence threshold.",
     )
     submitted = st.form_submit_button("Evaluate answer", type="primary")
 
@@ -38,11 +49,21 @@ if submitted:
                 "The local embedding model could not be loaded. "
                 "AnswerTrust continued with keyword evidence matching."
             )
+    nli_classifier = None
+    if use_nli:
+        try:
+            nli_classifier = load_nli_classifier()
+        except Exception:
+            st.warning(
+                "The local NLI model could not be loaded. "
+                "AnswerTrust continued with deterministic claim labels."
+            )
     try:
         run_id, result = execute_evaluation_run(
             EvaluationInput(question, paper, answer),
             DATABASE_PATH,
             semantic_matcher=matcher,
+            nli_classifier=nli_classifier,
         )
     except ValueError as error:
         st.error(str(error))
@@ -56,6 +77,11 @@ if submitted:
             with st.expander(f"Claim {index}: {claim.label.value}", expanded=True):
                 st.write(claim.claim)
                 st.write(claim.explanation)
+                if claim.nli_label:
+                    st.caption(
+                        f"NLI: {claim.nli_label} · confidence "
+                        f"{claim.nli_confidence:.0%}"
+                    )
                 if claim.failure_types:
                     st.warning("Failure types: " + ", ".join(claim.failure_types))
                 for evidence in claim.evidence:

@@ -62,6 +62,8 @@ class ClaimResult:
     evidence: list[Evidence]
     explanation: str
     failure_types: list[str] = field(default_factory=list)
+    nli_label: str | None = None
+    nli_confidence: float | None = None
 
 
 @dataclass

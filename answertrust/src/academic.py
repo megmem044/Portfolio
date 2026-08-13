@@ -147,7 +147,11 @@ def evaluate_claim(claim: str, evidence: list[Evidence], paper_text: str) -> Cla
     if claim_words & CAUSAL and evidence_words & CORRELATIONAL and not evidence_words & CAUSAL:
         failures.append("CORRELATION_AS_CAUSATION")
         label = ClaimLabel.PARTIALLY_SUPPORTED
-    if any(term in claim.lower() for term in ("children", "women", "men", "elderly", "patients")) and not content_words(claim) <= content_words(paper_text):
+    population_terms = {"children", "women", "men", "elderly", "patients"}
+    populations_outside_paper = (
+        claim_words & population_terms
+    ) - content_words(paper_text)
+    if populations_outside_paper:
         failures.append("OUTSIDE_STUDIED_SCOPE")
     if best.section == "LIMITATIONS" or (claim_words & UNIVERSAL and not claim_words & QUALIFIERS):
         failures.append("MISSING_QUALIFICATION")

@@ -7,6 +7,7 @@ from src.evaluator import evaluate_answer
 from src.example_data import load_examples,validate_examples
 from src.experiments import run_experiment,run_matcher_comparison
 from src.models import ClaimLabel,Decision,EvaluationInput,RunState
+from src.nli import NLIClassifier,NLIPrediction,apply_nli
 from src.review import ReviewDecision,resolve_human_review
 from src.semantic import SemanticMatcher,cosine_similarity
 from src.workflow import execute_evaluation_run
@@ -112,6 +113,56 @@ def test_results_prior_breaks_close_semantic_tie():
         semantic_matcher=SemanticMatcher(encoder=CloseEncoder()),
     )
     assert evidence[0].section=="RESULTS"
+
+
+class FakeNLIModel:
+    def __init__(self, scores): self.scores=scores
+    def predict(self, pairs): return [self.scores]
+
+
+def test_nli_predicts_entailment_and_confidence():
+    prediction=NLIClassifier(model=FakeNLIModel([0.0,4.0,0.0])).predict(
+        "Therapy improved sleep.","Treatment helped participants rest."
+    )
+    assert prediction.label=="entailment"
+    assert prediction.confidence>0.9
+
+
+def test_confident_nli_contradiction_overrides_heuristic():
+    result=evaluate_answer(
+        EvaluationInput("Did treatment improve sleep?","RESULTS\nTreatment improved sleep.","Treatment improved sleep."),
+        nli_classifier=NLIClassifier(model=FakeNLIModel([5.0,0.0,0.0])),
+    )
+    assert result.claim_results[0].label==ClaimLabel.CONTRADICTED
+    assert result.final_decision==Decision.REJECT
+
+
+def test_low_confidence_nli_does_not_override():
+    base=evaluate_answer(EvaluationInput("Did treatment improve sleep?","RESULTS\nTreatment improved sleep.","Treatment improved sleep."))
+    claim=base.claim_results[0]
+    apply_nli(claim,NLIPrediction("contradiction",0.4))
+    assert claim.label==ClaimLabel.SUPPORTED
+
+
+def test_nli_failure_falls_back_to_heuristic():
+    class BrokenNLI:
+        def predict(self,evidence,claim): raise RuntimeError("unavailable")
+    result=evaluate_answer(
+        EvaluationInput("Did treatment improve sleep?","RESULTS\nTreatment improved sleep.","Treatment improved sleep."),
+        nli_classifier=BrokenNLI(),
+    )
+    assert result.claim_results[0].label==ClaimLabel.SUPPORTED
+
+
+def test_participants_does_not_trigger_patients_scope_flag():
+    result=evaluate_answer(
+        EvaluationInput(
+            "Did treatment improve sleep?",
+            "RESULTS\nTreatment did not improve sleep.",
+            "Treatment improved sleep.",
+        )
+    )
+    assert "OUTSIDE_STUDIED_SCOPE" not in result.claim_results[0].failure_types
 
 
 def test_cosine_similarity_handles_zero_vector():

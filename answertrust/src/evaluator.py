@@ -7,12 +7,14 @@ from uuid import uuid4
 from src.academic import content_words, evaluate_claim, extract_claims, match_evidence, split_sections
 from src.decision_engine import make_decision
 from src.models import ClaimLabel, DimensionScore, EvaluationInput, EvaluationResult
+from src.nli import NLIClassifier, apply_nli
 from src.semantic import SemanticMatcher
 
 
 def evaluate_answer(
     evaluation_input: EvaluationInput,
     semantic_matcher: SemanticMatcher | None = None,
+    nli_classifier: NLIClassifier | None = None,
     **_: object,
 ) -> EvaluationResult:
     started = perf_counter()
@@ -22,14 +24,23 @@ def evaluate_answer(
     extracted = extract_claims(evaluation_input.answer)
     if not extracted:
         raise ValueError("The answer contains no evaluable claims.")
-    claim_results = [
-        evaluate_claim(
-            claim,
-            match_evidence(claim, sections, semantic_matcher=semantic_matcher),
-            evaluation_input.paper_text,
+    claim_results = []
+    for claim in extracted:
+        evidence = match_evidence(
+            claim, sections, semantic_matcher=semantic_matcher
         )
-        for claim in extracted
-    ]
+        claim_result = evaluate_claim(
+            claim, evidence, evaluation_input.paper_text
+        )
+        if nli_classifier is not None and evidence:
+            try:
+                claim_result = apply_nli(
+                    claim_result,
+                    nli_classifier.predict(evidence[0].passage, claim),
+                )
+            except Exception:
+                pass
+        claim_results.append(claim_result)
     supported = sum(item.label == ClaimLabel.SUPPORTED for item in claim_results)
     support_score = round(100 * supported / len(claim_results))
     question_terms = content_words(evaluation_input.question)
