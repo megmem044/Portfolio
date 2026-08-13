@@ -10,6 +10,6 @@ New-Item -ItemType Directory -Force -Path $modelCache | Out-Null
 $env:USERPROFILE = $streamlitProfile
 $env:HF_HOME = $modelCache
 
-python -m streamlit run (Join-Path $projectRoot "app.py") `
+python -m streamlit run (Join-Path $projectRoot "Evaluation.py") `
     --browser.gatherUsageStats false `
     --server.headless true
