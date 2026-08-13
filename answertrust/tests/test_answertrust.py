@@ -1,12 +1,14 @@
 from pathlib import Path
 import pytest
-from src.academic import extract_claims,split_sections
+import streamlit as st
+from src.academic import extract_claims,match_evidence,split_sections
 from src.database import get_evaluation_run
 from src.evaluator import evaluate_answer
 from src.example_data import load_examples,validate_examples
-from src.experiments import run_experiment
+from src.experiments import run_experiment,run_matcher_comparison
 from src.models import ClaimLabel,Decision,EvaluationInput,RunState
 from src.review import ReviewDecision,resolve_human_review
+from src.semantic import SemanticMatcher,cosine_similarity
 from src.workflow import execute_evaluation_run
 
 PAPER="METHODS\nAdults were randomly assigned.\nRESULTS\nTreatment improved outcomes in some participants.\nLIMITATIONS\nChildren were not studied."
@@ -46,3 +48,91 @@ def test_benchmark_schema_and_metrics():
     rows,metrics=run_experiment(write_output=False)
     assert len(rows)==50
     assert {"unsupported_detection_rate_pct","contradiction_detection_rate_pct","false_publish_rate_pct","review_rate_pct"} <= set(metrics)
+
+
+class FakeEncoder:
+    """Map a known paraphrase and evidence sentence to nearby vectors."""
+    def encode(self, sentences, **kwargs):
+        vectors={
+            "The intervention made participants rest better.":[1.0,0.0],
+            "Therapy improved sleep quality.":[0.98,0.02],
+            "Participants reported their weekly diet.":[0.0,1.0],
+            "The intervention was described to participants.":[0.2,0.8],
+        }
+        return [vectors[sentence] for sentence in sentences]
+
+
+def test_semantic_matcher_finds_paraphrased_evidence():
+    matcher=SemanticMatcher(encoder=FakeEncoder())
+    result=evaluate_answer(
+        EvaluationInput(
+            "Did the intervention improve rest?",
+            "METHODS\nParticipants reported their weekly diet.\nRESULTS\nTherapy improved sleep quality.",
+            "The intervention made participants rest better.",
+        ),
+        semantic_matcher=matcher,
+    )
+    assert result.claim_results[0].evidence[0].section=="RESULTS"
+    assert result.claim_results[0].label==ClaimLabel.SUPPORTED
+
+
+def test_semantic_failure_falls_back_to_lexical_matching():
+    class BrokenMatcher:
+        def similarities(self, claim, passages): raise RuntimeError("model unavailable")
+    result=evaluate_answer(
+        EvaluationInput("Did treatment improve sleep?","RESULTS\nTreatment improved sleep.","Treatment improved sleep."),
+        semantic_matcher=BrokenMatcher(),
+    )
+    assert result.claim_results[0].label==ClaimLabel.SUPPORTED
+
+
+def test_semantic_meaning_outranks_shallow_keyword_overlap():
+    matcher=SemanticMatcher(encoder=FakeEncoder())
+    sections=split_sections(
+        "METHODS\nThe intervention was described to participants.\n"
+        "RESULTS\nTherapy improved sleep quality."
+    )
+    evidence=match_evidence(
+        "The intervention made participants rest better.",
+        sections,
+        limit=1,
+        semantic_matcher=matcher,
+    )
+    assert evidence[0].section=="RESULTS"
+
+
+def test_results_prior_breaks_close_semantic_tie():
+    class CloseEncoder:
+        def encode(self, sentences, **kwargs):
+            return [[1.0,0.0],[0.9,0.1],[0.88,0.12]]
+    evidence=match_evidence(
+        "The intervention improved outcomes.",
+        {"METHODS":"The intervention was administered.","RESULTS":"Outcomes became better."},
+        limit=1,
+        semantic_matcher=SemanticMatcher(encoder=CloseEncoder()),
+    )
+    assert evidence[0].section=="RESULTS"
+
+
+def test_cosine_similarity_handles_zero_vector():
+    assert cosine_similarity([0.0,0.0],[1.0,1.0])==0.0
+
+
+def test_required_streamlit_navigation_api_is_available():
+    assert callable(st.switch_page)
+
+
+def test_matcher_comparison_reports_before_and_after(tmp_path):
+    examples=tmp_path/"semantic.json"
+    examples.write_text(
+        '[{"id":"one","claim":"The intervention made participants rest better.",'
+        '"paper_text":"METHODS\\nParticipants reported their weekly diet.\\nRESULTS\\nTherapy improved sleep quality.",'
+        '"expected_section":"RESULTS","expected_passage":"Therapy improved sleep quality."}]',
+        encoding="utf-8",
+    )
+    _,metrics=run_matcher_comparison(
+        SemanticMatcher(encoder=FakeEncoder()), examples
+    )
+    assert metrics["lexical_top_passage_accuracy_pct"]==0.0
+    assert metrics["semantic_top_passage_accuracy_pct"]==100.0
+    assert metrics["absolute_improvement_points"]==100.0

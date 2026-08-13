@@ -1,10 +1,14 @@
-"""Run the labelled academic benchmark and report safety metrics."""
+"""Run the labelled safety and semantic-retrieval benchmarks."""
+import argparse
 import csv
+import json
 from pathlib import Path
-from src.config import EXPERIMENT_RESULTS_PATH
+from src.academic import match_evidence, split_sections
+from src.config import EXPERIMENT_RESULTS_PATH, SEMANTIC_EXAMPLES_PATH
 from src.evaluator import evaluate_answer
 from src.example_data import load_examples,validate_examples
 from src.models import EvaluationInput
+from src.semantic import SemanticMatcher
 
 def calculate_metrics(rows:list[dict])->dict:
     total=len(rows); unsafe=[r for r in rows if r["expected_decision"]!="PUBLISH"]
@@ -26,6 +30,56 @@ def run_experiment(path:Path=EXPERIMENT_RESULTS_PATH,write_output:bool=True):
             writer=csv.DictWriter(handle,fieldnames=rows[0]); writer.writeheader(); writer.writerows(rows)
     return rows,calculate_metrics(rows)
 
+
+def run_matcher_comparison(
+    matcher: SemanticMatcher | None = None,
+    examples_path: Path = SEMANTIC_EXAMPLES_PATH,
+) -> tuple[list[dict], dict]:
+    """Compare top-passage accuracy for lexical and semantic matching."""
+    with examples_path.open(encoding="utf-8") as handle:
+        examples = json.load(handle)
+    matcher = matcher or SemanticMatcher()
+    rows = []
+    for example in examples:
+        sections = split_sections(example["paper_text"])
+        lexical = match_evidence(example["claim"], sections, limit=1)[0]
+        semantic = match_evidence(
+            example["claim"], sections, limit=1, semantic_matcher=matcher
+        )[0]
+        rows.append(
+            {
+                "id": example["id"],
+                "lexical_section": lexical.section,
+                "semantic_section": semantic.section,
+                "expected_section": example["expected_section"],
+                "lexical_correct": lexical.passage == example["expected_passage"],
+                "semantic_correct": semantic.passage == example["expected_passage"],
+            }
+        )
+    total = len(rows)
+    percent = lambda count: round(100 * count / total, 2) if total else 0.0
+    metrics = {
+        "total_examples": total,
+        "lexical_top_passage_accuracy_pct": percent(
+            sum(row["lexical_correct"] for row in rows)
+        ),
+        "semantic_top_passage_accuracy_pct": percent(
+            sum(row["semantic_correct"] for row in rows)
+        ),
+    }
+    metrics["absolute_improvement_points"] = round(
+        metrics["semantic_top_passage_accuracy_pct"]
+        - metrics["lexical_top_passage_accuracy_pct"],
+        2,
+    )
+    return rows, metrics
+
 if __name__=="__main__":
-    _,metrics=run_experiment()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--compare-matchers", action="store_true")
+    arguments = parser.parse_args()
+    if arguments.compare_matchers:
+        _, metrics = run_matcher_comparison()
+    else:
+        _,metrics=run_experiment()
     for key,value in metrics.items(): print(f"{key}: {value}")

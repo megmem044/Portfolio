@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import re
 from collections import Counter
+from typing import TYPE_CHECKING
 
 from src.models import ClaimLabel, ClaimResult, Evidence
+
+if TYPE_CHECKING:
+    from src.semantic import SemanticMatcher
 
 SECTIONS = ("ABSTRACT", "INTRODUCTION", "METHODS", "RESULTS", "DISCUSSION", "LIMITATIONS", "CONCLUSION")
 STOP = {"a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in", "is", "it", "of", "on", "or", "that", "the", "this", "to", "was", "were", "with"}
@@ -14,6 +18,11 @@ CAUSAL = {"cause", "caused", "causes", "led", "leads", "resulted", "because", "e
 CORRELATIONAL = {"associated", "association", "correlated", "correlation", "observational"}
 UNIVERSAL = {"all", "always", "everyone", "every", "entirely", "guarantees", "proves", "cures"}
 QUALIFIERS = {"may", "might", "could", "suggests", "associated", "some", "among", "limited", "uncertain"}
+SEMANTIC_SECTION_PRIORS = {
+    "RESULTS": 0.18,
+    "DISCUSSION": 0.05,
+    "CONCLUSION": 0.05,
+}
 
 
 def words(text: str) -> list[str]:
@@ -57,8 +66,51 @@ def _similarity(left: str, right: str) -> float:
     return len(a & b) / len(a) if a else 0.0
 
 
-def match_evidence(claim: str, sections: dict[str, str], limit: int = 2) -> list[Evidence]:
-    candidates = [Evidence(section, passage, _similarity(claim, passage)) for section, body in sections.items() for passage in sentences(body)]
+def match_evidence(
+    claim: str,
+    sections: dict[str, str],
+    limit: int = 2,
+    semantic_matcher: "SemanticMatcher | None" = None,
+) -> list[Evidence]:
+    """Rank passages semantically when available, otherwise by word overlap."""
+    passages = [
+        (section, passage)
+        for section, body in sections.items()
+        for passage in sentences(body)
+    ]
+    lexical_scores = [_similarity(claim, passage) for _, passage in passages]
+    scores = lexical_scores
+    if semantic_matcher is not None:
+        try:
+            semantic_scores = semantic_matcher.similarities(
+                claim, [passage for _, passage in passages]
+            )
+            # Meaning drives ranking. Academic outcome claims receive a visible
+            # Results-section prior so subject overlap in Methods does not win.
+            rank_scores = [
+                semantic + SEMANTIC_SECTION_PRIORS.get(section, 0.0)
+                for (section, _), semantic in zip(passages, semantic_scores)
+            ]
+            candidates = [
+                Evidence(section, passage, max(lexical, semantic))
+                for (section, passage), lexical, semantic in zip(
+                    passages, lexical_scores, semantic_scores
+                )
+            ]
+            return [
+                candidate
+                for _, candidate in sorted(
+                    zip(rank_scores, candidates),
+                    key=lambda item: item[0],
+                    reverse=True,
+                )[:limit]
+            ]
+        except Exception:
+            scores = lexical_scores
+    candidates = [
+        Evidence(section, passage, score)
+        for (section, passage), score in zip(passages, scores)
+    ]
     return sorted(candidates, key=lambda item: item.similarity, reverse=True)[:limit]
 
 

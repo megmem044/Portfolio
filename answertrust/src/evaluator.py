@@ -7,9 +7,14 @@ from uuid import uuid4
 from src.academic import content_words, evaluate_claim, extract_claims, match_evidence, split_sections
 from src.decision_engine import make_decision
 from src.models import ClaimLabel, DimensionScore, EvaluationInput, EvaluationResult
+from src.semantic import SemanticMatcher
 
 
-def evaluate_answer(evaluation_input: EvaluationInput, **_: object) -> EvaluationResult:
+def evaluate_answer(
+    evaluation_input: EvaluationInput,
+    semantic_matcher: SemanticMatcher | None = None,
+    **_: object,
+) -> EvaluationResult:
     started = perf_counter()
     if min(map(len, (evaluation_input.question.strip(), evaluation_input.paper_text.strip(), evaluation_input.answer.strip()))) < 3:
         raise ValueError("Question, paper text, and answer are required.")
@@ -17,7 +22,14 @@ def evaluate_answer(evaluation_input: EvaluationInput, **_: object) -> Evaluatio
     extracted = extract_claims(evaluation_input.answer)
     if not extracted:
         raise ValueError("The answer contains no evaluable claims.")
-    claim_results = [evaluate_claim(claim, match_evidence(claim, sections), evaluation_input.paper_text) for claim in extracted]
+    claim_results = [
+        evaluate_claim(
+            claim,
+            match_evidence(claim, sections, semantic_matcher=semantic_matcher),
+            evaluation_input.paper_text,
+        )
+        for claim in extracted
+    ]
     supported = sum(item.label == ClaimLabel.SUPPORTED for item in claim_results)
     support_score = round(100 * supported / len(claim_results))
     question_terms = content_words(evaluation_input.question)
