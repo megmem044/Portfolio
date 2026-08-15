@@ -1,6 +1,8 @@
 # Toodle
 
-Toodle is an in-progress modernization of a browser-only task manager into a maintainable full-stack application. The current phase connects a React/TypeScript frontend to a Node.js backend-for-frontend (BFF), a secured Spring Boot API, and PostgreSQL.
+_Last updated: August 15, 2026_
+
+Toodle modernizes a legacy browser task manager into a secure, contract-driven, production-grade multi-tier application. It uses a React/TypeScript frontend, an Express backend-for-frontend (BFF), a secured Spring Boot API, and PostgreSQL.
 
 > Project status: active development. The integrated stack includes a verified automated CI workflow, production container definitions, health monitoring, and deployment-ready architecture. A cloud deployment has not been completed.
 
@@ -39,10 +41,18 @@ The active code lives in `frontend/`, `bff/`, and `backend/`. Earlier vanilla we
 
 ## Roadmap
 
-- Add any remaining database constraints through new Flyway migrations
-- Consider cloud deployment after the local and CI workflows are stable
+- Publish an OpenAPI contract from Spring and validate or generate TypeScript types for the BFF.
+- Run Spring integration tests against real PostgreSQL with Testcontainers.
+- Add optimistic locking so older task edits return `409 Conflict` instead of overwriting newer changes.
+- Expand security tests for tokens, invalid input, blocked field changes, and owner isolation.
+- Add automated accessibility checks with axe-core and browser tests with Playwright.
+- Improve frontend loading, caching, stale-data, and error handling.
+- Deploy through CI using managed PostgreSQL and secure cloud configuration.
+- Add OpenTelemetry tracing across the BFF and Spring API.
+- Define stable cloud resources with Terraform.
+- Consider simple real-time updates only after the higher-priority work is complete.
 
-The goal is architectural modernization, not expanding the product with unrelated features.
+The goal is to deepen the current architecture, not make it more distributed. Toodle will not add extra microservices, Redis, Kafka, Python, machine learning, Kubernetes, or another database without a real product need. See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the ordered plan.
 
 ## Prerequisites
 
@@ -155,6 +165,7 @@ toodle/
 |-- backend/     Spring Boot API, tests, and database migrations
 |-- legacy/      Archived vanilla web and SwiftUI prototypes
 |-- README.md
+|-- PROJECT_PLAN.md
 `-- SOURCE_CODE_GUIDE.md
 ```
 
