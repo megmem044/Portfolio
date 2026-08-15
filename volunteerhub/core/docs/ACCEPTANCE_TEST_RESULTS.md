@@ -1,7 +1,5 @@
 # Acceptance Test Results – VolunteerHub
 
-**Course:** CMPT 370  
-**Team:** Team 9  
 **Project Name:** VolunteerHub – Volunteer Tracking & Matching System  
 **Date:** December 2025
 
@@ -200,5 +198,5 @@ All acceptance tests were conducted with team members testing user stories imple
 
 ## Sign-Off
 
-Testing completed and documented by Team 9  
+Testing completed and documented by the project team  
 Date: December 2025

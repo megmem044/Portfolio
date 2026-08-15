@@ -1,9 +1,6 @@
 # Final Product – VolunteerHub
 
-**Course:** CMPT 370  
-**Team:** Team 9  
 **Project Name:** VolunteerHub – Volunteer Tracking & Matching System  
-**Repository:** https://git.cs.usask.ca/adr480/cmpt370-team9
 
 ---
 

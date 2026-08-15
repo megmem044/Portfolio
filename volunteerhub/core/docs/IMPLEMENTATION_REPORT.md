@@ -1,6 +1,6 @@
 # VolunteerHub Implementation Report
 
-**Project:** CMPT 370 - Team 9  
+**Project:** VolunteerHub  
 **Status:** All features fully implemented and tested  
 **Date:** December 9, 2025
 
