@@ -1,5 +1,7 @@
 # Development Phases
 
+**Last updated: August 15, 2026**
+
 This document records how the 4-port packet switch has been built so far. The work is divided into small phases so each design decision and verification layer can be reviewed independently.
 
 ## Phase 1: Define the Project
@@ -160,8 +162,35 @@ Two representative waveforms provide visual evidence alongside the zero-error UV
 
 ## Next Phases
 
-1. Add Windows-friendly run and regression commands.
-2. Add arbitration fairness checks and end-of-test checks.
+The long-term goal is an FPGA-ready packet-switch subsystem with a software-visible control path. The existing switch remains the datapath. New work will be added around it in small stages.
+
+### Stage 1: Stronger Verification
+
+1. Add SystemVerilog assertions for FIFO limits, one-hot grants, correct routing, stable stalled outputs, and clean reset behavior.
+2. Add arbitration fairness and end-of-test checks.
 3. Add a prolonged-output-stall test.
-4. Save representative waveform views.
-5. Execute and record functional coverage when a suitable simulator license is available.
+4. Write a verification matrix that links requirements to tests, assertions, coverage, and results.
+5. Run functional coverage when a suitable simulator license is available and record any remaining coverage gaps.
+
+### Stage 2: Repeatable Automation
+
+1. Add a Python regression command that can choose tests, seeds, iteration counts, verbosity, and waveform output.
+2. Save failing seeds and produce a short pass/fail summary.
+3. Add hardware-focused CI for lint, RTL simulation, formal checks, and synthesis with free tools where possible.
+
+### Stage 3: Software-Visible Control
+
+1. Add a simple AXI4-Lite or APB register interface.
+2. Add registers for port enable controls, packet counters, stall counters, FIFO occupancy, error status, and counter reset.
+3. Add a UVM register model and bus agent to verify reset values, read/write rules, reserved bits, counters, and control effects.
+4. Write a small C/C++ driver that configures ports, reads status, and clears counters.
+
+### Stage 4: Formal, Synthesis, and Performance
+
+1. Formally check the FIFO and round-robin selector first because they are small and have clear rules.
+2. Make packet width and FIFO depth easy to configure, then test several configurations.
+3. Run synthesis and report logic use, registers, memory, timing, and maximum clock speed.
+4. Measure throughput, latency, fairness, and behavior under contention and backpressure.
+5. Use an FPGA board for a final hardware demonstration if one is available.
+
+These stages describe planned work. The current implementation ends at Phase 13 above.

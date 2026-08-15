@@ -1,5 +1,7 @@
 # 4-Port Packet Switch in Verilog
 
+**Last updated: August 15, 2026**
+
 This project builds a small digital traffic controller from scratch using Verilog. It is designed to be understandable both to people discovering digital hardware and to engineers reviewing the RTL.
 
 ## What Does a Packet Switch Do?
@@ -99,7 +101,7 @@ Inputs and outputs use a simple `ready`/`valid` agreement:
 
 If the receiver is not ready, the sender keeps the same packet available and waits. This makes traffic pauses predictable and prevents data from being dropped.
 
-The packet will be a fixed-width group of bits. Two bits identify the destination; the remaining bits hold the packet's payload. Exact widths will be documented when the RTL interface is implemented.
+Each packet is 32 bits wide. The top two bits identify the destination, and the other 30 bits hold the payload.
 
 ```text
 +----------------------+--------------------------------+
@@ -225,23 +227,47 @@ Only implemented files are shown. Questa run and regression scripts will be adde
 
 A chronological explanation of the design and verification work is available in [DEVELOPMENT.md](DEVELOPMENT.md).
 
-## Development Roadmap
+## Project Direction
 
-1. Build the input queue, destination decoder, fair selector, and integrated switch RTL.
-2. Compile and elaborate the complete RTL design.
-3. Define the SystemVerilog interfaces and UVM transaction.
-4. Build the driver, monitor, agent, scoreboard, and coverage model.
-5. Verify routing, simultaneous transfers, congestion, backpressure, and fairness.
-6. Add repeatable regression commands, coverage reporting, and example waveforms.
+The current project is a working 4-port RTL packet switch with a self-checking UVM environment. The next goal is to grow it into an FPGA-ready packet-switch subsystem that software can configure and inspect.
+
+The existing packet path will stay the same:
+
+```text
+input queues -> destination routing -> round-robin selection -> outputs
+```
+
+A small control path will be added beside it:
+
+```text
+C/C++ driver -> AXI4-Lite or APB registers -> packet-switch status and controls
+```
+
+Planned work, in priority order:
+
+1. Add SystemVerilog assertions for FIFO safety, routing, reset, ready/valid stability, and one-hot grants.
+2. Add a Python regression tool with test selection, repeatable seeds, logs, and a pass/fail summary.
+3. Write a simple verification plan that connects each requirement to tests, assertions, and coverage.
+4. Add an AXI4-Lite or APB register interface for port controls, counters, FIFO status, and errors.
+5. Add a UVM register model to check register reset values, access rules, and effects on the datapath.
+6. Formally check the FIFO and round-robin selector with small, focused properties.
+7. Run synthesis and report resource use, timing, and the effect of different packet widths and FIFO depths.
+8. Add a small C/C++ driver for reading counters, controlling ports, and clearing status.
+9. Measure throughput, latency, fairness, and backpressure under different traffic loads.
+10. Add hardware-focused CI and, later, demonstrate the design on an FPGA.
+
+These are planned additions. They are not part of the current implementation yet.
 
 ## Design Priorities
 
 - Easy to understand and explain in an interview
 - Modular Verilog with clear responsibilities
 - No vendor-specific FPGA features
-- No unnecessary protocol or control complexity
+- Add control features in small, testable steps
 - UVM-based automated checks for expected behavior and edge cases
 - Measurable functional coverage tied to the verification plan
+- Assertions, formal checks, and repeatable regressions
+- A clear path from RTL to software control and FPGA implementation
 - Clear documentation of design choices and tradeoffs
 
 ## Current Status
