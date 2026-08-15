@@ -1,117 +1,167 @@
-# Transaction Categorization
+# ClearSpend
 
-This project is an early version of an app that helps people organize their spending.
+_Last updated: August 15, 2026_
 
-A user records a transaction with an amount, merchant, and date. The app suggests a category, saves the transaction, and includes it in a monthly spending summary.
+ClearSpend is a personal finance data application. It turns messy transaction data from bank files and manual entries into clean, reliable records and useful spending reports.
 
-Example:
+The main focus of this project is data engineering: importing data, checking its quality, cleaning it, preventing duplicates, and using SQL to produce accurate analytics. The FastAPI backend and React website provide a simple way to use and demonstrate that data pipeline.
 
-`Starbucks, $8.50, July 10 → Food & Dining`
+## How it works
+
+```text
+Bank CSV files or manual entries
+              |
+              v
+       Import and staging
+              |
+              v
+     Validation and cleaning
+              |
+              v
+  Duplicate checks and review
+              |
+              v
+     Trusted transactions
+          /          \
+         v            v
+ Categorization   SQL analytics
+         \            /
+          v          v
+        ClearSpend dashboard
+```
+
+ClearSpend will support different bank CSV formats by mapping them into one standard transaction format. Imported rows will first go into a staging area, where the app can explain errors and possible duplicates before saving approved records.
 
 ## What works today
 
-- Add and save a transaction
-- Suggest categories for a few known merchant names
-- Search, filter, sort, and page through saved transactions
-- View, edit, or delete one transaction
-- Create and manage custom spending categories
-- Create, prioritize, pause, and manage merchant category rules
-- Show monthly totals grouped by category
-- Run with SQLite or PostgreSQL
-- Demonstrate a measured PostgreSQL index improvement
-- Register, log in, log out, and protect each user's data
-- Register, log in, reach the dashboard, and log out through React
-- Create, search, filter, sort, edit, and delete transactions through React
-- Display real monthly totals for the signed-in user
-- Check whether the service is running
+- Register, sign in, sign out, and keep each user's data private
+- Add, view, edit, and delete transactions
+- Search, filter, sort, and page through transactions
+- Suggest categories using merchant rules
+- Create and manage categories and categorization rules through the API
+- Calculate exact monthly totals by category in the database
+- Run with SQLite for simple development or PostgreSQL
+- Apply repeatable database changes with Alembic migrations
+- Demonstrate a measured improvement from a PostgreSQL index
+- Use a React dashboard for authentication, transactions, and monthly totals
+- Test the main backend, database, and security behavior
 
-The project currently provides only the backend—the part that stores information and performs the work. It does not yet have a website for users.
+## What comes next
 
-## What we plan to add
+The next major feature is a reliable CSV data pipeline. It will:
 
-- Better input checks and automated testing
-- Category and rule management screens
-- Monthly category charts and month selection
-- A simple dashboard
-- CSV imports from bank files
-- Category suggestions that improve using user corrections
+1. Accept files from different banks.
+2. Map different column names into one standard format.
+3. Store uploaded rows in staging tables before final approval.
+4. Validate dates, amounts, merchants, and currencies.
+5. Clean merchant names and other inconsistent values.
+6. Mark rows as new, exact duplicates, possible duplicates, or invalid.
+7. Preview results before saving transactions.
+8. Make retries safe so the same file does not create duplicate records.
+9. Reconcile every input row with an imported, duplicate, or invalid result.
+10. Measure processing speed and data-quality results.
 
-## How we will build it
+After importing is reliable, the project will add:
 
-The project will be developed in small phases. Each phase must work and pass its tests before the next one begins.
+- SQL reports for monthly change, category share, merchant totals, rolling averages, and uncategorized transactions
+- Analytics tables designed for reporting
+- dbt models and data-quality tests
+- CSV exports for analysts
+- Import performance benchmarks using large generated datasets
+- A small category model trained from reviewed corrections
+- Monitoring for import quality and changes in categorization results
+- Automated delivery and deployment checks
 
-| Phase | Main result | Skills demonstrated |
-|---|---|---|
-| 1. Foundation | A reliable backend that is easy to run | Python, FastAPI, Git, testing |
-| 2. Data and API | Safe storage and complete transaction features | SQL, PostgreSQL, database design, REST APIs |
-| 3. Users and security | Private accounts and protected data | Authentication, authorization, security |
-| 4. Frontend | A usable dashboard and transaction screens | JavaScript, React, API integration |
-| 5. Imports | Bank CSV upload and duplicate checking | Algorithms, file processing, background work |
-| 6. Machine learning | Category suggestions that learn from corrections | ML, model evaluation, data handling |
-| 7. Delivery | Automated checks and a deployed application | Linux, Bash, Docker, CI/CD, debugging |
+## Data correctness
 
-See the [phase plan and progress log](docs/phase-plan.md) for implementation and testing details.
+Financial data must remain exact and explainable. ClearSpend uses Python `Decimal` values and exact database number types instead of binary floating-point values for money.
 
-Project documentation:
+Important checks will include:
 
-- [Product guide and user stories](docs/product-requirements.md): what users need and when a feature is complete
-- [Phase plan and progress log](docs/phase-plan.md): what we will build and test in each phase
-- [Architecture guide](docs/architecture.md): how the folders work together and where new code belongs
-- [PostgreSQL guide](docs/postgresql.md): how to run and test with the PostgreSQL database
-- [Frontend guide](docs/frontend.md): how React state, forms, and API requests work together
+- Category totals add up to the monthly total.
+- Imported, duplicate, and invalid rows add up to the number of input rows.
+- Retrying an import does not create duplicate transactions.
+- Every saved transaction can be traced back to its source import and row.
+- Invalid data is explained instead of silently changed or discarded.
+
+## Main technologies
+
+- Python and FastAPI for the API and data-processing services
+- PostgreSQL and SQL for storage, validation, and analytics
+- SQLAlchemy and Alembic for database access and migrations
+- dbt for planned analytics models and data tests
+- React and TypeScript for the supporting web interface
+- Pytest for automated backend and pipeline tests
 
 ## Run the backend
 
 You need Python 3.11 or newer.
 
-1. Create a private project environment:
+1. Create and activate a virtual environment:
 
    ```powershell
    python -m venv .venv
    .venv\Scripts\Activate.ps1
    ```
 
-2. Install the app and its testing tools:
+2. Install the application and test tools:
 
    ```powershell
    python -m pip install -e ".[dev]"
    ```
 
-3. Start the app:
-
-   First, apply the database changes:
+3. Apply database migrations:
 
    ```powershell
    python -m alembic upgrade head
    ```
 
-   Then start the server:
+4. Start the API:
 
    ```powershell
    python -m uvicorn app.main:app --reload
    ```
 
-4. Open `http://127.0.0.1:8000/docs` to try the API in a browser.
+5. Open `http://127.0.0.1:8000/docs` to explore the API.
 
-Run the automated checks with:
+Run backend tests with:
 
 ```powershell
 python -m pytest
 ```
 
-The migration command creates or updates the database safely. To change a setting, copy `.env.example` to `.env` and edit the copied file. Never commit `.env` because it may contain private settings.
+Copy `.env.example` to `.env` to change local settings. Never commit `.env` or real financial data.
+
+## Run the frontend
+
+From the `frontend` folder:
+
+```powershell
+npm install
+npm run dev
+```
+
+Use `npm run lint` and `npm run build` to check the frontend.
 
 ## Project folders
 
-- `app/api` receives requests and provides shared route helpers.
-- `app/services` contains the category rules.
-- `app/services` contains the rule-matching logic.
-- `app/models` describes how transactions are stored.
-- `app/schemas` describes what transaction information is accepted and returned.
-- `app/db` connects the app to its database.
-- `tests` will contain automated checks.
+- `app/api` contains API routes and shared request helpers.
+- `app/services` contains business rules and categorization logic.
+- `app/models` contains database models.
+- `app/schemas` defines accepted and returned data.
+- `app/db` manages database connections.
+- `migrations` contains repeatable database changes.
+- `tests` contains automated backend tests.
 - `frontend` contains the React and TypeScript website.
+- `docs` contains the product, architecture, database, frontend, and phase guides.
 
-## Current status
+Planned data-pipeline and analytics folders will be added only when their features are implemented.
 
-The backend foundation, database phase, and authentication backend are complete. The React frontend supports registration, login, an authenticated dashboard shell, and logout. Displaying real transaction data is next.
+## Documentation
+
+- [Project plan](PROJECT_PLAN.md): priorities, milestones, and completion checks
+- [Product requirements](docs/product-requirements.md): user stories and expected behavior
+- [Detailed phase plan](docs/phase-plan.md): the existing implementation log
+- [Architecture guide](docs/architecture.md): how the current application is organized
+- [PostgreSQL guide](docs/postgresql.md): database setup and performance notes
+- [Frontend guide](docs/frontend.md): React structure and API integration
