@@ -3,6 +3,7 @@
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from typing import Literal
 
@@ -19,6 +20,13 @@ from src.models import ClaimLabel, Decision, EvaluationInput, EvaluationResult
 
 
 app = FastAPI(title="AnswerTrust API", version="1.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # SQLite is the local fallback; DATABASE_URL can point this at PostgreSQL.
 engine = create_database_engine()
@@ -233,6 +241,17 @@ def review_evaluation(
         "reviewer_notes": saved_review.reviewer_notes,
     }
     return review
+
+
+@app.get("/api/v1/reviews/pending", response_model=list[EvaluationListItemResponse])
+def list_pending_reviews(session: Session = Depends(get_session)):
+    """Return evaluations waiting for a human review decision."""
+    repository = EvaluationRepository(session)
+    return [
+        {"question": record.question, "answer": record.answer,
+         "evaluation": _record_response(record, repository), "reviewed": False}
+        for record in repository.list_pending_reviews()
+    ]
 
 
 @app.post("/api/v1/benchmarks/publication", response_model=BenchmarkRunResponse)

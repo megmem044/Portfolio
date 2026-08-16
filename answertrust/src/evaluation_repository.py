@@ -183,6 +183,17 @@ class EvaluationRepository:
             )
         )
 
+    def list_pending_reviews(self) -> list[EvaluationRecord]:
+        """Return evaluations whose human-review tasks are still open."""
+        return list(
+            self.session.scalars(
+                select(EvaluationRecord)
+                .join(ReviewTaskRecord, ReviewTaskRecord.evaluation_id == EvaluationRecord.evaluation_id)
+                .where(ReviewTaskRecord.status == "OPEN")
+                .order_by(ReviewTaskRecord.created_at)
+            )
+        )
+
     def claim_results(self, evaluation_id: str) -> list[dict]:
         """Rebuild ordered claim results from normalized database rows."""
         claims = list(

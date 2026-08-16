@@ -34,6 +34,18 @@ def test_health_endpoint():
     assert response.json() == {"status": "ok"}
 
 
+def test_react_development_origin_is_allowed():
+    response = client.options(
+        "/api/v1/evaluations",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "POST",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
 def test_create_evaluation():
     response = client.post(
         "/api/v1/evaluations",
@@ -128,6 +140,21 @@ def test_review_unknown_evaluation_returns_not_found():
 
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "NOT_FOUND"
+
+
+def test_pending_review_endpoint_removes_resolved_item():
+    created = client.post(
+        "/api/v1/evaluations",
+        json={"question": "Did treatment improve outcomes?", "paper_text": "RESULTS\nTreatment improved outcomes in some participants.", "answer": "Treatment improved outcomes for all participants."},
+    ).json()
+    pending = client.get("/api/v1/reviews/pending").json()
+    assert created["evaluation_id"] in {item["evaluation"]["evaluation_id"] for item in pending}
+    client.post(
+        f"/api/v1/evaluations/{created['evaluation_id']}/review",
+        json={"decision": "APPROVE", "notes": "A reviewer accepts this wording."},
+    )
+    pending = client.get("/api/v1/reviews/pending").json()
+    assert created["evaluation_id"] not in {item["evaluation"]["evaluation_id"] for item in pending}
 
 
 def test_api_client_creates_evaluation():
