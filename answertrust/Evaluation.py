@@ -2,26 +2,13 @@
 
 import streamlit as st
 
-from src.config import DATABASE_PATH
+from src.api_client import AnswerTrustAPIClient
 from src.models import EvaluationInput
-from src.nli import NLIClassifier
-from src.semantic import SemanticMatcher
 from src.ui import apply_theme, evidence_block, hero, verdict
-from src.workflow import execute_evaluation_run
 
 st.set_page_config(page_title="AnswerTrust", page_icon="A", layout="wide", initial_sidebar_state="expanded")
 apply_theme()
 hero("Research-grounded AI evaluation", "Know what the paper actually supports.", "AnswerTrust decomposes generated answers into claims, retrieves evidence from the supplied research, and flags contradictions, overstatement, and missing support.", tone="lemon")
-
-
-@st.cache_resource
-def load_semantic_matcher() -> SemanticMatcher:
-    return SemanticMatcher()
-
-
-@st.cache_resource
-def load_nli_classifier() -> NLIClassifier:
-    return NLIClassifier()
 
 
 st.markdown('<div class="at-kicker">New evaluation</div>', unsafe_allow_html=True)
@@ -36,27 +23,20 @@ with st.form("evaluation"):
     with answer_column:
         st.markdown('<div class="at-section-title"><span class="at-step">3</span>Add the generated answer</div>', unsafe_allow_html=True)
         answer = st.text_area("AI-generated answer", height=290, placeholder="Paste the answer that should be checked against the paper.")
-    with st.expander("Evaluation engines", expanded=False):
-        ml_left, ml_right = st.columns(2)
-        use_semantic = ml_left.checkbox("Semantic evidence retrieval", value=True, help="MiniLM matches paraphrased claims to evidence.")
-        use_nli = ml_right.checkbox("Entailment and contradiction model", value=True, help="Confidence-gated NLI classification with deterministic fallback.")
-        st.caption("Models run locally. AnswerTrust never searches the web or adds outside evidence.")
+    st.caption("The evaluation is sent to the local AnswerTrust API.")
     submitted = st.form_submit_button("Evaluate claims", type="primary", use_container_width=True)
 
 if submitted:
-    matcher = None
-    nli_classifier = None
-    if use_semantic:
-        try: matcher = load_semantic_matcher()
-        except Exception: st.warning("Semantic model unavailable. Continuing with keyword evidence matching.")
-    if use_nli:
-        try: nli_classifier = load_nli_classifier()
-        except Exception: st.warning("NLI model unavailable. Continuing with deterministic claim labels.")
     try:
         with st.spinner("Extracting claims and checking academic evidence..."):
-            run_id, result = execute_evaluation_run(EvaluationInput(question, paper, answer), DATABASE_PATH, semantic_matcher=matcher, nli_classifier=nli_classifier)
-    except ValueError as error: st.error(str(error))
-    except Exception as error: st.error(f"Evaluation failed after automatic retries: {error}")
+            result = AnswerTrustAPIClient().create_evaluation(
+                EvaluationInput(question, paper, answer)
+            )
+            run_id = result.evaluation_id
+    except Exception:
+        st.error(
+            "The evaluation API is unavailable. Start FastAPI and try again."
+        )
     else:
         verdict(result.final_decision.value, result.overall_score, result.recommended_action, f"Run {run_id[:8]} · {result.explanation} · {result.total_latency_ms} ms")
         st.subheader("Claim audit")

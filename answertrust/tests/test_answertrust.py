@@ -9,9 +9,12 @@ from src.experiments import calculate_nli_metrics,nli_threshold_sweep,run_experi
 from src.models import ClaimLabel,Decision,EvaluationInput,RunState
 from src.nli import LABELS,NLIClassifier,NLIPrediction,apply_nli
 from src.review import ReviewDecision,resolve_human_review
+from src.retrieval import AcademicEvidenceRetriever
 from src.semantic import SemanticMatcher,cosine_similarity
 from src.workflow import execute_evaluation_run
 from src.config import MODEL_CACHE_DIR,configure_model_cache
+from src.classification import AcademicClaimClassifier
+from src.pipeline import EvaluationPipeline
 
 PAPER="METHODS\nAdults were randomly assigned.\nRESULTS\nTreatment improved outcomes in some participants.\nLIMITATIONS\nChildren were not studied."
 
@@ -76,6 +79,34 @@ def test_semantic_matcher_finds_paraphrased_evidence():
     )
     assert result.claim_results[0].evidence[0].section=="RESULTS"
     assert result.claim_results[0].label==ClaimLabel.SUPPORTED
+
+
+def test_evaluator_uses_evidence_retriever_interface():
+    class FixedRetriever:
+        def retrieve(self, claim, sections, limit=2):
+            return AcademicEvidenceRetriever().retrieve(claim, sections, limit)
+
+    result=evaluate_answer(
+        EvaluationInput(
+            "Did treatment improve sleep?",
+            "RESULTS\nTreatment improved sleep.",
+            "Treatment improved sleep.",
+        ),
+        evidence_retriever=FixedRetriever(),
+    )
+    assert result.claim_results[0].label==ClaimLabel.SUPPORTED
+
+
+def test_pipeline_connects_retrieval_and_classification():
+    pipeline=EvaluationPipeline(AcademicEvidenceRetriever(),AcademicClaimClassifier())
+    result=pipeline.evaluate(
+        EvaluationInput(
+            "Did treatment improve sleep?",
+            "RESULTS\nTreatment improved sleep.",
+            "Treatment improved sleep.",
+        )
+    )
+    assert result.final_decision==Decision.PUBLISH
 
 
 def test_semantic_failure_falls_back_to_lexical_matching():

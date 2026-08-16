@@ -3,6 +3,7 @@
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+API_BASE_URL = "http://127.0.0.1:8000/api/v1"
 DATA_DIR = PROJECT_ROOT / "data"
 RESULTS_DIR = PROJECT_ROOT / "results"
 MODEL_CACHE_DIR = PROJECT_ROOT / "model_cache"

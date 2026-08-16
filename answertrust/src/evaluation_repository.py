@@ -1,0 +1,193 @@
+"""Database operations for evaluation records."""
+
+from __future__ import annotations
+
+from dataclasses import asdict
+from hashlib import sha256
+import json
+from uuid import uuid4
+
+from sqlalchemy import delete, func, select
+from sqlalchemy.orm import Session
+
+from src.db_models import ClaimRecord, EvaluationRecord, EvidencePassageRecord, PaperRecord, ReviewRecord
+from src.models import Decision, EvaluationInput, EvaluationResult
+
+
+class EvaluationRepository:
+    """Save and read evaluations through one clear interface."""
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def save_queued(self, evaluation_id: str, item: EvaluationInput) -> EvaluationRecord:
+        """Store a new evaluation before processing begins."""
+        paper_hash = sha256(item.paper_text.encode("utf-8")).hexdigest()
+        paper = self.session.scalar(
+            select(PaperRecord).where(PaperRecord.content_hash == paper_hash)
+        )
+        if paper is None:
+            paper = PaperRecord(
+                paper_id=str(uuid4()),
+                content_hash=paper_hash,
+                paper_text=item.paper_text,
+            )
+            self.session.add(paper)
+            self.session.flush()
+        record = EvaluationRecord(
+            evaluation_id=evaluation_id,
+            paper_id=paper.paper_id,
+            state="QUEUED",
+            question=item.question,
+            answer=item.answer,
+        )
+        self.session.add(record)
+        self.session.flush()
+        return record
+
+    def get(self, evaluation_id: str) -> EvaluationRecord | None:
+        """Find one evaluation by its ID."""
+        return self.session.get(EvaluationRecord, evaluation_id)
+
+    def save_result(self, result: EvaluationResult) -> EvaluationRecord:
+        """Store a completed result and move it to the correct state."""
+        record = self.get(result.evaluation_id)
+        if record is None:
+            raise KeyError(f"Unknown evaluation: {result.evaluation_id}")
+        record.state = {
+            Decision.PUBLISH: "COMPLETED",
+            Decision.REVIEW: "REVIEW_REQUIRED",
+            Decision.REJECT: "REJECTED",
+        }[result.final_decision]
+        record.overall_score = result.overall_score
+        record.final_decision = result.final_decision.value
+        record.dimension_scores = _json_safe(result.dimension_scores)
+        record.main_concern = result.main_concern
+        record.explanation = result.explanation
+        record.recommended_action = result.recommended_action
+        record.total_latency_ms = result.total_latency_ms
+        existing_claim_ids = list(
+            self.session.scalars(
+                select(ClaimRecord.claim_id).where(
+                    ClaimRecord.evaluation_id == result.evaluation_id
+                )
+            )
+        )
+        if existing_claim_ids:
+            self.session.execute(
+                delete(EvidencePassageRecord).where(
+                    EvidencePassageRecord.claim_id.in_(existing_claim_ids)
+                )
+            )
+            self.session.execute(
+                delete(ClaimRecord).where(
+                    ClaimRecord.evaluation_id == result.evaluation_id
+                )
+            )
+        for claim_position, claim in enumerate(result.claim_results):
+            claim_id = str(uuid4())
+            self.session.add(
+                ClaimRecord(
+                    claim_id=claim_id,
+                    evaluation_id=result.evaluation_id,
+                    position=claim_position,
+                    claim_text=claim.claim,
+                    label=claim.label.value,
+                    explanation=claim.explanation,
+                    failure_types=claim.failure_types,
+                    nli_label=claim.nli_label,
+                    nli_confidence=claim.nli_confidence,
+                )
+            )
+            for evidence_position, evidence in enumerate(claim.evidence):
+                self.session.add(
+                    EvidencePassageRecord(
+                        evidence_id=str(uuid4()),
+                        claim_id=claim_id,
+                        position=evidence_position,
+                        section=evidence.section,
+                        passage=evidence.passage,
+                        similarity=evidence.similarity,
+                    )
+                )
+        self.session.flush()
+        return record
+
+    def list(self, offset: int = 0, limit: int = 20) -> tuple[list[EvaluationRecord], int]:
+        """Return one page of evaluations and the total count."""
+        records = list(
+            self.session.scalars(
+                select(EvaluationRecord)
+                .order_by(EvaluationRecord.created_at.desc())
+                .offset(offset)
+                .limit(limit)
+            )
+        )
+        total = self.session.scalar(select(func.count(EvaluationRecord.evaluation_id)))
+        return records, int(total or 0)
+
+    def save_review(
+        self, evaluation_id: str, decision: str, notes: str
+    ) -> ReviewRecord:
+        """Save one human decision while preserving the system decision."""
+        record = self.get(evaluation_id)
+        if record is None:
+            raise KeyError(f"Unknown evaluation: {evaluation_id}")
+        if record.state != "REVIEW_REQUIRED":
+            raise ValueError("Only evaluations awaiting review can be resolved.")
+        review = ReviewRecord(
+            evaluation_id=evaluation_id,
+            reviewer_decision=decision,
+            reviewer_notes=notes.strip(),
+        )
+        self.session.add(review)
+        record.state = "APPROVED" if decision == "APPROVE" else "REJECTED"
+        self.session.flush()
+        return review
+
+    def get_review(self, evaluation_id: str) -> ReviewRecord | None:
+        """Return the human decision for an evaluation, when one exists."""
+        return self.session.get(ReviewRecord, evaluation_id)
+
+    def claim_results(self, evaluation_id: str) -> list[dict]:
+        """Rebuild ordered claim results from normalized database rows."""
+        claims = list(
+            self.session.scalars(
+                select(ClaimRecord)
+                .where(ClaimRecord.evaluation_id == evaluation_id)
+                .order_by(ClaimRecord.position)
+            )
+        )
+        results = []
+        for claim in claims:
+            evidence = list(
+                self.session.scalars(
+                    select(EvidencePassageRecord)
+                    .where(EvidencePassageRecord.claim_id == claim.claim_id)
+                    .order_by(EvidencePassageRecord.position)
+                )
+            )
+            results.append(
+                {
+                    "claim": claim.claim_text,
+                    "label": claim.label,
+                    "evidence": [
+                        {
+                            "section": item.section,
+                            "passage": item.passage,
+                            "similarity": item.similarity,
+                        }
+                        for item in evidence
+                    ],
+                    "explanation": claim.explanation,
+                    "failure_types": claim.failure_types,
+                    "nli_label": claim.nli_label,
+                    "nli_confidence": claim.nli_confidence,
+                }
+            )
+        return results
+
+
+def _json_safe(items: list) -> list[dict]:
+    """Convert dataclasses and enums into values accepted by a JSON column."""
+    return json.loads(json.dumps([asdict(item) for item in items], default=lambda item: item.value))
