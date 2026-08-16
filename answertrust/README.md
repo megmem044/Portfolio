@@ -198,3 +198,8 @@ into a generic LLM application. Multi-paper synthesis, general-purpose RAG,
 hosted LLM dependencies, autonomous publication, premature microservices, and
 Kubernetes without a concrete operational need remain outside the near-term
 scope.
+
+## Database guide
+
+See [docs/database.md](docs/database.md) for SQLite and PostgreSQL setup,
+Alembic migrations, integration testing, and legacy data import instructions.

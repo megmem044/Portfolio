@@ -66,6 +66,26 @@ class AnswerTrustAPIClient:
         response.raise_for_status()
         return response.json()
 
+    def run_publication_benchmark(self) -> dict:
+        """Run and save the publication-safety benchmark."""
+        options = {}
+        if self.request_timeout is not None:
+            options["timeout"] = self.request_timeout
+        response = self.client.post(
+            f"{self.base_url}/benchmarks/publication", **options
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def list_benchmarks(self) -> list[dict]:
+        """Return saved benchmark runs."""
+        options = {}
+        if self.request_timeout is not None:
+            options["timeout"] = self.request_timeout
+        response = self.client.get(f"{self.base_url}/benchmarks", **options)
+        response.raise_for_status()
+        return response.json()
+
 
 def _evaluation_result(data: dict) -> EvaluationResult:
     """Turn the API's JSON response back into application objects."""

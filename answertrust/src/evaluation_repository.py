@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from datetime import datetime, timezone
 from hashlib import sha256
 import json
 from uuid import uuid4
@@ -10,7 +11,7 @@ from uuid import uuid4
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from src.db_models import ClaimRecord, EvaluationRecord, EvidencePassageRecord, PaperRecord, ReviewRecord
+from src.db_models import ClaimRecord, EvaluationRecord, EvidencePassageRecord, ModelPredictionRecord, PaperRecord, ReviewRecord, ReviewTaskRecord
 from src.models import Decision, EvaluationInput, EvaluationResult
 
 
@@ -66,6 +67,12 @@ class EvaluationRepository:
         record.explanation = result.explanation
         record.recommended_action = result.recommended_action
         record.total_latency_ms = result.total_latency_ms
+        if result.final_decision == Decision.REVIEW and self.get_review_task(result.evaluation_id) is None:
+            self.session.add(
+                ReviewTaskRecord(
+                    task_id=str(uuid4()), evaluation_id=result.evaluation_id, status="OPEN"
+                )
+            )
         existing_claim_ids = list(
             self.session.scalars(
                 select(ClaimRecord.claim_id).where(
@@ -74,6 +81,11 @@ class EvaluationRepository:
             )
         )
         if existing_claim_ids:
+            self.session.execute(
+                delete(ModelPredictionRecord).where(
+                    ModelPredictionRecord.claim_id.in_(existing_claim_ids)
+                )
+            )
             self.session.execute(
                 delete(EvidencePassageRecord).where(
                     EvidencePassageRecord.claim_id.in_(existing_claim_ids)
@@ -95,10 +107,18 @@ class EvaluationRepository:
                     label=claim.label.value,
                     explanation=claim.explanation,
                     failure_types=claim.failure_types,
-                    nli_label=claim.nli_label,
-                    nli_confidence=claim.nli_confidence,
                 )
             )
+            if claim.nli_label is not None and claim.nli_confidence is not None:
+                self.session.add(
+                    ModelPredictionRecord(
+                        prediction_id=str(uuid4()),
+                        claim_id=claim_id,
+                        model_name="nli-classifier",
+                        predicted_label=claim.nli_label,
+                        confidence=claim.nli_confidence,
+                    )
+                )
             for evidence_position, evidence in enumerate(claim.evidence):
                 self.session.add(
                     EvidencePassageRecord(
@@ -135,8 +155,14 @@ class EvaluationRepository:
             raise KeyError(f"Unknown evaluation: {evaluation_id}")
         if record.state != "REVIEW_REQUIRED":
             raise ValueError("Only evaluations awaiting review can be resolved.")
+        task = self.get_review_task(evaluation_id)
+        if task is None or task.status != "OPEN":
+            raise ValueError("The evaluation has no open review task.")
+        task.status = "RESOLVED"
+        task.resolved_at = datetime.now(timezone.utc)
         review = ReviewRecord(
             evaluation_id=evaluation_id,
+            task_id=task.task_id,
             reviewer_decision=decision,
             reviewer_notes=notes.strip(),
         )
@@ -148,6 +174,14 @@ class EvaluationRepository:
     def get_review(self, evaluation_id: str) -> ReviewRecord | None:
         """Return the human decision for an evaluation, when one exists."""
         return self.session.get(ReviewRecord, evaluation_id)
+
+    def get_review_task(self, evaluation_id: str) -> ReviewTaskRecord | None:
+        """Return the review task linked to an evaluation."""
+        return self.session.scalar(
+            select(ReviewTaskRecord).where(
+                ReviewTaskRecord.evaluation_id == evaluation_id
+            )
+        )
 
     def claim_results(self, evaluation_id: str) -> list[dict]:
         """Rebuild ordered claim results from normalized database rows."""
@@ -167,6 +201,12 @@ class EvaluationRepository:
                     .order_by(EvidencePassageRecord.position)
                 )
             )
+            prediction = self.session.scalar(
+                select(ModelPredictionRecord)
+                .where(ModelPredictionRecord.claim_id == claim.claim_id)
+                .order_by(ModelPredictionRecord.created_at.desc())
+                .limit(1)
+            )
             results.append(
                 {
                     "claim": claim.claim_text,
@@ -181,8 +221,8 @@ class EvaluationRepository:
                     ],
                     "explanation": claim.explanation,
                     "failure_types": claim.failure_types,
-                    "nli_label": claim.nli_label,
-                    "nli_confidence": claim.nli_confidence,
+                    "nli_label": prediction.predicted_label if prediction else None,
+                    "nli_confidence": prediction.confidence if prediction else None,
                 }
             )
         return results

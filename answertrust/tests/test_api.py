@@ -181,3 +181,19 @@ def test_openapi_contains_evaluation_response_schema():
         ["content"]["application/json"]["schema"]["$ref"]
         == "#/components/schemas/EvaluationResponse"
     )
+
+
+def test_publication_benchmark_api_persists_run_and_results():
+    response = client.post("/api/v1/benchmarks/publication")
+
+    assert response.status_code == 200
+    created = response.json()
+    assert created["status"] == "COMPLETED"
+    assert created["metrics"]["total_examples"] == 50
+    assert len(created["results"]) == 50
+
+    listed = client.get("/api/v1/benchmarks").json()
+    assert created["run_id"] in {run["run_id"] for run in listed}
+
+    detail = client.get(f"/api/v1/benchmarks/{created['run_id']}").json()
+    assert len(detail["results"]) == 50

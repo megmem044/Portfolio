@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from src.evaluator import evaluate_answer
+from src.benchmark_repository import BenchmarkRepository
+from src.benchmark_service import run_publication_benchmark
 from src.db import create_database_engine, create_session_factory, session_scope
 from src.db_models import EvaluationRecord
 from src.evaluation_repository import EvaluationRepository
@@ -133,6 +135,25 @@ class ReviewResponse(BaseModel):
     reviewer_notes: str
 
 
+class BenchmarkResultResponse(BaseModel):
+    example_id: str
+    expected_label: str
+    actual_label: str
+    is_correct: bool
+    details: dict
+
+
+class BenchmarkRunResponse(BaseModel):
+    run_id: str
+    benchmark_name: str
+    status: str
+    started_at: datetime
+    completed_at: datetime | None
+    metrics: dict | None
+    error_message: str | None
+    results: list[BenchmarkResultResponse] = []
+
+
 @app.get("/api/v1/health", response_model=dict[str, str])
 def health() -> dict[str, str]:
     """Confirm that the API server is running."""
@@ -214,6 +235,31 @@ def review_evaluation(
     return review
 
 
+@app.post("/api/v1/benchmarks/publication", response_model=BenchmarkRunResponse)
+def create_publication_benchmark(session: Session = Depends(get_session)):
+    """Run and save the publication-safety benchmark."""
+    repository = BenchmarkRepository(session)
+    run = run_publication_benchmark(repository)
+    return _benchmark_response(run, repository)
+
+
+@app.get("/api/v1/benchmarks", response_model=list[BenchmarkRunResponse])
+def list_benchmark_runs(session: Session = Depends(get_session)):
+    """List saved benchmark runs without their example details."""
+    repository = BenchmarkRepository(session)
+    return [_benchmark_response(run, repository, include_results=False) for run in repository.list()]
+
+
+@app.get("/api/v1/benchmarks/{run_id}", response_model=BenchmarkRunResponse)
+def get_benchmark_run(run_id: str, session: Session = Depends(get_session)):
+    """Return one benchmark run and all of its example results."""
+    repository = BenchmarkRepository(session)
+    run = repository.get(run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Benchmark run not found.")
+    return _benchmark_response(run, repository)
+
+
 def _record_response(
     record: EvaluationRecord, repository: EvaluationRepository
 ) -> dict:
@@ -230,4 +276,27 @@ def _record_response(
         "recommended_action": record.recommended_action,
         "total_latency_ms": record.total_latency_ms,
         "deterministic_latency_ms": record.total_latency_ms,
+    }
+
+
+def _benchmark_response(run, repository: BenchmarkRepository, include_results: bool = True) -> dict:
+    results = repository.results(run.run_id) if include_results else []
+    return {
+        "run_id": run.run_id,
+        "benchmark_name": run.benchmark_name,
+        "status": run.status,
+        "started_at": run.started_at,
+        "completed_at": run.completed_at,
+        "metrics": run.metrics,
+        "error_message": run.error_message,
+        "results": [
+            {
+                "example_id": result.example_id,
+                "expected_label": result.expected_label,
+                "actual_label": result.actual_label,
+                "is_correct": result.is_correct,
+                "details": result.details,
+            }
+            for result in results
+        ],
     }

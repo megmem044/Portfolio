@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -76,8 +76,34 @@ class EvaluationRecord(Base):
     total_latency_ms: Mapped[int | None] = mapped_column(Integer)
 
 
+class ReviewTaskRecord(Base):
+    """A human-review task created for an uncertain evaluation."""
+
+    __tablename__ = "review_tasks"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('OPEN', 'RESOLVED')", name="ck_review_tasks_status"
+        ),
+    )
+
+    task_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    evaluation_id: Mapped[str] = mapped_column(
+        ForeignKey("evaluations_v2.evaluation_id"),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+    status: Mapped[str] = mapped_column(String(16), default="OPEN", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class ReviewRecord(Base):
-    """One human decision linked to an evaluation."""
+    """One human decision linked to a review task and evaluation."""
 
     __tablename__ = "review_decisions"
     __table_args__ = (
@@ -89,6 +115,9 @@ class ReviewRecord(Base):
 
     evaluation_id: Mapped[str] = mapped_column(
         ForeignKey("evaluations_v2.evaluation_id"), primary_key=True
+    )
+    task_id: Mapped[str] = mapped_column(
+        ForeignKey("review_tasks.task_id"), unique=True, nullable=False
     )
     reviewer_decision: Mapped[str] = mapped_column(String(16), nullable=False)
     reviewer_notes: Mapped[str] = mapped_column(Text, nullable=False)
@@ -118,8 +147,6 @@ class ClaimRecord(Base):
     label: Mapped[str] = mapped_column(String(32), nullable=False)
     explanation: Mapped[str] = mapped_column(Text, nullable=False)
     failure_types: Mapped[list] = mapped_column(JSON, nullable=False)
-    nli_label: Mapped[str | None] = mapped_column(String(32))
-    nli_confidence: Mapped[float | None] = mapped_column(Float)
 
 
 class EvidencePassageRecord(Base):
@@ -138,3 +165,68 @@ class EvidencePassageRecord(Base):
     section: Mapped[str] = mapped_column(String(64), nullable=False)
     passage: Mapped[str] = mapped_column(Text, nullable=False)
     similarity: Mapped[float] = mapped_column(Float, nullable=False)
+
+
+class ModelPredictionRecord(Base):
+    """A model prediction kept separately from the final claim decision."""
+
+    __tablename__ = "model_predictions"
+
+    prediction_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    claim_id: Mapped[str] = mapped_column(
+        ForeignKey("claims.claim_id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    model_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    predicted_label: Mapped[str] = mapped_column(String(32), nullable=False)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+
+class BenchmarkRunRecord(Base):
+    """One measured benchmark execution."""
+
+    __tablename__ = "benchmark_runs"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('RUNNING', 'COMPLETED', 'FAILED')",
+            name="ck_benchmark_runs_status",
+        ),
+    )
+
+    run_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    benchmark_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+        index=True,
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    metrics: Mapped[dict | None] = mapped_column(JSON)
+    error_message: Mapped[str | None] = mapped_column(Text)
+
+
+class BenchmarkResultRecord(Base):
+    """The expected and actual outcome for one benchmark example."""
+
+    __tablename__ = "benchmark_results"
+    __table_args__ = (
+        UniqueConstraint("run_id", "example_id", name="uq_benchmark_result_example"),
+    )
+
+    result_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    run_id: Mapped[str] = mapped_column(
+        ForeignKey("benchmark_runs.run_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    example_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    expected_label: Mapped[str] = mapped_column(String(64), nullable=False)
+    actual_label: Mapped[str] = mapped_column(String(64), nullable=False)
+    is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    details: Mapped[dict] = mapped_column(JSON, nullable=False)
