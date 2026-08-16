@@ -1,4 +1,4 @@
-import type { Evaluation, EvaluationInput, ReviewItem } from './types'
+import type { BenchmarkRun, Evaluation, EvaluationInput, ReviewItem } from './types'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/api/v1'
 
@@ -26,3 +26,6 @@ export function getPendingReviews() { return request<ReviewItem[]>('/reviews/pen
 export function submitReview(id: string, decision: 'APPROVE' | 'REJECT', notes: string) {
   return request(`/evaluations/${encodeURIComponent(id)}/review`, { method: 'POST', body: JSON.stringify({ decision, notes }) })
 }
+export function runPublicationBenchmark() { return request<BenchmarkRun>('/benchmarks/publication', { method: 'POST' }) }
+export function getBenchmarkRuns() { return request<BenchmarkRun[]>('/benchmarks') }
+export function getBenchmarkRun(id: string) { return request<BenchmarkRun>(`/benchmarks/${encodeURIComponent(id)}`) }

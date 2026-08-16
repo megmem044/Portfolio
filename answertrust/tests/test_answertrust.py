@@ -1,17 +1,12 @@
 from pathlib import Path
-import pytest
-import streamlit as st
 from src.academic import extract_claims,match_evidence,split_sections
-from src.database import get_evaluation_run
 from src.evaluator import evaluate_answer
 from src.example_data import load_examples,validate_examples
 from src.experiments import calculate_nli_metrics,nli_threshold_sweep,run_experiment,run_matcher_comparison,run_nli_benchmark
-from src.models import ClaimLabel,Decision,EvaluationInput,RunState
+from src.models import ClaimLabel,Decision,EvaluationInput
 from src.nli import LABELS,NLIClassifier,NLIPrediction,apply_nli
-from src.review import ReviewDecision,resolve_human_review
 from src.retrieval import AcademicEvidenceRetriever
 from src.semantic import SemanticMatcher,cosine_similarity
-from src.workflow import execute_evaluation_run
 from src.config import MODEL_CACHE_DIR,configure_model_cache
 from src.classification import AcademicClaimClassifier
 from src.pipeline import EvaluationPipeline
@@ -33,20 +28,6 @@ def test_contradiction_rejected():
     result=evaluate_answer(EvaluationInput("Did treatment improve sleep?","RESULTS\nTreatment did not improve sleep.","Treatment improved sleep."))
     assert result.claim_results[0].label==ClaimLabel.CONTRADICTED
     assert result.final_decision==Decision.REJECT
-
-def test_retry_and_review_audit(tmp_path:Path):
-    calls={"count":0}
-    def flaky(item,**kwargs):
-        calls["count"]+=1
-        if calls["count"]==1: raise TimeoutError("temporary")
-        return evaluate_answer(item)
-    run_id,_=execute_evaluation_run(EvaluationInput("Did treatment improve outcomes?",PAPER,"Treatment improved outcomes for all participants."),tmp_path/"db.sqlite",evaluator=flaky)
-    run=get_evaluation_run(run_id,tmp_path/"db.sqlite")
-    assert run["attempt_count"]==2 and run["state"]==RunState.HUMAN_REVIEW.value
-    resolve_human_review(run_id,ReviewDecision.REJECT,tmp_path/"db.sqlite","Universal wording is not supported.")
-    run=get_evaluation_run(run_id,tmp_path/"db.sqlite")
-    assert run["system_decision"]=="REVIEW" and run["reviewer_decision"]=="REJECT"
-    assert run["reviewer_notes"]=="Universal wording is not supported."
 
 def test_benchmark_schema_and_metrics():
     examples=load_examples(); assert len(examples)==50; assert validate_examples(examples)==[]
@@ -256,10 +237,6 @@ def test_model_cache_environment_is_project_local(monkeypatch):
 
 def test_cosine_similarity_handles_zero_vector():
     assert cosine_similarity([0.0,0.0],[1.0,1.0])==0.0
-
-
-def test_required_streamlit_navigation_api_is_available():
-    assert callable(st.switch_page)
 
 
 def test_matcher_comparison_reports_before_and_after(tmp_path):

@@ -1,6 +1,6 @@
 # AnswerTrust
 
-**Last updated: August 15, 2026**
+**Last updated: August 16, 2026**
 
 AnswerTrust is a paper-grounded AI evaluation system. It decomposes an
 AI-generated answer into claims, retrieves relevant passages from a supplied
@@ -33,20 +33,22 @@ definitions of done.
 
 ## Current status
 
-The repository currently contains the verified local MVP:
+The repository currently contains the verified web MVP:
 
-- a Streamlit evaluation interface, human-review queue, and benchmark dashboard;
-- SQLite persistence for evaluation and review history;
-- automatic retry for transient evaluation failures;
+- a React evaluation interface, human-review queue, and benchmark dashboard;
+- a versioned FastAPI service;
+- SQLAlchemy persistence with SQLite for local use and PostgreSQL support;
+- Alembic database migrations and a documented legacy-data importer;
 - local MiniLM embeddings for paraphrase-aware evidence retrieval;
 - academic section priors and keyword retrieval fallback;
 - confidence-gated NLI with deterministic fallback;
 - claim-level evidence, explanations, failure types, and confidence details;
 - preserved system and reviewer decisions with timestamps;
-- repository-local model caching and Windows setup scripts.
+- repository-local model caching and Windows setup scripts;
+- pytest API and database tests plus Playwright browser tests.
 
-The Streamlit application remains the runnable interface while the API,
-PostgreSQL, queue, worker, and React frontend are built incrementally.
+React is the primary interface. The asynchronous queue and worker remain future
+project-plan phases.
 
 ## Current architecture
 
@@ -158,26 +160,34 @@ These deliberately constructed regression benchmarks are not estimates of
 general performance across academic literature. AnswerTrust is not suitable for
 autonomous clinical or scientific decision-making.
 
-## Run the current MVP
+## Run the current application
 
-AnswerTrust currently targets Python 3.11. In PowerShell:
+AnswerTrust currently targets Python 3.11. Install and verify the backend in
+PowerShell:
 
 ```powershell
 python -m pip install -r requirements.txt
 .\setup_ml.ps1
 python -m pytest -q
-.\run.ps1
 ```
 
-The current verification baseline is:
+Start the API from the project root:
 
-```text
-22 passed
+```powershell
+python -m uvicorn src.api:app --reload
 ```
 
-The first ML setup downloads model files into the ignored `model_cache/`
-directory. The local application database is created at `data/answertrust.db`.
-Both remain excluded from Git.
+In a second terminal, start the React application:
+
+```powershell
+cd frontend
+npm.cmd install
+npm.cmd run dev -- --host 127.0.0.1
+```
+
+Open `http://127.0.0.1:5173`. The first ML setup downloads model files into the
+ignored `model_cache/` directory. The local application database is created at
+`data/answertrust.db`. Both remain excluded from Git.
 
 ## Reproduce the benchmarks
 

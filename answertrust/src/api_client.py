@@ -1,4 +1,4 @@
-"""Small client used by Streamlit to communicate with FastAPI."""
+"""Small Python client for communicating with the AnswerTrust API."""
 
 from datetime import datetime
 
