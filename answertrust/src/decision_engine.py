@@ -5,7 +5,7 @@ from src.models import ClaimLabel, ClaimResult, Decision
 
 def make_decision(claims: list[ClaimResult], completeness: int, relevance: int) -> Decision:
     labels = [claim.label for claim in claims]
-    if not claims or relevance < 35:
+    if not claims:
         return Decision.REJECT
     confirmed_contradictions = [
         claim
@@ -23,5 +23,7 @@ def make_decision(claims: list[ClaimResult], completeness: int, relevance: int) 
     if any(label != ClaimLabel.SUPPORTED for label in labels) or completeness < 75:
         return Decision.REVIEW
     if any(claim.failure_types for claim in claims):
+        return Decision.REVIEW
+    if relevance < 35 or completeness < 75:
         return Decision.REVIEW
     return Decision.PUBLISH

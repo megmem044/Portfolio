@@ -2,7 +2,7 @@ from pathlib import Path
 from src.academic import extract_claims,match_evidence,split_sections
 from src.evaluator import evaluate_answer
 from src.example_data import load_examples,validate_examples
-from src.experiments import calculate_nli_metrics,nli_threshold_sweep,run_experiment,run_matcher_comparison,run_nli_benchmark
+from src.experiments import calculate_nli_metrics,export_disagreements,nli_threshold_sweep,run_experiment,run_matcher_comparison,run_nli_benchmark
 from src.models import ClaimLabel,Decision,EvaluationInput
 from src.nli import LABELS,NLIClassifier,NLIPrediction,apply_nli
 from src.retrieval import AcademicEvidenceRetriever
@@ -29,16 +29,43 @@ def test_contradiction_rejected():
     assert result.claim_results[0].label==ClaimLabel.CONTRADICTED
     assert result.final_decision==Decision.REJECT
 
+def test_small_percentage_contradicts_most_claim():
+    result=evaluate_answer(EvaluationInput("Were most associations strong?","RESULTS\nOnly 5% of statistically significant associations were strong.","Most statistically significant associations were strong."))
+    assert result.claim_results[0].label==ClaimLabel.CONTRADICTED
+    assert result.final_decision==Decision.REJECT
+
+def test_reversed_numeric_comparison_is_rejected():
+    result=evaluate_answer(EvaluationInput("Which effect was larger?","RESULTS\nSummed effects were 6279; total treatment effect was 5455.","The total treatment effect was larger than the summed effects."))
+    assert result.claim_results[0].label==ClaimLabel.CONTRADICTED
+    assert result.final_decision==Decision.REJECT
+
+def test_nonsignificant_result_contradicts_significant_claim():
+    result=evaluate_answer(EvaluationInput("Was the difference significant?","RESULTS\nThe difference was not significant (p = 0.42).","The difference was statistically significant."))
+    assert result.claim_results[0].label==ClaimLabel.CONTRADICTED
+    assert result.final_decision==Decision.REJECT
+
+def test_low_relevance_alone_does_not_reject_supported_claim():
+    result=evaluate_answer(EvaluationInput("What safeguard was recommended?","CONCLUSION\nPotential publication bias should be investigated when assessing placebo-effect magnitude.","Assessments of placebo-effect magnitude should investigate publication bias."))
+    assert result.claim_results[0].label==ClaimLabel.SUPPORTED
+    assert result.final_decision!=Decision.REJECT
+
 def test_benchmark_schema_and_metrics():
-    examples=load_examples(); assert len(examples)==60; assert validate_examples(examples)==[]
+    examples=load_examples(); assert len(examples)==100; assert validate_examples(examples)==[]
     assert {item["schema_version"] for item in examples}=={2}
     assert {item["source_type"] for item in examples}=={"SYNTHETIC","REAL_EXCERPT"}
-    assert sum(item["source_type"]=="REAL_EXCERPT" for item in examples)==10
+    assert sum(item["source_type"]=="REAL_EXCERPT" for item in examples)==50
     assert all(item["label_rationale"] for item in examples)
     rows,metrics=run_experiment(write_output=False)
-    assert len(rows)==60
+    assert len(rows)==100
     assert {"unsupported_detection_rate_pct","contradiction_detection_rate_pct","false_publish_rate_pct","review_rate_pct"} <= set(metrics)
     assert {"source_type","difficulty_category","reviewer_confidence"} <= set(rows[0])
+
+def test_disagreement_export_is_deidentified(tmp_path):
+    rows=[{"id":"case-1","category":"numerical","source_type":"REAL_EXCERPT","source_locator":"https://doi.org/example","difficulty_category":"HARD","annotation_status":"PROJECT_AUTHORED","reviewer_label":"SUPPORTED","reviewer_confidence":0.9,"actual_claim_label":"CONTRADICTED","expected_decision":"PUBLISH","actual_decision":"REJECT","question":"private","paper_text":"private","answer":"private"}]
+    exported=export_disagreements(rows,tmp_path/"disagreements.csv")
+    content=(tmp_path/"disagreements.csv").read_text(encoding="utf-8")
+    assert len(exported)==1
+    assert "private" not in content
 
 
 def test_real_benchmark_excerpt_requires_provenance():

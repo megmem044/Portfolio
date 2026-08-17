@@ -51,7 +51,8 @@ The repository currently contains the verified web MVP:
 - claim-level evidence, explanations, failure types, and confidence details;
 - preserved system and reviewer decisions with timestamps;
 - repository-local model caching and Windows setup scripts;
-- pytest API and database tests plus Playwright browser tests.
+- pytest API and database tests plus Playwright browser tests;
+- a de-identified export of system-versus-reviewer benchmark disagreements.
 
 React is the primary interface. Evaluation requests return immediately while a
 separate worker processes claims and the result page polls for status updates.
@@ -127,7 +128,7 @@ AnswerTrust currently:
 
 ### Publication safety benchmark
 
-Measured on 50 self-authored, paper-grounded examples:
+Historical baseline measured on the original 50 self-authored, paper-grounded examples:
 
 | Metric | Result |
 | --- | ---: |
@@ -136,6 +137,22 @@ Measured on 50 self-authored, paper-grounded examples:
 | Contradiction detection | 100% |
 | False-publish rate | 0% |
 | Human-review rate | 40% |
+
+Current mixed benchmark measured on August 17, 2026 using 50 synthetic cases
+and 50 provenance-labelled real-paper cases:
+
+| Metric | Result |
+| --- | ---: |
+| Decision accuracy | 85% |
+| Unsupported-claim detection | 90% |
+| Contradiction detection | 73.53% |
+| False-publish rate | 0% |
+| Human-review rate | 31% |
+
+The verified test run completed with 67 backend tests passing, one optional
+test skipped, and all 8 Playwright browser tests passing. The harder mixed
+benchmark intentionally exposes remaining conservative errors while retaining
+a zero false-publish rate.
 
 ### Semantic retrieval benchmark
 
@@ -166,10 +183,11 @@ These deliberately constructed regression benchmarks are not estimates of
 general performance across academic literature. AnswerTrust is not suitable for
 autonomous clinical or scientific decision-making.
 
-The publication benchmark uses schema version 2. Its manifest explicitly marks
-the original 50 cases as project-created synthetic examples. The first 10
-real-paper cases use short Creative Commons PLOS excerpts with stable DOI
-provenance. Future real-paper
+The publication benchmark uses schema version 2 and now contains 100 cases: 50
+project-created synthetic cases and 50 real-paper cases. The real-paper cases
+use short Creative Commons PLOS excerpts with stable DOI provenance. They test
+numbers, converted tables, subgroups, limitations, causal language, statistical
+significance, scope changes, and reporting overstatement. Future real-paper
 excerpts must record a source title, stable URL or DOI, excerpt section, reuse
 license, difficulty category, reviewer label and confidence, annotation status,
 and label rationale. This prevents synthetic cases from being presented as
@@ -251,6 +269,12 @@ python -m src.experiments --compare-matchers
 python -m src.experiments --benchmark-nli
 python -m src.experiments --analyze-nli
 ```
+
+The publication benchmark writes the full result set to
+`results/experiment_results.csv`. It also writes only system-versus-reviewer
+differences to `results/benchmark_disagreements.csv`. The disagreement export
+excludes the question, paper text, and answer so it can be shared for review
+without copying benchmark text into the export.
 
 ## Run the complete stack with Docker
 

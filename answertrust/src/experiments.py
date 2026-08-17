@@ -4,7 +4,7 @@ import csv
 import json
 from pathlib import Path
 from src.academic import match_evidence, split_sections
-from src.config import EXPERIMENT_RESULTS_PATH, NLI_EXAMPLES_PATH, SEMANTIC_EXAMPLES_PATH
+from src.config import DISAGREEMENT_RESULTS_PATH, EXPERIMENT_RESULTS_PATH, NLI_EXAMPLES_PATH, SEMANTIC_EXAMPLES_PATH
 from src.evaluator import evaluate_answer
 from src.example_data import load_examples,validate_examples
 from src.models import EvaluationInput
@@ -18,6 +18,16 @@ def calculate_metrics(rows:list[dict])->dict:
     pct=lambda n,d: round(100*n/d,2) if d else 0.0
     return {"total_examples":total,"decision_accuracy_pct":pct(sum(r["expected_decision"]==r["actual_decision"] for r in rows),total),"unsupported_detection_rate_pct":pct(sum(r["actual_claim_label"]=="UNSUPPORTED" for r in unsupported),len(unsupported)),"contradiction_detection_rate_pct":pct(sum(r["actual_claim_label"]=="CONTRADICTED" for r in contradicted),len(contradicted)),"false_publish_rate_pct":pct(sum(r["actual_decision"]=="PUBLISH" for r in unsafe),len(unsafe)),"review_rate_pct":pct(sum(r["actual_decision"]=="REVIEW" for r in rows),total)}
 
+def export_disagreements(rows:list[dict],path:Path=DISAGREEMENT_RESULTS_PATH)->list[dict]:
+    """Write de-identified rows where the system differs from the reviewer."""
+    disagreements=[row for row in rows if row["reviewer_label"]!=row["actual_claim_label"] or row["expected_decision"]!=row["actual_decision"]]
+    path.parent.mkdir(parents=True,exist_ok=True)
+    fields=["id","category","source_type","source_locator","difficulty_category","annotation_status","reviewer_label","reviewer_confidence","actual_claim_label","expected_decision","actual_decision"]
+    with path.open("w",newline="",encoding="utf-8") as handle:
+        writer=csv.DictWriter(handle,fieldnames=fields); writer.writeheader()
+        writer.writerows({field:row[field] for field in fields} for row in disagreements)
+    return disagreements
+
 def run_experiment(path:Path=EXPERIMENT_RESULTS_PATH,write_output:bool=True):
     examples=load_examples(); errors=validate_examples(examples)
     if errors: raise ValueError("; ".join(errors))
@@ -29,6 +39,7 @@ def run_experiment(path:Path=EXPERIMENT_RESULTS_PATH,write_output:bool=True):
         path.parent.mkdir(parents=True,exist_ok=True)
         with path.open("w",newline="",encoding="utf-8") as handle:
             writer=csv.DictWriter(handle,fieldnames=rows[0]); writer.writeheader(); writer.writerows(rows)
+        export_disagreements(rows)
     return rows,calculate_metrics(rows)
 
 
