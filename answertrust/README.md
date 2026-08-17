@@ -1,6 +1,6 @@
 # AnswerTrust
 
-**Last updated: August 16, 2026**
+**Last updated: August 17, 2026**
 
 AnswerTrust is a paper-grounded AI evaluation system. It decomposes an
 AI-generated answer into claims, retrieves relevant passages from a supplied
@@ -27,9 +27,9 @@ The target stack is:
 - GitHub Actions for build and test automation;
 - structured logging and operational metrics.
 
-These platform components are the planned direction, not current completed
-features. See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the phased roadmap and
-definitions of done.
+This platform foundation is now implemented. Benchmark expansion, release
+preparation, and optional deployment remain in the roadmap. See
+[PROJECT_PLAN.md](PROJECT_PLAN.md) for the phased definitions of done.
 
 ## Current status
 
@@ -39,6 +39,12 @@ The repository currently contains the verified web MVP:
 - a versioned FastAPI service;
 - SQLAlchemy persistence with SQLite for local use and PostgreSQL support;
 - Alembic database migrations and a documented legacy-data importer;
+- Redis-backed asynchronous evaluation with a separate RQ worker;
+- persisted queued, processing, retrying, completed, and failed states;
+- reviewer and administrator authentication with protected actions;
+- structured logs, health checks, readiness checks, and persistent analytics;
+- a Docker Compose stack for React, FastAPI, PostgreSQL, Redis, and the worker;
+- GitHub Actions checks for backend, frontend, browser, and container builds;
 - local MiniLM embeddings for paraphrase-aware evidence retrieval;
 - academic section priors and keyword retrieval fallback;
 - confidence-gated NLI with deterministic fallback;
@@ -47,8 +53,8 @@ The repository currently contains the verified web MVP:
 - repository-local model caching and Windows setup scripts;
 - pytest API and database tests plus Playwright browser tests.
 
-React is the primary interface. The asynchronous queue and worker remain future
-project-plan phases.
+React is the primary interface. Evaluation requests return immediately while a
+separate worker processes claims and the result page polls for status updates.
 
 ## Current architecture
 
@@ -99,7 +105,7 @@ MiniLM | NLI | rules
 Docker Compose | CI/CD | tests | logs | metrics
 ```
 
-Evaluation requests will return an ID immediately. The worker will advance each
+Evaluation requests return an ID immediately. The worker advances each
 job through persisted states such as `QUEUED`, `PROCESSING`, `COMPLETED`,
 `REVIEW_REQUIRED`, `APPROVED`, `REJECTED`, `FAILED`, and `RETRYING`.
 
@@ -188,7 +194,7 @@ Start the evaluation worker in another terminal from the project root:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
-python -m rq worker --url redis://127.0.0.1:6379/0 --worker-class rq.worker.SpawnWorker evaluations
+.\.venv\Scripts\rq.exe worker --url redis://127.0.0.1:6379/0 --worker-class rq.worker.SpawnWorker evaluations
 ```
 
 Create the first administrator in a separate terminal. The command asks for the
