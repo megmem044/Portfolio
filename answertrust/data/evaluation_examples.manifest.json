@@ -1,0 +1,13 @@
+{
+  "schema_version": 2,
+  "dataset_name": "AnswerTrust publication-safety regression benchmark",
+  "description": "Project-created synthetic cases used to prevent safety regressions. These are not real paper excerpts.",
+  "example_defaults": {
+    "source_type": "SYNTHETIC",
+    "source_title": "AnswerTrust project-created regression case",
+    "reuse_license": "PROJECT_CREATED",
+    "difficulty_category": "BASIC",
+    "annotation_status": "PROJECT_AUTHORED",
+    "reviewer_confidence": 1.0
+  }
+}

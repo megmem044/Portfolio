@@ -24,7 +24,7 @@ def run_experiment(path:Path=EXPERIMENT_RESULTS_PATH,write_output:bool=True):
     rows=[]
     for item in examples:
         result=evaluate_answer(EvaluationInput(item["question"],item["paper_text"],item["answer"]))
-        rows.append({"id":item["id"],"category":item["category"],"expected_claim_label":item["expected_claim_label"],"actual_claim_label":result.claim_results[0].label.value,"expected_decision":item["expected_decision"],"actual_decision":result.final_decision.value})
+        rows.append({"id":item["id"],"category":item["category"],"source_type":item["source_type"],"source_locator":item["source_locator"],"difficulty_category":item["difficulty_category"],"annotation_status":item["annotation_status"],"reviewer_label":item["reviewer_label"],"reviewer_confidence":item["reviewer_confidence"],"expected_claim_label":item["expected_claim_label"],"actual_claim_label":result.claim_results[0].label.value,"expected_decision":item["expected_decision"],"actual_decision":result.final_decision.value})
     if write_output:
         path.parent.mkdir(parents=True,exist_ok=True)
         with path.open("w",newline="",encoding="utf-8") as handle:

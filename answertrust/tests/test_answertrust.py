@@ -30,10 +30,26 @@ def test_contradiction_rejected():
     assert result.final_decision==Decision.REJECT
 
 def test_benchmark_schema_and_metrics():
-    examples=load_examples(); assert len(examples)==50; assert validate_examples(examples)==[]
+    examples=load_examples(); assert len(examples)==60; assert validate_examples(examples)==[]
+    assert {item["schema_version"] for item in examples}=={2}
+    assert {item["source_type"] for item in examples}=={"SYNTHETIC","REAL_EXCERPT"}
+    assert sum(item["source_type"]=="REAL_EXCERPT" for item in examples)==10
+    assert all(item["label_rationale"] for item in examples)
     rows,metrics=run_experiment(write_output=False)
-    assert len(rows)==50
+    assert len(rows)==60
     assert {"unsupported_detection_rate_pct","contradiction_detection_rate_pct","false_publish_rate_pct","review_rate_pct"} <= set(metrics)
+    assert {"source_type","difficulty_category","reviewer_confidence"} <= set(rows[0])
+
+
+def test_real_benchmark_excerpt_requires_provenance():
+    examples=load_examples()
+    examples[0]={**examples[0],"source_type":"REAL_EXCERPT","source_title":"Open paper","source_locator":"","reuse_license":"CC-BY-4.0","excerpt_section":"RESULTS"}
+    assert "Example 1 real excerpt requires source_locator." in validate_examples(examples)
+
+
+def test_benchmark_reviewer_confidence_is_bounded():
+    examples=load_examples();examples[0]={**examples[0],"reviewer_confidence":1.2}
+    assert "Example 1 reviewer confidence must be between 0 and 1." in validate_examples(examples)
 
 
 class FakeEncoder:

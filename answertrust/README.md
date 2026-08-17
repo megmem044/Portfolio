@@ -166,6 +166,15 @@ These deliberately constructed regression benchmarks are not estimates of
 general performance across academic literature. AnswerTrust is not suitable for
 autonomous clinical or scientific decision-making.
 
+The publication benchmark uses schema version 2. Its manifest explicitly marks
+the original 50 cases as project-created synthetic examples. The first 10
+real-paper cases use short Creative Commons PLOS excerpts with stable DOI
+provenance. Future real-paper
+excerpts must record a source title, stable URL or DOI, excerpt section, reuse
+license, difficulty category, reviewer label and confidence, annotation status,
+and label rationale. This prevents synthetic cases from being presented as
+independent or real-world evidence.
+
 ## Run the current application
 
 AnswerTrust currently targets Python 3.11. Install and verify the backend in
