@@ -6,3 +6,5 @@ httpx==0.28.1
 SQLAlchemy==2.0.46
 alembic==1.16.5
 psycopg[binary]==3.2.9
+redis==8.0.1
+rq==2.10.0

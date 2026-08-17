@@ -171,11 +171,50 @@ python -m pip install -r requirements.txt
 python -m pytest -q
 ```
 
+Asynchronous evaluations require Redis. Start Redis locally with Docker:
+
+```powershell
+docker run --name answertrust-redis -p 6379:6379 redis:8
+```
+
 Start the API from the project root:
 
 ```powershell
+python -m alembic upgrade head
 python -m uvicorn src.api:app --reload
 ```
+
+Start the evaluation worker in another terminal from the project root:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m rq worker --url redis://127.0.0.1:6379/0 --worker-class rq.worker.SpawnWorker evaluations
+```
+
+Create the first administrator in a separate terminal. The command asks for the
+password without showing it on screen:
+
+```powershell
+python -m scripts.create_user --email admin@example.com --role ADMIN
+```
+
+Create reviewer accounts in the same way with `--role REVIEWER`. In a deployed
+environment, set `ANSWERTRUST_AUTH_SECRET` to a long random value before
+starting the API so signed sessions use a private secret.
+
+The API exposes two operational checks:
+
+- `GET /api/v1/health` confirms that the process is running;
+- `GET /api/v1/readiness` confirms that the database is reachable.
+
+Administrators can read non-sensitive process counters from
+`GET /api/v1/metrics` with their bearer token. API requests and completed
+evaluations produce structured JSON logs without paper text, answers,
+passwords, or reviewer notes.
+
+The administrator-only `GET /api/v1/analytics` endpoint and React Analytics
+page calculate persistent totals and trends from saved evaluations, review
+tasks, review decisions, and benchmark runs.
 
 In a second terminal, start the React application:
 
@@ -197,6 +236,35 @@ python -m src.experiments --compare-matchers
 python -m src.experiments --benchmark-nli
 python -m src.experiments --analyze-nli
 ```
+
+## Run the complete stack with Docker
+
+Copy `.env.example` to `.env` and replace both example secrets before using the
+stack outside local development. Then build and start all five services:
+
+```powershell
+docker compose up --build
+```
+
+The website is available at `http://127.0.0.1:5173` and the API documentation
+at `http://127.0.0.1:8000/docs`. PostgreSQL and Redis data are stored in Docker
+volumes and survive container restarts.
+
+Create the first administrator after the API is healthy:
+
+```powershell
+docker compose exec api python -m scripts.create_user --email admin@example.com --role ADMIN
+```
+
+Stop the stack with `Ctrl+C`. To stop containers without deleting saved data:
+
+```powershell
+docker compose down
+```
+
+GitHub Actions runs backend tests against PostgreSQL, builds and checks the
+React application, runs Playwright in Chromium, and verifies both container
+images on every push and pull request.
 
 The NLI analysis reports incorrect or below-threshold examples, false
 entailments, false contradictions, and a confidence-threshold sweep.

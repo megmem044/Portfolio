@@ -50,6 +50,35 @@ class EvaluationRepository:
         """Find one evaluation by its ID."""
         return self.session.get(EvaluationRecord, evaluation_id)
 
+    def start_attempt(self, evaluation_id: str) -> EvaluationRecord:
+        record = self.get(evaluation_id)
+        if record is None:
+            raise KeyError(f"Unknown evaluation: {evaluation_id}")
+        if record.state in {"COMPLETED", "REVIEW_REQUIRED", "APPROVED", "REJECTED"}:
+            return record
+        record.attempt_count += 1
+        record.state = "PROCESSING" if record.attempt_count == 1 else "RETRYING"
+        record.failure_message = None
+        self.session.flush()
+        return record
+
+    def save_failure(self, evaluation_id: str, message: str, final: bool) -> None:
+        record = self.get(evaluation_id)
+        if record is None:
+            raise KeyError(f"Unknown evaluation: {evaluation_id}")
+        record.state = "FAILED" if final else "RETRYING"
+        record.failure_message = message[:1000]
+        self.session.flush()
+
+    def evaluation_input(self, evaluation_id: str) -> EvaluationInput:
+        record = self.get(evaluation_id)
+        if record is None:
+            raise KeyError(f"Unknown evaluation: {evaluation_id}")
+        paper = self.session.get(PaperRecord, record.paper_id)
+        if paper is None:
+            raise KeyError(f"Paper missing for evaluation: {evaluation_id}")
+        return EvaluationInput(record.question, paper.paper_text, record.answer)
+
     def save_result(self, result: EvaluationResult) -> EvaluationRecord:
         """Store a completed result and move it to the correct state."""
         record = self.get(result.evaluation_id)
@@ -138,16 +167,17 @@ class EvaluationRepository:
         records = list(
             self.session.scalars(
                 select(EvaluationRecord)
+                .where(EvaluationRecord.final_decision.is_not(None))
                 .order_by(EvaluationRecord.created_at.desc())
                 .offset(offset)
                 .limit(limit)
             )
         )
-        total = self.session.scalar(select(func.count(EvaluationRecord.evaluation_id)))
+        total = self.session.scalar(select(func.count(EvaluationRecord.evaluation_id)).where(EvaluationRecord.final_decision.is_not(None)))
         return records, int(total or 0)
 
     def save_review(
-        self, evaluation_id: str, decision: str, notes: str
+        self, evaluation_id: str, decision: str, notes: str, reviewer_user_id: str | None = None
     ) -> ReviewRecord:
         """Save one human decision while preserving the system decision."""
         record = self.get(evaluation_id)
@@ -163,6 +193,7 @@ class EvaluationRepository:
         review = ReviewRecord(
             evaluation_id=evaluation_id,
             task_id=task.task_id,
+            reviewer_user_id=reviewer_user_id,
             reviewer_decision=decision,
             reviewer_notes=notes.strip(),
         )

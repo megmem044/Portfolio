@@ -1,6 +1,7 @@
 """Small Python client for communicating with the AnswerTrust API."""
 
 from datetime import datetime
+from time import monotonic, sleep
 
 import httpx
 
@@ -24,10 +25,12 @@ class AnswerTrustAPIClient:
         base_url: str = API_BASE_URL,
         client=None,
         request_timeout: int | None = 120,
+        access_token: str | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.client = client or httpx
         self.request_timeout = request_timeout
+        self.headers = {"Authorization": f"Bearer {access_token}"} if access_token else {}
 
     def create_evaluation(self, item: EvaluationInput) -> EvaluationResult:
         request_options = {
@@ -41,7 +44,18 @@ class AnswerTrustAPIClient:
             request_options["timeout"] = self.request_timeout
         response = self.client.post(f"{self.base_url}/evaluations", **request_options)
         response.raise_for_status()
-        return _evaluation_result(response.json())
+        evaluation_id = response.json()["evaluation_id"]
+        deadline = monotonic() + (self.request_timeout or 120)
+        while monotonic() < deadline:
+            result_response = self.client.get(f"{self.base_url}/evaluations/{evaluation_id}")
+            result_response.raise_for_status()
+            data = result_response.json()
+            if "final_decision" in data:
+                return _evaluation_result(data)
+            if data["state"] == "FAILED":
+                raise RuntimeError(data.get("failure_message") or "Evaluation failed.")
+            sleep(0.05)
+        raise TimeoutError("The evaluation did not finish in time.")
 
     def list_review_required(self) -> list[dict]:
         """Return evaluations waiting for a human decision."""
@@ -57,7 +71,7 @@ class AnswerTrustAPIClient:
 
     def review_evaluation(self, evaluation_id: str, decision: str, notes: str) -> dict:
         """Send a human review decision to the API."""
-        options = {"json": {"decision": decision, "notes": notes}}
+        options = {"json": {"decision": decision, "notes": notes}, "headers": self.headers}
         if self.request_timeout is not None:
             options["timeout"] = self.request_timeout
         response = self.client.post(
@@ -68,7 +82,7 @@ class AnswerTrustAPIClient:
 
     def run_publication_benchmark(self) -> dict:
         """Run and save the publication-safety benchmark."""
-        options = {}
+        options = {"headers": self.headers}
         if self.request_timeout is not None:
             options["timeout"] = self.request_timeout
         response = self.client.post(

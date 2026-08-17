@@ -1,11 +1,13 @@
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
+from sqlalchemy import select
 
-from src.api import app, get_session
+from src.auth import create_token, create_user
+from src.api import app, get_evaluation_enqueuer, get_session
 from src.api_client import AnswerTrustAPIClient
 from src.db import create_session_factory, session_scope
-from src.db_models import Base
+from src.db_models import Base, UserRecord
 from src.models import Decision, EvaluationInput
 
 
@@ -27,11 +29,85 @@ app.dependency_overrides[get_session] = get_test_session
 client = TestClient(app)
 
 
+def sync_enqueue(evaluation_id):
+    with session_scope(api_session_factory) as session:
+        repository = EvaluationRepository(session)
+        result = evaluate_answer(repository.evaluation_input(evaluation_id))
+        result.evaluation_id = evaluation_id
+        repository.save_result(result)
+
+
+app.dependency_overrides[get_evaluation_enqueuer] = lambda: sync_enqueue
+
+
+def submit_and_get(payload):
+    submitted = client.post("/api/v1/evaluations", json=payload)
+    assert submitted.status_code == 202
+    return client.get(f"/api/v1/evaluations/{submitted.json()['evaluation_id']}").json()
+
+
+def auth_headers(role="REVIEWER"):
+    email = f"{role.lower()}@example.com"
+    with session_scope(api_session_factory) as session:
+        user = session.scalar(select(UserRecord).where(UserRecord.email == email))
+        if user is None:
+            user = create_user(session, email, "secure-password", role)
+        token = create_token(user)
+    return {"Authorization": f"Bearer {token}"}
+
+
+def test_login_returns_user_and_token():
+    auth_headers()
+    response = client.post("/api/v1/auth/login", json={"email": "reviewer@example.com", "password": "secure-password"})
+    assert response.status_code == 200
+    assert response.json()["user"]["role"] == "REVIEWER"
+
+
+def test_review_queue_requires_sign_in():
+    response = client.get("/api/v1/reviews/pending")
+    assert response.status_code == 401
+
+
+def test_reviewer_cannot_run_administrator_benchmark():
+    response = client.post("/api/v1/benchmarks/publication", headers=auth_headers())
+    assert response.status_code == 403
+
+
 def test_health_endpoint():
     response = client.get("/api/v1/health")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+def test_readiness_checks_database_connection():
+    response = client.get("/api/v1/readiness")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ready", "database": "connected"}
+
+
+def test_every_response_has_request_id():
+    response = client.get("/api/v1/health", headers={"X-Request-ID": "test-request-123"})
+    assert response.headers["X-Request-ID"] == "test-request-123"
+
+
+def test_metrics_are_admin_only_and_contain_request_counts():
+    denied = client.get("/api/v1/metrics", headers=auth_headers())
+    assert denied.status_code == 403
+    response = client.get("/api/v1/metrics", headers=auth_headers("ADMIN"))
+    assert response.status_code == 200
+    assert response.json()["http_requests_total"] >= 1
+
+
+def test_persistent_analytics_are_admin_only():
+    denied = client.get("/api/v1/analytics", headers=auth_headers())
+    assert denied.status_code == 403
+    response = client.get("/api/v1/analytics", headers=auth_headers("ADMIN"))
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total_evaluations"] >= 0
+    assert set(body["decision_counts"]) == {"PUBLISH", "REVIEW", "REJECT"}
+    assert "benchmark_history" in body
 
 
 def test_react_development_origin_is_allowed():
@@ -47,17 +123,15 @@ def test_react_development_origin_is_allowed():
 
 
 def test_create_evaluation():
-    response = client.post(
-        "/api/v1/evaluations",
-        json={
+    result = submit_and_get(
+        {
             "question": "Did treatment improve sleep?",
             "paper_text": "RESULTS\nTreatment improved sleep.",
             "answer": "Treatment improved sleep.",
         },
     )
 
-    assert response.status_code == 200
-    assert response.json()["final_decision"] == "PUBLISH"
+    assert result["final_decision"] == "PUBLISH"
 
 
 def test_create_evaluation_rejects_missing_input():
@@ -70,14 +144,13 @@ def test_create_evaluation_rejects_missing_input():
 
 
 def test_get_evaluation_by_id():
-    created = client.post(
-        "/api/v1/evaluations",
-        json={
+    created = submit_and_get(
+        {
             "question": "Did treatment improve sleep?",
             "paper_text": "RESULTS\nTreatment improved sleep.",
             "answer": "Treatment improved sleep.",
         },
-    ).json()
+    )
 
     response = client.get(f"/api/v1/evaluations/{created['evaluation_id']}")
 
@@ -113,18 +186,18 @@ def test_list_evaluations_rejects_invalid_limit():
 
 
 def test_review_keeps_original_system_decision():
-    created = client.post(
-        "/api/v1/evaluations",
-        json={
+    created = submit_and_get(
+        {
             "question": "Did treatment improve outcomes?",
             "paper_text": "RESULTS\nTreatment improved outcomes in some participants.",
             "answer": "Treatment improved outcomes for all participants.",
         },
-    ).json()
+    )
 
     response = client.post(
         f"/api/v1/evaluations/{created['evaluation_id']}/review",
         json={"decision": "REJECT", "notes": "The answer overstates the result."},
+        headers=auth_headers(),
     )
 
     assert response.status_code == 200
@@ -136,6 +209,7 @@ def test_review_unknown_evaluation_returns_not_found():
     response = client.post(
         "/api/v1/evaluations/unknown-id/review",
         json={"decision": "APPROVE", "notes": "The answer is acceptable."},
+        headers=auth_headers(),
     )
 
     assert response.status_code == 404
@@ -143,23 +217,21 @@ def test_review_unknown_evaluation_returns_not_found():
 
 
 def test_pending_review_endpoint_removes_resolved_item():
-    created = client.post(
-        "/api/v1/evaluations",
-        json={"question": "Did treatment improve outcomes?", "paper_text": "RESULTS\nTreatment improved outcomes in some participants.", "answer": "Treatment improved outcomes for all participants."},
-    ).json()
-    pending = client.get("/api/v1/reviews/pending").json()
+    created = submit_and_get({"question": "Did treatment improve outcomes?", "paper_text": "RESULTS\nTreatment improved outcomes in some participants.", "answer": "Treatment improved outcomes for all participants."})
+    pending = client.get("/api/v1/reviews/pending", headers=auth_headers()).json()
     assert created["evaluation_id"] in {item["evaluation"]["evaluation_id"] for item in pending}
     client.post(
         f"/api/v1/evaluations/{created['evaluation_id']}/review",
         json={"decision": "APPROVE", "notes": "A reviewer accepts this wording."},
+        headers=auth_headers(),
     )
-    pending = client.get("/api/v1/reviews/pending").json()
+    pending = client.get("/api/v1/reviews/pending", headers=auth_headers()).json()
     assert created["evaluation_id"] not in {item["evaluation"]["evaluation_id"] for item in pending}
 
 
 def test_api_client_creates_evaluation():
     api_client = AnswerTrustAPIClient(
-        base_url="/api/v1", client=client, request_timeout=None
+        base_url="/api/v1", client=client, request_timeout=None, access_token=auth_headers()["Authorization"].removeprefix("Bearer ")
     )
 
     result = api_client.create_evaluation(
@@ -176,7 +248,8 @@ def test_api_client_creates_evaluation():
 
 def test_api_client_lists_and_reviews_flagged_evaluation():
     api_client = AnswerTrustAPIClient(
-        base_url="/api/v1", client=client, request_timeout=None
+        base_url="/api/v1", client=client, request_timeout=None,
+        access_token=auth_headers()["Authorization"].removeprefix("Bearer "),
     )
     result = api_client.create_evaluation(
         EvaluationInput(
@@ -199,19 +272,19 @@ def test_api_client_lists_and_reviews_flagged_evaluation():
     }
 
 
-def test_openapi_contains_evaluation_response_schema():
+def test_openapi_contains_evaluation_submission_schema():
     schema = client.get("/openapi.json").json()
 
-    assert "EvaluationResponse" in schema["components"]["schemas"]
+    assert "EvaluationSubmissionResponse" in schema["components"]["schemas"]
     assert (
-        schema["paths"]["/api/v1/evaluations"]["post"]["responses"]["200"]
+        schema["paths"]["/api/v1/evaluations"]["post"]["responses"]["202"]
         ["content"]["application/json"]["schema"]["$ref"]
-        == "#/components/schemas/EvaluationResponse"
+        == "#/components/schemas/EvaluationSubmissionResponse"
     )
 
 
 def test_publication_benchmark_api_persists_run_and_results():
-    response = client.post("/api/v1/benchmarks/publication")
+    response = client.post("/api/v1/benchmarks/publication", headers=auth_headers("ADMIN"))
 
     assert response.status_code == 200
     created = response.json()

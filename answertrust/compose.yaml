@@ -1,0 +1,79 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: answertrust
+      POSTGRES_USER: answertrust
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-answertrust-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U answertrust -d answertrust"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    command: ["sh", "-c", "python -m alembic upgrade head && python -m uvicorn src.api:app --host 0.0.0.0 --port 8000"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://answertrust:${POSTGRES_PASSWORD:-local-answertrust-password}@postgres:5432/answertrust
+      REDIS_URL: redis://redis:6379/0
+      ANSWERTRUST_AUTH_SECRET: ${ANSWERTRUST_AUTH_SECRET:-local-compose-secret-change-me}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/readiness')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    build: .
+    command: ["rq", "worker", "--url", "redis://redis:6379/0", "evaluations"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://answertrust:${POSTGRES_PASSWORD:-local-answertrust-password}@postgres:5432/answertrust
+      REDIS_URL: redis://redis:6379/0
+      ANSWERTRUST_AUTH_SECRET: ${ANSWERTRUST_AUTH_SECRET:-local-compose-secret-change-me}
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - model_cache:/app/model_cache
+
+  frontend:
+    build:
+      context: frontend
+      args:
+        VITE_API_URL: http://127.0.0.1:8000/api/v1
+    ports:
+      - "5173:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
+  model_cache:

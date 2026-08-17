@@ -22,6 +22,22 @@ class Base(DeclarativeBase):
     """Base class shared by all new database models."""
 
 
+class UserRecord(Base):
+    """A minimal account used for protected reviewer and administrator work."""
+
+    __tablename__ = "users"
+    __table_args__ = (
+        CheckConstraint("role IN ('REVIEWER', 'ADMIN')", name="ck_users_role"),
+    )
+
+    user_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    email: Mapped[str] = mapped_column(String(254), unique=True, nullable=False, index=True)
+    password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    role: Mapped[str] = mapped_column(String(16), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+
 class PaperRecord(Base):
     """A paper stored once and reused by evaluations."""
 
@@ -74,6 +90,8 @@ class EvaluationRecord(Base):
     explanation: Mapped[str | None] = mapped_column(Text)
     recommended_action: Mapped[str | None] = mapped_column(Text)
     total_latency_ms: Mapped[int | None] = mapped_column(Integer)
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    failure_message: Mapped[str | None] = mapped_column(Text)
 
 
 class ReviewTaskRecord(Base):
@@ -119,6 +137,7 @@ class ReviewRecord(Base):
     task_id: Mapped[str] = mapped_column(
         ForeignKey("review_tasks.task_id"), unique=True, nullable=False
     )
+    reviewer_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.user_id"), index=True)
     reviewer_decision: Mapped[str] = mapped_column(String(16), nullable=False)
     reviewer_notes: Mapped[str] = mapped_column(Text, nullable=False)
     reviewed_at: Mapped[datetime] = mapped_column(

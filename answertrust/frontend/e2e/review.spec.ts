@@ -2,6 +2,10 @@ import { expect, test } from '@playwright/test'
 import { reviewEvaluation } from './fixtures'
 
 test('a reviewer can resolve an evaluation', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('answertrust_token', 'test-token')
+    localStorage.setItem('answertrust_user', JSON.stringify({ user_id: 'user-1', email: 'reviewer@example.com', role: 'REVIEWER' }))
+  })
   const item = { question: 'Did walking help everyone?', answer: 'Walking helped everyone.', evaluation: reviewEvaluation, reviewed: false }
   await page.route('**/api/v1/reviews/pending', route => route.fulfill({ json: [item] }))
   await page.route('**/api/v1/evaluations/review-123/review', async route => {
@@ -18,6 +22,10 @@ test('a reviewer can resolve an evaluation', async ({ page }) => {
 })
 
 test('shows the empty review state', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('answertrust_token', 'test-token')
+    localStorage.setItem('answertrust_user', JSON.stringify({ user_id: 'user-1', email: 'reviewer@example.com', role: 'REVIEWER' }))
+  })
   await page.route('**/api/v1/reviews/pending', route => route.fulfill({ json: [] }))
   await page.goto('/review')
   await expect(page.getByText('Review queue clear')).toBeVisible()

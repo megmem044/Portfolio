@@ -2,6 +2,10 @@ import { expect, test } from '@playwright/test'
 import { benchmark } from './fixtures'
 
 test('runs a publication benchmark and shows its errors', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('answertrust_token', 'test-token')
+    localStorage.setItem('answertrust_user', JSON.stringify({ user_id: 'admin-1', email: 'admin@example.com', role: 'ADMIN' }))
+  })
   await page.route('**/api/v1/benchmarks', async route => {
     if (route.request().method() === 'POST') await route.fulfill({ json: benchmark })
     else await route.fulfill({ json: [] })

@@ -52,6 +52,22 @@ def test_session_scope_saves_evaluation(tmp_path):
         assert saved.state == "QUEUED"
 
 
+def test_evaluation_attempt_moves_from_processing_to_retry(tmp_path):
+    engine = create_database_engine(f"sqlite:///{tmp_path.as_posix()}/attempt.db")
+    Base.metadata.create_all(engine)
+    factory = create_session_factory(engine)
+    with session_scope(factory) as session:
+        repository = EvaluationRepository(session)
+        repository.save_queued("attempt-1", EvaluationInput("Question?", "Paper text", "Answer text"))
+        assert repository.start_attempt("attempt-1").state == "PROCESSING"
+        repository.save_failure("attempt-1", "Temporary failure", final=False)
+    with session_scope(factory) as session:
+        record = EvaluationRepository(session).get("attempt-1")
+        assert record is not None
+        assert record.state == "RETRYING"
+        assert record.attempt_count == 1
+
+
 def test_session_scope_rolls_back_failed_work(tmp_path):
     engine = create_database_engine(f"sqlite:///{tmp_path.as_posix()}/test.db")
     Base.metadata.create_all(engine)
