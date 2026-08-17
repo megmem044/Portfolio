@@ -162,18 +162,22 @@ class EvaluationRepository:
         self.session.flush()
         return record
 
-    def list(self, offset: int = 0, limit: int = 20) -> tuple[list[EvaluationRecord], int]:
+    def list(self, offset: int = 0, limit: int = 20, include_pending: bool = True) -> tuple[list[EvaluationRecord], int]:
         """Return one page of evaluations and the total count."""
+        query = select(EvaluationRecord)
+        count_query = select(func.count(EvaluationRecord.evaluation_id))
+        if not include_pending:
+            query = query.where(EvaluationRecord.final_decision.is_not(None))
+            count_query = count_query.where(EvaluationRecord.final_decision.is_not(None))
         records = list(
             self.session.scalars(
-                select(EvaluationRecord)
-                .where(EvaluationRecord.final_decision.is_not(None))
+                query
                 .order_by(EvaluationRecord.created_at.desc())
                 .offset(offset)
                 .limit(limit)
             )
         )
-        total = self.session.scalar(select(func.count(EvaluationRecord.evaluation_id)).where(EvaluationRecord.final_decision.is_not(None)))
+        total = self.session.scalar(count_query)
         return records, int(total or 0)
 
     def save_review(

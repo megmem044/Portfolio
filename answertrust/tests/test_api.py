@@ -8,6 +8,8 @@ from src.api import app, get_evaluation_enqueuer, get_session
 from src.api_client import AnswerTrustAPIClient
 from src.db import create_session_factory, session_scope
 from src.db_models import Base, UserRecord
+from src.evaluation_repository import EvaluationRepository
+from src.evaluator import evaluate_answer
 from src.models import Decision, EvaluationInput
 
 

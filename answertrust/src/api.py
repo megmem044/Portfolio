@@ -292,7 +292,7 @@ def list_evaluations(
     session: Session = Depends(get_session),
 ):
     """Return a small page of completed evaluations."""
-    records, total = EvaluationRepository(session).list(offset, limit)
+    records, total = EvaluationRepository(session).list(offset, limit, include_pending=False)
     items = [
         {
             "question": record.question,
