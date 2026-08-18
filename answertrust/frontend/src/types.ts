@@ -1,3 +1,4 @@
+// Shared API response and form types used by the frontend.
 export type Decision = 'PUBLISH' | 'REVIEW' | 'REJECT'
 export type UserRole = 'REVIEWER' | 'ADMIN'
 export interface User { user_id: string; email: string; role: UserRole }

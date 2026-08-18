@@ -1,3 +1,4 @@
+// Vite development and production build settings.
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 

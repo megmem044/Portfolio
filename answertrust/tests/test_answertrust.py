@@ -1,3 +1,5 @@
+"""Unit tests for the evaluation pipeline and benchmark helpers."""
+
 from pathlib import Path
 from src.academic import extract_claims,match_evidence,split_sections
 from src.evaluator import evaluate_answer
@@ -10,6 +12,7 @@ from src.semantic import SemanticMatcher,cosine_similarity
 from src.config import MODEL_CACHE_DIR,configure_model_cache
 from src.classification import AcademicClaimClassifier
 from src.pipeline import EvaluationPipeline
+from src.reviewer_agreement import calculate_agreement,export_review_sheet
 
 PAPER="METHODS\nAdults were randomly assigned.\nRESULTS\nTreatment improved outcomes in some participants.\nLIMITATIONS\nChildren were not studied."
 
@@ -104,6 +107,38 @@ def test_real_benchmark_excerpt_requires_provenance():
 def test_benchmark_reviewer_confidence_is_bounded():
     examples=load_examples();examples[0]={**examples[0],"reviewer_confidence":1.2}
     assert "Example 1 reviewer confidence must be between 0 and 1." in validate_examples(examples)
+
+def test_blind_review_export_hides_existing_labels(tmp_path):
+    rows=export_review_sheet(tmp_path/"review.csv",sample_size=5,seed=7)
+    assert len(rows)==5
+    assert all(row["independent_label"]=="" for row in rows)
+    assert all("expected_claim_label" not in row and "reviewer_label" not in row for row in rows)
+
+def test_independent_review_reports_agreement_and_kappa():
+    examples=[
+        {"id":"a","category":"supported","reviewer_label":"SUPPORTED"},
+        {"id":"b","category":"contradicted","reviewer_label":"CONTRADICTED"},
+        {"id":"c","category":"supported","reviewer_label":"SUPPORTED"},
+    ]
+    rows=[
+        {"id":"a","independent_label":"SUPPORTED","reviewer_confidence":"0.9"},
+        {"id":"b","independent_label":"CONTRADICTED","reviewer_confidence":"1"},
+        {"id":"c","independent_label":"CONTRADICTED","reviewer_confidence":"0.7"},
+    ]
+    report=calculate_agreement(rows,examples)
+    assert report["reviewed_examples"]==3
+    assert report["agreement_pct"]==66.67
+    assert report["cohens_kappa"]==0.4
+    assert report["disagreements"][0]["id"]=="c"
+
+def test_independent_review_rejects_incomplete_labels():
+    examples=[{"id":"a","category":"supported","reviewer_label":"SUPPORTED"}]
+    try:
+        calculate_agreement([{"id":"a","independent_label":"","reviewer_confidence":"2"}],examples)
+    except ValueError as error:
+        assert "independent_label" in str(error) and "between 0 and 1" in str(error)
+    else:
+        raise AssertionError("Incomplete review should fail validation.")
 
 
 class FakeEncoder:

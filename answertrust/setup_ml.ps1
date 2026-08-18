@@ -1,3 +1,4 @@
+# Download and cache the local embedding and NLI models.
 $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path

@@ -1,3 +1,4 @@
+// Browser checks for sign-in and protected navigation.
 import { expect, test } from '@playwright/test'
 
 test('a reviewer can sign in and open the protected workspace', async ({ page }) => {

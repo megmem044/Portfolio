@@ -1,3 +1,4 @@
+// Main application routes and page components.
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { BrowserRouter, NavLink, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom'
@@ -7,6 +8,12 @@ import './App.css'
 import './Review.css'
 import './Benchmark.css'
 import './Analytics.css'
+
+const overstatementDemo: EvaluationInput = {
+  question: 'Did the treatment improve sleep for every participant?',
+  paper_text: 'RESULTS\nThe treatment improved sleep quality in some participants.\n\nLIMITATIONS\nThe study was conducted at one clinic and follow-up lasted four weeks.',
+  answer: 'The treatment improved sleep for every participant and will work for all patients long term.',
+}
 
 function Layout() {
   const [user,setUser]=useState<User|null>(()=>{try{return JSON.parse(localStorage.getItem('answertrust_user')??'null') as User|null}catch{return null}})
@@ -49,12 +56,14 @@ function EvaluatePage() {
     catch (problem) { setError(problem instanceof Error ? problem.message : 'The evaluation could not be completed.') }
     finally { setSubmitting(false) }
   }
+  function loadDemo(){setForm(overstatementDemo);setError('')}
   return <>
     <section className="hero-panel"><div><p className="eyebrow">Research-grounded answer checking</p><h1>See what the paper really supports.</h1><p>AnswerTrust breaks an AI answer into claims, finds matching evidence, and explains what is safe to publish.</p></div><div className="hero-proof"><span>Evidence first</span><span>Claim by claim</span><span>Human review when needed</span></div></section>
     <div className="evaluate-layout">
-      <aside className="guide-card"><p className="eyebrow">How it works</p><ol><li><b>Paste the question</b><span>Copy the question that was given to the AI.</span></li><li><b>Paste the paper text</b><span>Copy the exact excerpt, relevant section, or full paper text.</span></li><li><b>Paste the AI answer</b><span>Copy the answer the AI generated for that question.</span></li></ol><p className="privacy-note">AnswerTrust checks the AI answer only against the paper text you provide. It does not use the web as evidence.</p></aside>
+      <aside className="guide-card"><p className="eyebrow">How it works</p><ol><li><b>Paste the question</b><span>Copy the question that was given to the AI.</span></li><li><b>Paste the paper text</b><span>Copy the exact excerpt, relevant section, or full paper text.</span></li><li><b>Paste the AI answer</b><span>Copy the answer the AI generated for that question.</span></li></ol><p className="privacy-note">AnswerTrust checks the AI answer only against the paper text you provide. It does not use the web as evidence.</p><div className="responsible-use"><b>Use human judgment</b><p>A result is a screening recommendation, not proof that a scientific claim is true. Expert review is still required for medical, scientific, and publication decisions.</p></div></aside>
       <form className="evaluation-form" onSubmit={submit}>
         <div className="form-heading"><div><span className="step-number">1</span><div><h2>Start a new evaluation</h2><p>All three fields are required.</p></div></div></div>
+        <div className="demo-callout"><div><b>Want to see an overstatement?</b><p>Load an example where an AI changes “some participants” into “every participant” and extends a four-week result to the long term.</p></div><button type="button" onClick={loadDemo}>Load demo</button></div>
         <label><span>Research question</span><small>Paste the question that was answered by the AI.</small><input aria-label="Research question" required minLength={3} value={form.question} onChange={e => setForm({...form, question:e.target.value})} placeholder="Example: Did the treatment improve sleep?" /></label>
         <label><span>Text copied from the paper</span><small>Paste the exact excerpt that may support the answer, or paste the full paper text. Section headings are helpful but optional.</small><textarea aria-label="Text copied from the paper" required minLength={3} value={form.paper_text} onChange={e => setForm({...form, paper_text:e.target.value})} placeholder="Paste the paper’s actual words here…" /></label>
         <label><span>AI-generated answer</span><small>Paste the answer the AI generated when it was asked the research question above.</small><textarea aria-label="AI-generated answer" className="answer-field" required minLength={3} value={form.answer} onChange={e => setForm({...form, answer:e.target.value})} placeholder="Paste the AI-generated answer here…" /></label>
@@ -122,7 +131,7 @@ function BenchmarkPage({user}:{user:User|null}) {
   async function selectRun(run:BenchmarkRun){if(run.run_id===selected?.run_id)return;setError('');try{setSelected(await getBenchmarkRun(run.run_id))}catch(problem){setError(problem instanceof Error?problem.message:'The benchmark run could not be loaded.')}}
   const incorrect=selected?.results.filter(result=>!result.is_correct)??[]
   return <section className="benchmark-page">
-    <div className="benchmark-hero"><div><p className="eyebrow">Measured, not assumed</p><h1>Test publication safety.</h1><p>This benchmark checks AnswerTrust against 50 examples where the correct decision is already known.</p></div>{user?.role==='ADMIN'?<button onClick={runBenchmark} disabled={running}>{running?'Checking 50 examples…':'Run publication benchmark'}<span aria-hidden="true">→</span></button>:<div className="admin-note">Administrators can run new benchmarks.<NavLink to="/login">{user?'Your account is read-only here.':'Sign in as an administrator.'}</NavLink></div>}</div>
+    <div className="benchmark-hero"><div><p className="eyebrow">Measured, not assumed</p><h1>Test publication safety.</h1><p>This benchmark checks AnswerTrust against 150 labelled examples, including 100 real-paper cases.</p></div>{user?.role==='ADMIN'?<button onClick={runBenchmark} disabled={running}>{running?'Checking 150 examples…':'Run publication benchmark'}<span aria-hidden="true">→</span></button>:<div className="admin-note">Administrators can run new benchmarks.<NavLink to="/login">{user?'Your account is read-only here.':'Sign in as an administrator.'}</NavLink></div>}</div>
     {error&&<div className="error-message" role="alert">{error}</div>}
     {loading?<div className="state-card">Loading benchmark history…</div>:<>
       {selected?.metrics?<>

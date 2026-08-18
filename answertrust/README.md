@@ -52,7 +52,8 @@ The repository currently contains the verified web MVP:
 - preserved system and reviewer decisions with timestamps;
 - repository-local model caching and Windows setup scripts;
 - pytest API and database tests plus Playwright browser tests;
-- a de-identified export of system-versus-reviewer benchmark disagreements.
+- a de-identified export of system-versus-reviewer benchmark disagreements;
+- a built-in overstatement demonstration and visible responsible-use guidance.
 
 React is the primary interface. Evaluation requests return immediately while a
 separate worker processes claims and the result page polls for status updates.
@@ -149,8 +150,8 @@ and 100 provenance-labelled real-paper cases:
 | False-publish rate | 0% |
 | Human-review rate | 26.67% |
 
-The verified test run completed with 73 backend tests passing, one optional
-test skipped, and all 8 Playwright browser tests passing. The harder mixed
+The verified test run completed with 76 backend tests passing, one optional
+test skipped, and all 9 Playwright browser tests passing. The harder mixed
 benchmark intentionally exposes remaining conservative errors while retaining
 a zero false-publish rate. The lower accuracy relative to the earlier 100-case
 run reflects the addition of harder null-result, limitation, subgroup,
@@ -195,6 +196,12 @@ excerpts must record a source title, stable URL or DOI, excerpt section, reuse
 license, difficulty category, reviewer label and confidence, annotation status,
 and label rationale. This prevents synthetic cases from being presented as
 independent or real-world evidence.
+
+The evaluation page includes a loadable end-to-end example in which an AI
+changes a result about some participants into a claim about every participant
+and extends a four-week observation to long-term effectiveness. The interface
+also states that AnswerTrust is a screening aid, not proof of scientific truth
+or a replacement for expert medical, scientific, or publication review.
 
 Repeated paper-level metadata is stored in `data/evaluation_sources.json`, while
 each benchmark case retains its own excerpt section, expected label, difficulty,
@@ -283,6 +290,32 @@ differences to `results/benchmark_disagreements.csv`. The disagreement export
 excludes the question, paper text, and answer so it can be shared for review
 without copying benchmark text into the export.
 
+## Run an independent label review
+
+Create a repeatable blind sample of 30 real-paper cases:
+
+```powershell
+python -m src.reviewer_agreement export --sample-size 30
+```
+
+Give `results/independent_review.csv` to a second person. They should fill in
+only `independent_label`, `reviewer_confidence`, and `reviewer_notes`. Valid
+labels are `SUPPORTED`, `PARTIALLY_SUPPORTED`, `UNSUPPORTED`, `CONTRADICTED`,
+and `INSUFFICIENT_EVIDENCE`; confidence is a number from 0 to 1. The sheet does
+not contain the project-authored label or the system prediction.
+
+After the completed sheet is returned, calculate agreement:
+
+```powershell
+python -m src.reviewer_agreement report results/independent_review.csv
+```
+
+The command validates the sheet and writes `results/reviewer_agreement.json`
+with raw agreement, a 95% Wilson confidence interval, Cohen's kappa,
+category-level agreement, and the disputed case IDs. The reviewer must work
+independently for these numbers to be meaningful; a project author filling in
+the second column does not count as independent validation.
+
 ## Run the complete stack with Docker
 
 Copy `.env.example` to `.env` and replace both example secrets before using the
@@ -322,6 +355,22 @@ into a generic LLM application. Multi-paper synthesis, general-purpose RAG,
 hosted LLM dependencies, autonomous publication, premature microservices, and
 Kubernetes without a concrete operational need remain outside the near-term
 scope.
+
+## Possible future improvements
+
+The current release is intentionally limited to checking one answer against
+paper text supplied by the user. Reasonable next steps would be:
+
+- complete the independent 30-case review and publish agreement results;
+- improve contradiction handling for difficult paraphrases and null results;
+- add PDF text extraction while preserving page and section references;
+- add accessibility testing beyond the existing browser checks;
+- deploy the Docker stack with managed secrets, backups, and error monitoring;
+- repeat the real-paper benchmark with reviewers from different backgrounds.
+
+Multi-paper synthesis and autonomous publication decisions should only be
+considered after the single-paper safety workflow has stronger external
+validation.
 
 ## Database guide
 

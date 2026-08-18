@@ -1,3 +1,4 @@
+// Stable API fixtures shared by the browser tests.
 export const evaluation = {
   evaluation_id: 'evaluation-123',
   timestamp: '2026-08-16T12:00:00Z',

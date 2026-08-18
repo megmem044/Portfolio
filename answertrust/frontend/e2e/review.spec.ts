@@ -1,3 +1,4 @@
+// Browser checks for the human-review queue.
 import { expect, test } from '@playwright/test'
 import { reviewEvaluation } from './fixtures'
 

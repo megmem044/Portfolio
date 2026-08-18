@@ -1,3 +1,4 @@
+# Local production-style stack for the app and its dependencies.
 services:
   postgres:
     image: postgres:17-alpine

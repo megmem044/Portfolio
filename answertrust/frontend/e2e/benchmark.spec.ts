@@ -1,3 +1,4 @@
+// Browser checks for benchmark history and administrator actions.
 import { expect, test } from '@playwright/test'
 import { benchmark } from './fixtures'
 

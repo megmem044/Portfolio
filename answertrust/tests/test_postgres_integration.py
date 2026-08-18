@@ -1,3 +1,5 @@
+"""Optional integration checks that run against a configured PostgreSQL database."""
+
 import os
 
 import pytest

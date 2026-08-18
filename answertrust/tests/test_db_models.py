@@ -1,3 +1,5 @@
+"""Persistence tests for evaluations, reviews, users, and benchmarks."""
+
 from sqlalchemy import create_engine, func, inspect, select
 
 from src.db import database_url, create_database_engine, create_session_factory, session_scope

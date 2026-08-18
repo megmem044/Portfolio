@@ -1,3 +1,4 @@
+# Python image shared by the API and background worker.
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

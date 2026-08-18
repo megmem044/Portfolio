@@ -1,3 +1,5 @@
+"""Checks that Alembic can build and upgrade a fresh database."""
+
 from pathlib import Path
 
 from alembic.config import Config

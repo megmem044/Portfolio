@@ -1,3 +1,4 @@
+// Browser checks for submission, polling, errors, and the example form.
 import { expect, test } from '@playwright/test'
 import { evaluation } from './fixtures'
 
@@ -29,6 +30,15 @@ test('shows a useful message when the API is unavailable', async ({ page }) => {
   await page.getByRole('button', { name: 'Evaluate claims' }).click()
 
   await expect(page.getByRole('alert')).toContainText('API is unavailable')
+})
+
+test('loads the overstatement demonstration into the evaluation form', async ({ page }) => {
+  await page.goto('/evaluate')
+  await page.getByRole('button', { name: 'Load demo' }).click()
+  await expect(page.getByLabel('Research question')).toHaveValue(/every participant/)
+  await expect(page.getByLabel('Text copied from the paper')).toHaveValue(/some participants/)
+  await expect(page.getByLabel('AI-generated answer')).toHaveValue(/all patients long term/)
+  await expect(page.getByText('Expert review is still required')).toBeVisible()
 })
 
 test('shows queued work and then displays the completed result', async ({ page }) => {

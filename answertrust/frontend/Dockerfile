@@ -1,3 +1,4 @@
+# Build the React bundle, then serve it from a small nginx image.
 FROM node:24-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./

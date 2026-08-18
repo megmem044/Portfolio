@@ -1,3 +1,4 @@
+// Browser checks for the administrator analytics dashboard.
 import { expect, test } from '@playwright/test'
 
 test('an administrator can view persistent analytics', async ({ page }) => {
