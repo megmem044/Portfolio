@@ -24,3 +24,4 @@ cache/
 model_cache/
 results/*.csv
 .streamlit-profile/
+PROJECT_PLAN.md
