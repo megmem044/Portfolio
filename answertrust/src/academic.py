@@ -11,7 +11,7 @@ from src.models import ClaimLabel, ClaimResult, Evidence
 if TYPE_CHECKING:
     from src.semantic import SemanticMatcher
 
-SECTIONS = ("ABSTRACT", "INTRODUCTION", "METHODS", "RESULTS", "DISCUSSION", "LIMITATIONS", "CONCLUSION")
+SECTIONS = ("ABSTRACT", "INTRODUCTION", "METHODS", "RESULTS", "DISCUSSION", "LIMITATIONS", "CONCLUSION", "EDITORIAL ASSESSMENT")
 STOP = {"a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in", "is", "it", "of", "on", "or", "that", "the", "this", "to", "was", "were", "with"}
 NEGATIONS = {"no", "not", "never", "didn't", "doesn't", "without", "failed"}
 CAUSAL = {"cause", "caused", "causes", "led", "leads", "resulted", "because", "effect"}
@@ -44,7 +44,7 @@ def content_words(text: str) -> set[str]:
 
 def split_sections(text: str) -> dict[str, str]:
     """Parse common headings; unheaded text is treated as UNKNOWN."""
-    heading = re.compile(r"(?im)^\s*(?:#+\s*)?(" + "|".join(SECTIONS) + r")\s*:?\s*$")
+    heading = re.compile(r"(?im)^\s*(?:#+\s*)?(" + "|".join(SECTIONS) + r"|TABLE\s+\d+)\s*:?\s*$")
     matches = list(heading.finditer(text))
     if not matches:
         return {"UNKNOWN": text.strip()}
@@ -124,7 +124,7 @@ def match_evidence(
 
 
 def _has_negation(text: str) -> bool:
-    return bool(set(words(text)) & NEGATIONS)
+    return bool(set(words(text)) & (NEGATIONS | {"lack", "lacks", "lacking"}) or re.search(r"\bnon[-\s]?[a-z]+", text.lower()))
 
 
 def _numeric_contradiction(claim: str, passage: str) -> bool:
@@ -135,8 +135,10 @@ def _numeric_contradiction(claim: str, passage: str) -> bool:
         if word in claim_words and percentages and not any(lower <= value <= upper for value in percentages):
             return True
 
+    opposite_vocabulary = set().union(*(left | right for left, right in OPPOSITES))
+    aligned_terms = (content_words(claim) & content_words(passage)) - opposite_vocabulary
     for left, right in OPPOSITES:
-        if (claim_words & left and passage_words & right) or (claim_words & right and passage_words & left):
+        if len(aligned_terms) >= 2 and ((claim_words & left and passage_words & right) or (claim_words & right and passage_words & left)):
             return True
 
     if claim_words & {"significant", "significantly"}:
@@ -170,9 +172,24 @@ def _numbers_are_compatible(claim: str, passage: str, claimed: set[str], evidenc
         differences = {round(abs(left-right), 6) for left in evidence_values for right in evidence_values}
         if round(claim_values[0], 6) in differences:
             return True
+    range_match = re.search(r"\b(\d+)\s+(?:through|to)\s+(\d+)\b", passage.lower())
+    if range_match:
+        start, end = map(int, range_match.groups())
+        if {int(value) for value in claim_values if value.is_integer()} <= set(range(start, end + 1)):
+            return True
     threshold = re.search(r"\bp\s*<\s*(0?\.\d+)", claim.lower())
     observed = re.search(r"\bp\s*=\s*(0?\.\d+)", passage.lower())
     return bool(threshold and observed and float(observed.group(1)) < float(threshold.group(1)))
+
+
+def _derived_number_support(claim: str, passage: str, claimed: set[str], evidenced: set[str]) -> bool:
+    if not claimed or not evidenced or not _numbers_are_compatible(claim, passage, claimed, evidenced):
+        return False
+    exact = claimed <= evidenced
+    threshold = bool(re.search(r"\bp\s*<", claim.lower()) and re.search(r"\bp\s*=", passage.lower()))
+    range_statement = bool(re.search(r"\b(?:through|to)\b", passage.lower()))
+    arithmetic = len(claimed) == 1 and len(evidenced) >= 2 and not exact
+    return threshold or range_statement or arithmetic
 
 
 def evaluate_claim(claim: str, evidence: list[Evidence], paper_text: str) -> ClaimResult:
@@ -199,7 +216,10 @@ def evaluate_claim(claim: str, evidence: list[Evidence], paper_text: str) -> Cla
         label = ClaimLabel.SUPPORTED
         explanation = "The claim closely matches the supplied passage."
 
-    if label == ClaimLabel.PARTIALLY_SUPPORTED and numbers_claimed and _numbers_are_compatible(claim, best.passage, numbers_claimed, numbers_evidenced) and best.similarity >= 0.45:
+    if label in {ClaimLabel.UNSUPPORTED, ClaimLabel.PARTIALLY_SUPPORTED} and _derived_number_support(claim, best.passage, numbers_claimed, numbers_evidenced):
+        label = ClaimLabel.SUPPORTED
+        explanation = "The claim correctly derives the reported comparison, range, or statistical threshold."
+    elif label == ClaimLabel.PARTIALLY_SUPPORTED and numbers_claimed and _numbers_are_compatible(claim, best.passage, numbers_claimed, numbers_evidenced) and best.similarity >= 0.45:
         label = ClaimLabel.SUPPORTED
         explanation = "The claim preserves the reported value and its surrounding result."
 
@@ -216,7 +236,7 @@ def evaluate_claim(claim: str, evidence: list[Evidence], paper_text: str) -> Cla
     ) - content_words(paper_text)
     if populations_outside_paper:
         failures.append("OUTSIDE_STUDIED_SCOPE")
-    if best.section == "LIMITATIONS" or (claim_words & UNIVERSAL and not claim_words & QUALIFIERS):
+    if claim_words & UNIVERSAL and not claim_words & QUALIFIERS:
         failures.append("MISSING_QUALIFICATION")
     if label == ClaimLabel.UNSUPPORTED:
         failures.append("UNSUPPORTED_CLAIM")

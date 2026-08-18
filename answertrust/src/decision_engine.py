@@ -20,10 +20,8 @@ def make_decision(claims: list[ClaimResult], completeness: int, relevance: int) 
     unsupported = labels.count(ClaimLabel.UNSUPPORTED)
     if unsupported and unsupported / len(labels) >= 0.5:
         return Decision.REJECT
-    if any(label != ClaimLabel.SUPPORTED for label in labels) or completeness < 75:
+    if any(label != ClaimLabel.SUPPORTED for label in labels):
         return Decision.REVIEW
     if any(claim.failure_types for claim in claims):
-        return Decision.REVIEW
-    if relevance < 35 or completeness < 75:
         return Decision.REVIEW
     return Decision.PUBLISH

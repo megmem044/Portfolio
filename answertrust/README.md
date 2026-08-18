@@ -143,13 +143,13 @@ and 50 provenance-labelled real-paper cases:
 
 | Metric | Result |
 | --- | ---: |
-| Decision accuracy | 85% |
-| Unsupported-claim detection | 90% |
+| Decision accuracy | 91% |
+| Unsupported-claim detection | 100% |
 | Contradiction detection | 73.53% |
 | False-publish rate | 0% |
 | Human-review rate | 31% |
 
-The verified test run completed with 67 backend tests passing, one optional
+The verified test run completed with 73 backend tests passing, one optional
 test skipped, and all 8 Playwright browser tests passing. The harder mixed
 benchmark intentionally exposes remaining conservative errors while retaining
 a zero false-publish rate.

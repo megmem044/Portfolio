@@ -47,7 +47,34 @@ def test_nonsignificant_result_contradicts_significant_claim():
 def test_low_relevance_alone_does_not_reject_supported_claim():
     result=evaluate_answer(EvaluationInput("What safeguard was recommended?","CONCLUSION\nPotential publication bias should be investigated when assessing placebo-effect magnitude.","Assessments of placebo-effect magnitude should investigate publication bias."))
     assert result.claim_results[0].label==ClaimLabel.SUPPORTED
-    assert result.final_decision!=Decision.REJECT
+    assert result.final_decision==Decision.PUBLISH
+
+def test_unrelated_opposites_do_not_create_a_contradiction():
+    result=evaluate_answer(EvaluationInput("Did tutoring reduce anxiety?","RESULTS\nAttendance at tutoring was high.","Tutoring reduced anxiety."))
+    assert result.claim_results[0].label==ClaimLabel.UNSUPPORTED
+    assert result.final_decision==Decision.REJECT
+
+def test_non_positive_matches_not_positive():
+    result=evaluate_answer(EvaluationInput("How was spin defined?","METHODS\nSpin describes results as beneficial even though they were not positive.","Spin presents non-positive results as beneficial."))
+    assert result.claim_results[0].label!=ClaimLabel.CONTRADICTED
+
+def test_inclusive_table_range_supports_enumerated_tables():
+    result=evaluate_answer(EvaluationInput("Where were results summarized?","RESULTS\nResults were summarized in Tables 2 through 4.","Results were summarized in Tables 2, 3, and 4."))
+    assert result.claim_results[0].label==ClaimLabel.SUPPORTED
+    assert result.final_decision==Decision.PUBLISH
+
+def test_lack_matches_did_not_include():
+    result=evaluate_answer(EvaluationInput("What problem was identified?","EDITORIAL ASSESSMENT\nThe analysis did not include a robust statistical analysis.","Editors identified a lack of robust statistical analysis."))
+    assert result.claim_results[0].label!=ClaimLabel.CONTRADICTED
+
+def test_valid_p_value_threshold_is_supported():
+    result=evaluate_answer(EvaluationInput("Was the difference significant?","RESULTS\nThe reported difference had p = 0.049.","The difference met the p < 0.05 threshold."))
+    assert result.claim_results[0].label==ClaimLabel.SUPPORTED
+    assert result.final_decision==Decision.PUBLISH
+
+def test_faithful_limitation_does_not_require_extra_qualification():
+    result=evaluate_answer(EvaluationInput("Why was simulation used?","LIMITATIONS\nSimulation allowed control over the underlying distribution.","Simulation was used to control the underlying distribution."))
+    assert "MISSING_QUALIFICATION" not in result.claim_results[0].failure_types
 
 def test_benchmark_schema_and_metrics():
     examples=load_examples(); assert len(examples)==100; assert validate_examples(examples)==[]
