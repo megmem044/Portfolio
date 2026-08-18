@@ -12,12 +12,23 @@ ANNOTATION_STATUSES={"PROJECT_AUTHORED","INDEPENDENTLY_REVIEWED"}
 def load_examples(path:Path=EVALUATION_EXAMPLES_PATH)->list[dict]:
     """Load examples and apply declared dataset-level metadata defaults."""
     with path.open(encoding="utf-8") as handle: examples=json.load(handle)
+    sources_path=path.with_name("evaluation_sources.json")
+    sources={}
+    if sources_path.exists():
+        with sources_path.open(encoding="utf-8") as handle:
+            sources={item["id"]:item for item in json.load(handle)}
     manifest_path=path.with_name(f"{path.stem}.manifest.json")
     if not manifest_path.exists(): return examples
     with manifest_path.open(encoding="utf-8") as handle: manifest=json.load(handle)
     defaults=manifest.get("example_defaults",{}); normalized=[]
     for item in examples:
-        enriched={**defaults,**item}; enriched["schema_version"]=manifest["schema_version"]
+        source=sources.get(item.get("source_ref"),{})
+        enriched={**defaults,**source,**item}; enriched["schema_version"]=manifest["schema_version"]
+        if source:
+            enriched["source_type"]="REAL_EXCERPT"
+            enriched.setdefault("annotation_status","PROJECT_AUTHORED")
+        elif item.get("source_ref"):
+            enriched["source_type"]="UNKNOWN_SOURCE"
         enriched.setdefault("source_locator",item.get("id",""))
         enriched.setdefault("excerpt_section",_first_section(item.get("paper_text","")))
         enriched.setdefault("reviewer_label",item.get("expected_claim_label"))

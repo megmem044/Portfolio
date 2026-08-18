@@ -138,21 +138,24 @@ Historical baseline measured on the original 50 self-authored, paper-grounded ex
 | False-publish rate | 0% |
 | Human-review rate | 40% |
 
-Current mixed benchmark measured on August 17, 2026 using 50 synthetic cases
-and 50 provenance-labelled real-paper cases:
+Current mixed benchmark, measured on August 17, 2026 using 50 synthetic cases
+and 100 provenance-labelled real-paper cases:
 
 | Metric | Result |
 | --- | ---: |
-| Decision accuracy | 91% |
+| Decision accuracy | 82.67% |
 | Unsupported-claim detection | 100% |
-| Contradiction detection | 73.53% |
+| Contradiction detection | 66.67% |
 | False-publish rate | 0% |
-| Human-review rate | 31% |
+| Human-review rate | 26.67% |
 
 The verified test run completed with 73 backend tests passing, one optional
 test skipped, and all 8 Playwright browser tests passing. The harder mixed
 benchmark intentionally exposes remaining conservative errors while retaining
-a zero false-publish rate.
+a zero false-publish rate. The lower accuracy relative to the earlier 100-case
+run reflects the addition of harder null-result, limitation, subgroup,
+confidence-interval, and paraphrase cases rather than a change to the earlier
+test set.
 
 ### Semantic retrieval benchmark
 
@@ -183,8 +186,8 @@ These deliberately constructed regression benchmarks are not estimates of
 general performance across academic literature. AnswerTrust is not suitable for
 autonomous clinical or scientific decision-making.
 
-The publication benchmark uses schema version 2 and now contains 100 cases: 50
-project-created synthetic cases and 50 real-paper cases. The real-paper cases
+The publication benchmark uses schema version 2 and now contains 150 cases: 50
+project-created synthetic cases and 100 real-paper cases. The real-paper cases
 use short Creative Commons PLOS excerpts with stable DOI provenance. They test
 numbers, converted tables, subgroups, limitations, causal language, statistical
 significance, scope changes, and reporting overstatement. Future real-paper
@@ -192,6 +195,10 @@ excerpts must record a source title, stable URL or DOI, excerpt section, reuse
 license, difficulty category, reviewer label and confidence, annotation status,
 and label rationale. This prevents synthetic cases from being presented as
 independent or real-world evidence.
+
+Repeated paper-level metadata is stored in `data/evaluation_sources.json`, while
+each benchmark case retains its own excerpt section, expected label, difficulty,
+confidence, and rationale.
 
 ## Run the current application
 

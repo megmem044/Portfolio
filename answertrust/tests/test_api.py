@@ -291,11 +291,11 @@ def test_publication_benchmark_api_persists_run_and_results():
     assert response.status_code == 200
     created = response.json()
     assert created["status"] == "COMPLETED"
-    assert created["metrics"]["total_examples"] == 100
-    assert len(created["results"]) == 100
+    assert created["metrics"]["total_examples"] == 150
+    assert len(created["results"]) == 150
 
     listed = client.get("/api/v1/benchmarks").json()
     assert created["run_id"] in {run["run_id"] for run in listed}
 
     detail = client.get(f"/api/v1/benchmarks/{created['run_id']}").json()
-    assert len(detail["results"]) == 100
+    assert len(detail["results"]) == 150

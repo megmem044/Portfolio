@@ -77,13 +77,13 @@ def test_faithful_limitation_does_not_require_extra_qualification():
     assert "MISSING_QUALIFICATION" not in result.claim_results[0].failure_types
 
 def test_benchmark_schema_and_metrics():
-    examples=load_examples(); assert len(examples)==100; assert validate_examples(examples)==[]
+    examples=load_examples(); assert len(examples)==150; assert validate_examples(examples)==[]
     assert {item["schema_version"] for item in examples}=={2}
     assert {item["source_type"] for item in examples}=={"SYNTHETIC","REAL_EXCERPT"}
-    assert sum(item["source_type"]=="REAL_EXCERPT" for item in examples)==50
+    assert sum(item["source_type"]=="REAL_EXCERPT" for item in examples)==100
     assert all(item["label_rationale"] for item in examples)
     rows,metrics=run_experiment(write_output=False)
-    assert len(rows)==100
+    assert len(rows)==150
     assert {"unsupported_detection_rate_pct","contradiction_detection_rate_pct","false_publish_rate_pct","review_rate_pct"} <= set(metrics)
     assert {"source_type","difficulty_category","reviewer_confidence"} <= set(rows[0])
 
