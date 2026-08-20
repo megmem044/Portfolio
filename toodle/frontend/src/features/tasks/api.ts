@@ -16,20 +16,21 @@ export interface BootstrapResponse {
 }
 
 export class ApiRequestError extends Error {
-  constructor(public readonly status: number, public readonly code: string | undefined, message: string) {
-    super(message);
+  constructor(public readonly status: number, public readonly code: string | undefined, message: string, public readonly correlationId?: string) {
+    super(correlationId ? `${message} (Request ID: ${correlationId})` : message);
     this.name = 'ApiRequestError';
   }
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const token = localStorage.getItem(tokenKey);
-  const response = await fetch(`${apiUrl}${path}`, { headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options?.headers }, ...options });
+  const correlationId = crypto.randomUUID();
+  const response = await fetch(`${apiUrl}${path}`, { headers: { 'Content-Type': 'application/json', 'X-Correlation-Id': correlationId, ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options?.headers }, ...options });
   if (!response.ok) {
     const body = await response.json().catch(() => ({ message: 'Request failed' }));
     // An invalid or expired token must not leave the client in a false signed-in state.
     if (response.status === 401 || response.status === 403) authApi.logout();
-    throw new ApiRequestError(response.status, body.code, body.message ?? 'Request failed');
+    throw new ApiRequestError(response.status, body.code, body.message ?? 'Request failed', response.headers.get('X-Correlation-Id') ?? correlationId);
   }
   return response.status === 204 ? undefined as T : response.json() as Promise<T>;
 }

@@ -120,6 +120,9 @@ When Spring is running:
 
 The backend test writes the checked contract to `backend/target/openapi.json`. The BFF build compares its generated TypeScript types with that file. Compatibility rules are in [API_COMPATIBILITY.md](API_COMPATIBILITY.md).
 
+Provider-neutral release, rollback, and database recovery steps are in
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ## Production-style Docker stack
 
 Create a local `.env` from `.env.example`, replace its sample secrets, then run:

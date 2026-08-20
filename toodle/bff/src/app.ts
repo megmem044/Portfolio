@@ -7,6 +7,7 @@ import type { components } from './generated/spring-api.js';
 type Fetch = typeof globalThis.fetch;
 type TaskResponse = components['schemas']['TaskResponse'];
 type CategoryResponse = components['schemas']['CategoryResponse'];
+const correlationIdPattern = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 
 export interface AppOptions {
   fetch?: Fetch;
@@ -22,10 +23,11 @@ export function createApp(options: AppOptions = {}) {
   const springHealthUrl = options.springHealthUrl ?? process.env.SPRING_HEALTH_URL ?? 'http://127.0.0.1:8080/actuator/health';
   const frontendOrigins = options.frontendOrigins ?? process.env.FRONTEND_ORIGIN?.split(',').map((origin) => origin.trim()).filter(Boolean) ?? ['http://127.0.0.1:5173', 'http://localhost:5173'];
 
-  app.use(cors({ origin: frontendOrigins }));
+  app.use(cors({ origin: frontendOrigins, exposedHeaders: ['X-Correlation-Id'] }));
   app.use(express.json());
   app.use((request, response, next) => {
-    const correlationId = request.header('x-correlation-id') ?? randomUUID();
+    const suppliedId = request.header('x-correlation-id');
+    const correlationId = suppliedId && correlationIdPattern.test(suppliedId) ? suppliedId : randomUUID();
     response.locals.correlationId = correlationId;
     response.setHeader('X-Correlation-Id', correlationId);
     response.on('finish', () => console.info(JSON.stringify({ correlationId, method: request.method, path: request.path, status: response.statusCode })));

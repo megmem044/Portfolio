@@ -53,6 +53,33 @@ test('generated correlation ID is returned and forwarded to Spring', async () =>
   assert.equal(forwardedId, response.headers.get('x-correlation-id'));
 });
 
+test('browser correlation ID is preserved across the BFF', async () => {
+  let forwardedId: string | null = null;
+  const upstream: typeof fetch = async (_input, init) => {
+    forwardedId = new Headers(init?.headers).get('x-correlation-id');
+    return Response.json([]);
+  };
+  const response = await request(upstream, '/api/tasks', {
+    headers: { Authorization: 'Bearer test-token', 'X-Correlation-Id': 'browser-request-123' },
+  });
+  assert.equal(response.headers.get('x-correlation-id'), 'browser-request-123');
+  assert.equal(forwardedId, 'browser-request-123');
+  assert.equal(response.headers.get('access-control-expose-headers'), 'X-Correlation-Id');
+});
+
+test('unsafe correlation ID is replaced before logging or forwarding', async () => {
+  let forwardedId: string | null = null;
+  const upstream: typeof fetch = async (_input, init) => {
+    forwardedId = new Headers(init?.headers).get('x-correlation-id');
+    return Response.json([]);
+  };
+  const response = await request(upstream, '/api/tasks', {
+    headers: { Authorization: 'Bearer test-token', 'X-Correlation-Id': 'unsafe value' },
+  });
+  assert.match(response.headers.get('x-correlation-id') ?? '', /^[0-9a-f-]{36}$/);
+  assert.equal(forwardedId, response.headers.get('x-correlation-id'));
+});
+
 test('Spring error status and body pass through the BFF', async () => {
   const upstream: typeof fetch = async () => Response.json({ code: 'TASK_NOT_FOUND', message: 'Task not found' }, { status: 404 });
   const response = await request(upstream, '/api/tasks/missing', { headers: { Authorization: 'Bearer test-token' } });

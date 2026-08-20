@@ -21,11 +21,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class CorrelationIdFilter extends OncePerRequestFilter {
     private static final Logger LOGGER = LoggerFactory.getLogger(CorrelationIdFilter.class);
     private static final String HEADER = "X-Correlation-Id";
+    private static final String SAFE_ID_PATTERN = "[A-Za-z0-9][A-Za-z0-9._:-]{0,127}";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String correlationId = request.getHeader(HEADER);
-        if (correlationId == null || correlationId.isBlank()) correlationId = UUID.randomUUID().toString();
+        if (correlationId == null || !correlationId.matches(SAFE_ID_PATTERN)) correlationId = UUID.randomUUID().toString();
         // MDC exposes the ID to every log entry emitted while this request is processed.
         MDC.put("correlationId", correlationId);
         response.setHeader(HEADER, correlationId);

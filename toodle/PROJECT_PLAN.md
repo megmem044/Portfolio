@@ -66,11 +66,11 @@ The next major step is cloud deployment.
 - [ ] Make GitHub Actions publish images and deploy them.
 - [ ] Configure TLS, secrets, CORS, migrations, and health checks.
 - [ ] Test login, tasks, persistence, and user separation online.
-- [ ] Write rollback and recovery instructions.
+- [x] Write rollback and recovery instructions.
 
 ### 8. Tracing
 
-- [ ] Keep one request ID through the browser, BFF, and Spring.
+- [x] Keep one request ID through the browser, BFF, and Spring.
 - [ ] Add OpenTelemetry.
 - [ ] Record request and database timing.
 - [ ] Keep passwords, tokens, and private data out of traces.

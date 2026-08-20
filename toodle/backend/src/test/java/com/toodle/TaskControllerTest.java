@@ -64,6 +64,19 @@ class TaskControllerTest {
     }
 
     @Test
+    void preservesSafeCorrelationIdsAndReplacesUnsafeValues() throws Exception {
+        mockMvc.perform(get("/api/tasks").header("Authorization", authorization).header("X-Correlation-Id", "browser-request-123"))
+            .andExpect(status().isOk())
+            .andExpect(header().string("X-Correlation-Id", "browser-request-123"));
+
+        String replacement = mockMvc.perform(get("/api/tasks").header("Authorization", authorization).header("X-Correlation-Id", "unsafe value"))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getHeader("X-Correlation-Id");
+        org.junit.jupiter.api.Assertions.assertNotNull(replacement);
+        org.junit.jupiter.api.Assertions.assertTrue(replacement.matches("[0-9a-f-]{36}"));
+    }
+
+    @Test
     void rejectsAnUnauthenticatedTaskRequest() throws Exception {
         mockMvc.perform(get("/api/tasks"))
             .andExpect(status().isUnauthorized())
