@@ -4,6 +4,7 @@ import com.toodle.dto.AuthResponse;
 import com.toodle.dto.LoginRequest;
 import com.toodle.dto.RegisterRequest;
 import com.toodle.service.AuthService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Authentication", description = "Register an account or sign in")
 public class AuthController {
     private final AuthService authService;
     public AuthController(AuthService authService) { this.authService = authService; }

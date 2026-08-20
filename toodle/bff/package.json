@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
-    "build": "tsc --noEmit",
+    "build": "npm run check:api-types && tsc --noEmit",
+    "generate:api-types": "openapi-typescript ../backend/target/openapi.json -o src/generated/spring-api.ts",
+    "check:api-types": "openapi-typescript ../backend/target/openapi.json -o src/generated/spring-api.ts --check",
     "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
@@ -16,6 +18,7 @@
   "devDependencies": {
     "@types/cors": "latest",
     "@types/express": "latest",
+    "openapi-typescript": "7.13.0",
     "tsx": "latest",
     "typescript": "latest"
   }

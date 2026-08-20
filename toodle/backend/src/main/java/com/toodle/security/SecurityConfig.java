@@ -25,7 +25,10 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter, ObjectMapper objectMapper) throws Exception {
         return http.csrf(csrf -> csrf.disable()).cors(cors -> {}).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(authorize -> authorize.requestMatchers("/api/auth/**", "/actuator/health/**", "/actuator/info").permitAll().requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().anyRequest().authenticated())
+            .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers("/api/auth/**", "/actuator/health/**", "/actuator/info", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .anyRequest().authenticated())
             .exceptionHandling(errors -> errors
                 .authenticationEntryPoint((request, response, exception) -> writeSecurityError(response, request.getRequestURI(), HttpServletResponse.SC_UNAUTHORIZED, "AUTHENTICATION_REQUIRED", "Authentication is required", objectMapper))
                 .accessDeniedHandler((request, response, exception) -> writeSecurityError(response, request.getRequestURI(), HttpServletResponse.SC_FORBIDDEN, "ACCESS_DENIED", "Access is denied", objectMapper)))

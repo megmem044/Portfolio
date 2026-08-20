@@ -1,4 +1,4 @@
-name: CI
+name: Toodle CI
 
 on:
   pull_request:
@@ -14,6 +14,8 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,12 +33,12 @@ jobs:
       - name: Test and build frontend
         working-directory: toodle/frontend
         run: npm ci && npm test && npm run build
-      - name: Test and type-check BFF
-        working-directory: toodle/bff
-        run: npm ci && npm test && npm run build
-      - name: Test backend
+      - name: Test backend and export OpenAPI contract
         working-directory: toodle/backend
         run: mvn -s maven-settings.xml test
+      - name: Test BFF and verify generated API types
+        working-directory: toodle/bff
+        run: npm ci && npm test && npm run build
       - name: Build production images
         working-directory: toodle
         run: docker compose -f compose.production.yaml build

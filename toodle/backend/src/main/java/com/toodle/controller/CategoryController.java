@@ -3,6 +3,8 @@ package com.toodle.controller;
 import com.toodle.dto.CategoryRequest;
 import com.toodle.dto.CategoryResponse;
 import com.toodle.service.CategoryService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -21,6 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/categories")
 @CrossOrigin(origins = "http://127.0.0.1:5173")
+@Tag(name = "Categories", description = "Manage categories owned by the signed-in user")
+@SecurityRequirement(name = "bearerAuth")
 public class CategoryController {
     private final CategoryService categoryService;
 

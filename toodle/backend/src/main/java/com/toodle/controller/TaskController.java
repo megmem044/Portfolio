@@ -3,6 +3,8 @@ package com.toodle.controller;
 import com.toodle.dto.TaskRequest;
 import com.toodle.dto.TaskResponse;
 import com.toodle.service.TaskService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.UUID;
 import jakarta.validation.Valid;
@@ -21,6 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/tasks")
 @CrossOrigin(origins = "http://127.0.0.1:5173")
+@Tag(name = "Tasks", description = "Manage tasks owned by the signed-in user")
+@SecurityRequirement(name = "bearerAuth")
 public class TaskController {
     private final TaskService taskService;
 

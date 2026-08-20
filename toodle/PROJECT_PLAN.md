@@ -60,8 +60,8 @@ Not yet completed:
 
 ### 1. Add an OpenAPI contract
 
-- [ ] Generate an OpenAPI specification from Spring Boot.
-- [ ] Use it to validate or generate TypeScript types for the BFF.
+- [x] Generate an OpenAPI specification from Spring Boot.
+- [x] Use it to validate or generate TypeScript types for the BFF.
 - [ ] Add a CI check that catches breaking API changes.
 - [ ] Document API versioning and compatibility rules.
 

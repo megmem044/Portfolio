@@ -94,6 +94,29 @@ The goal is to deepen the current architecture, not make it more distributed. To
 
 Open `http://127.0.0.1:5173`.
 
+## API documentation
+
+While the Spring Boot API is running, its OpenAPI contract is available as JSON at
+`http://127.0.0.1:8080/v3/api-docs` and as an interactive Swagger page at
+`http://127.0.0.1:8080/swagger-ui.html`. Authentication routes are public; task and
+category routes use the documented JWT bearer scheme.
+
+The backend contract test exports the verified specification to
+`backend/target/openapi.json`. The BFF generates its Spring response types from that
+file:
+
+```powershell
+cd backend
+mvn -s maven-settings.xml -Dtest=OpenApiContractTest test
+
+cd ../bff
+npm run generate:api-types
+npm run build
+```
+
+`npm run build` fails when the checked-in generated types no longer match the latest
+exported backend contract.
+
 ## Run the production-shaped container stack
 
 1. Copy `.env.example` to `.env` and replace the password and JWT secret.

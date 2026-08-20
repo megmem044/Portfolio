@@ -2,8 +2,11 @@
 import cors from 'cors';
 import express, { type Request, type Response } from 'express';
 import { randomUUID } from 'node:crypto';
+import type { components } from './generated/spring-api.js';
 
 type Fetch = typeof globalThis.fetch;
+type TaskResponse = components['schemas']['TaskResponse'];
+type CategoryResponse = components['schemas']['CategoryResponse'];
 
 export interface AppOptions {
   fetch?: Fetch;
@@ -50,6 +53,10 @@ export function createApp(options: AppOptions = {}) {
     response.status(upstream.status).send(payload);
   }
 
+  function upstreamJson<T>(response: globalThis.Response) {
+    return response.json() as Promise<T>;
+  }
+
   function requireBearerToken(request: Request, response: Response) {
     if (authorization(request)?.startsWith('Bearer ')) return true;
     response.status(401).json({ message: 'Bearer authentication is required' });
@@ -79,7 +86,10 @@ export function createApp(options: AppOptions = {}) {
       ]);
       if (!tasksResponse.ok) return forward(response, tasksResponse);
       if (!categoriesResponse.ok) return forward(response, categoriesResponse);
-      response.json({ tasks: await tasksResponse.json(), categories: await categoriesResponse.json() });
+      response.json({
+        tasks: await upstreamJson<TaskResponse[]>(tasksResponse),
+        categories: await upstreamJson<CategoryResponse[]>(categoriesResponse),
+      });
     } catch (error) { next(error); }
   });
 
