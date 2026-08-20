@@ -15,6 +15,13 @@ export interface BootstrapResponse {
   categories: Category[];
 }
 
+export class ApiRequestError extends Error {
+  constructor(public readonly status: number, public readonly code: string | undefined, message: string) {
+    super(message);
+    this.name = 'ApiRequestError';
+  }
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const token = localStorage.getItem(tokenKey);
   const response = await fetch(`${apiUrl}${path}`, { headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options?.headers }, ...options });
@@ -22,7 +29,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     const body = await response.json().catch(() => ({ message: 'Request failed' }));
     // An invalid or expired token must not leave the client in a false signed-in state.
     if (response.status === 401 || response.status === 403) authApi.logout();
-    throw new Error(body.message ?? 'Request failed');
+    throw new ApiRequestError(response.status, body.code, body.message ?? 'Request failed');
   }
   return response.status === 204 ? undefined as T : response.json() as Promise<T>;
 }
@@ -61,6 +68,7 @@ function taskRequest(task: Task | TaskDraft) {
     priority: task.priority.toUpperCase(),
     categoryId: task.categoryId,
     completed: 'isCompleted' in task ? task.isCompleted : false,
+    ...('version' in task ? { version: task.version } : {}),
   };
 }
 

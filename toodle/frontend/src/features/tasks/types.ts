@@ -16,6 +16,7 @@ export interface Task {
   categoryId: string | null;
   categoryColor: string | null;
   createdAt: string;
+  version: number;
 }
 
 export interface Category {

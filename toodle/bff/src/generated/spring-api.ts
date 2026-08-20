@@ -118,6 +118,8 @@ export interface components {
             /** Format: uuid */
             categoryId?: string;
             completed?: boolean;
+            /** Format: int64 */
+            version?: number;
         };
         TaskResponse: {
             /** Format: uuid */
@@ -137,6 +139,8 @@ export interface components {
             categoryColor?: string;
             /** Format: date-time */
             createdAt?: string;
+            /** Format: int64 */
+            version?: number;
         };
         CategoryRequest: {
             name: string;

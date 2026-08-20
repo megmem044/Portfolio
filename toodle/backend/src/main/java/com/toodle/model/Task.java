@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -28,6 +29,8 @@ public class Task {
     private Priority priority;
     private boolean completed;
     private Instant createdAt;
+    @Version
+    private long version;
     @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;
@@ -62,6 +65,7 @@ public class Task {
     public Priority getPriority() { return priority; }
     public boolean isCompleted() { return completed; }
     public Instant getCreatedAt() { return createdAt; }
+    public long getVersion() { return version; }
     public Category getCategory() { return category; }
 
     public void update(String title, String description, LocalDate startDate, LocalTime startTime, LocalDate dueDate, LocalTime dueTime, Priority priority, Category category, boolean completed) {

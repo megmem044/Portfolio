@@ -21,7 +21,7 @@ describe('TaskForm', () => {
   it('loads and submits edits to an existing task', async () => {
     const user = userEvent.setup();
     const onSave = vi.fn();
-    const task: Task = { id: 'task-1', title: 'Old title', description: '', startDate: '2026-08-12', startTime: '', dueDate: '2026-08-12', dueTime: '', priority: 'medium', isCompleted: false, categoryId: null, categoryColor: null, createdAt: '2026-08-12T00:00:00Z' };
+    const task: Task = { id: 'task-1', title: 'Old title', description: '', startDate: '2026-08-12', startTime: '', dueDate: '2026-08-12', dueTime: '', priority: 'medium', isCompleted: false, categoryId: null, categoryColor: null, createdAt: '2026-08-12T00:00:00Z', version: 0 };
     render(<TaskForm {...commonProps} task={task} onSave={onSave} />);
     const title = screen.getByLabelText('Title');
     await user.clear(title);

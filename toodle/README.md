@@ -31,8 +31,10 @@ The active code lives in `frontend/`, `bff/`, and `backend/`. Earlier vanilla we
 - Node/Express BFF, including a composed bootstrap response
 - Spring Boot REST endpoints for authentication, tasks, and categories
 - PostgreSQL persistence with Flyway migrations
+- PostgreSQL integration testing with Testcontainers and production Flyway migrations
 - JWT authentication and owner-scoped server-side data access
 - Standard API error responses with status, code, message, path, timestamp, and correlation ID
+- Optimistic task locking with `409 Conflict` recovery for stale browser edits
 - Owner-isolation, authentication, schedule-validation, and CRUD integration coverage
 - Tasks and Calendar feature domains composed by the React shell
 - GitHub Actions verification for frontend tests/build, BFF tests/type-checking, backend tests, and production image builds
@@ -42,8 +44,6 @@ The active code lives in `frontend/`, `bff/`, and `backend/`. Earlier vanilla we
 ## Roadmap
 
 - Publish an OpenAPI contract from Spring and validate or generate TypeScript types for the BFF.
-- Run Spring integration tests against real PostgreSQL with Testcontainers.
-- Add optimistic locking so older task edits return `409 Conflict` instead of overwriting newer changes.
 - Expand security tests for tokens, invalid input, blocked field changes, and owner isolation.
 - Add automated accessibility checks with axe-core and browser tests with Playwright.
 - Improve frontend loading, caching, stale-data, and error handling.
@@ -117,6 +117,9 @@ npm run build
 `npm run build` fails when the checked-in generated types no longer match the latest
 exported backend contract.
 
+See [API_COMPATIBILITY.md](API_COMPATIBILITY.md) for the rules that distinguish safe
+contract additions from breaking changes and explain when a new API version is needed.
+
 ## Run the production-shaped container stack
 
 1. Copy `.env.example` to `.env` and replace the password and JWT secret.
@@ -177,7 +180,7 @@ cd ../backend
 mvn -s maven-settings.xml test
 ```
 
-The repository includes seven focused frontend component cases, six BFF route/forwarding tests, and 12 backend tests across web integration and JWT-expiration coverage. The complete workflow was verified on GitHub Actions with commit `51d17d6`.
+The repository includes eight focused frontend component cases, six BFF route/forwarding tests, and 15 backend tests across OpenAPI, PostgreSQL web integration, optimistic locking, and JWT-expiration coverage. The PostgreSQL suite uses the same Maven command run by Toodle CI.
 
 ## Repository map
 

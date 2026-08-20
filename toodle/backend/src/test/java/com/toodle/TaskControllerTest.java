@@ -15,13 +15,32 @@ import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Testcontainers
 class TaskControllerTest {
+    @Container
+    static final PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:16-alpine");
+
+    @DynamicPropertySource
+    static void postgresProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+    }
+
     @Autowired
     private MockMvc mockMvc;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
     private String authorization;
 
     @BeforeEach
@@ -47,6 +66,15 @@ class TaskControllerTest {
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"))
             .andExpect(jsonPath("$.correlationId").isNotEmpty());
+    }
+
+    @Test
+    void runsAgainstPostgresWithAllFlywayMigrations() {
+        String database = jdbcTemplate.queryForObject("select current_setting('server_version')", String.class);
+        String migration = jdbcTemplate.queryForObject("select version from flyway_schema_history where success = true order by installed_rank desc limit 1", String.class);
+
+        org.junit.jupiter.api.Assertions.assertNotNull(database);
+        org.junit.jupiter.api.Assertions.assertEquals("3", migration);
     }
 
     @Test
@@ -148,14 +176,40 @@ class TaskControllerTest {
             .andExpect(status().isCreated())
             .andReturn().getResponse().getContentAsString();
         String taskId = JsonPath.read(created, "$.id");
+        Integer version = JsonPath.read(created, "$.version");
 
         mockMvc.perform(get("/api/tasks/{id}", taskId).header("Authorization", authorization)).andExpect(status().isOk()).andExpect(jsonPath("$.title").value("Original"));
-        mockMvc.perform(put("/api/tasks/{id}", taskId).header("Authorization", authorization).contentType("application/json").content("{\"title\":\"Updated\",\"priority\":\"HIGH\",\"completed\":true}"))
+        mockMvc.perform(put("/api/tasks/{id}", taskId).header("Authorization", authorization).contentType("application/json").content("{\"title\":\"Updated\",\"priority\":\"HIGH\",\"completed\":true,\"version\":" + version + "}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.title").value("Updated"))
-            .andExpect(jsonPath("$.isCompleted").value(true));
+            .andExpect(jsonPath("$.isCompleted").value(true))
+            .andExpect(jsonPath("$.version").value(version + 1));
         mockMvc.perform(delete("/api/tasks/{id}", taskId).header("Authorization", authorization)).andExpect(status().isNoContent());
         mockMvc.perform(get("/api/tasks/{id}", taskId).header("Authorization", authorization)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void rejectsAnOlderCopyAfterAnotherClientUpdatesTheTask() throws Exception {
+        String created = mockMvc.perform(post("/api/tasks").header("Authorization", authorization).contentType("application/json").content("{\"title\":\"Shared copy\",\"priority\":\"LOW\"}"))
+            .andExpect(status().isCreated())
+            .andReturn().getResponse().getContentAsString();
+        String taskId = JsonPath.read(created, "$.id");
+        Integer version = JsonPath.read(created, "$.version");
+
+        mockMvc.perform(put("/api/tasks/{id}", taskId).header("Authorization", authorization).contentType("application/json")
+                .content("{\"title\":\"First client\",\"priority\":\"LOW\",\"version\":" + version + "}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.version").value(version + 1));
+
+        mockMvc.perform(put("/api/tasks/{id}", taskId).header("Authorization", authorization).contentType("application/json")
+                .content("{\"title\":\"Older second client\",\"priority\":\"HIGH\",\"version\":" + version + "}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("RESOURCE_CONFLICT"))
+            .andExpect(jsonPath("$.message").value("This task changed since you opened it. Refresh and try again."));
+
+        mockMvc.perform(get("/api/tasks/{id}", taskId).header("Authorization", authorization))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.title").value("First client"));
     }
 
     @Test

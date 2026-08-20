@@ -50,8 +50,6 @@ Already implemented:
 Not yet completed:
 
 - OpenAPI contract and generated or validated TypeScript types.
-- Testcontainers-based PostgreSQL integration tests.
-- Optimistic locking and user-friendly conflict handling.
 - Automated accessibility checks.
 - Dedicated frontend server-state management.
 - Cloud deployment, distributed tracing, and infrastructure as code.
@@ -62,27 +60,27 @@ Not yet completed:
 
 - [x] Generate an OpenAPI specification from Spring Boot.
 - [x] Use it to validate or generate TypeScript types for the BFF.
-- [ ] Add a CI check that catches breaking API changes.
-- [ ] Document API versioning and compatibility rules.
+- [x] Add a CI check that catches breaking API changes.
+- [x] Document API versioning and compatibility rules.
 
 Result: Spring, the BFF, and the frontend share a clear, checked contract.
 
 ### 2. Test with real PostgreSQL
 
-- [ ] Add Testcontainers to the Spring integration tests.
-- [ ] Run Flyway migrations in the test container.
-- [ ] Test database constraints, repositories, services, and controllers together.
-- [ ] Keep small unit tests where a database is not needed.
+- [x] Add Testcontainers to the Spring integration tests.
+- [x] Run Flyway migrations in the test container.
+- [x] Test database constraints, repositories, services, and controllers together.
+- [x] Keep small unit tests where a database is not needed.
 
 Result: integration tests use the same database engine as production.
 
 ### 3. Prevent silent task overwrites
 
-- [ ] Add a JPA `@Version` field to tasks through a new Flyway migration.
-- [ ] Include the version in task API requests and responses.
-- [ ] Return `409 Conflict` when an old copy of a task is saved.
-- [ ] Show a clear refresh-and-retry message in the frontend.
-- [ ] Test two clients updating the same task.
+- [x] Add a JPA `@Version` field to tasks through a new Flyway migration.
+- [x] Include the version in task API requests and responses.
+- [x] Return `409 Conflict` when an old copy of a task is saved.
+- [x] Show a clear refresh-and-retry message in the frontend.
+- [x] Test two clients updating the same task.
 
 Result: an older edit cannot silently overwrite a newer one.
 

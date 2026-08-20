@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 /** Applies task operations while enforcing the authenticated owner boundary. */
@@ -40,11 +41,16 @@ public class TaskService {
         return taskRepository.save(new Task(request.title().trim(), normalize(request.description()), request.startDate(), request.startTime(), request.dueDate(), request.dueTime(), request.priority(), findCategory(request.categoryId(), owner), owner, request.completed()));
     }
 
+    @Transactional
     public Task update(UUID id, TaskRequest request) {
         validateSchedule(request);
         Task task = findById(id);
+        if (request.version() == null || request.version() != task.getVersion()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This task changed since you opened it. Refresh and try again.");
+        }
         task.update(request.title().trim(), normalize(request.description()), request.startDate(), request.startTime(), request.dueDate(), request.dueTime(), request.priority(), findCategory(request.categoryId(), currentUserService.get()), request.completed());
-        return taskRepository.save(task);
+        taskRepository.flush();
+        return task;
     }
 
     public void delete(UUID id) {

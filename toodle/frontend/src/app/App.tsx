@@ -6,6 +6,7 @@ import { TaskForm } from '../components/TaskForm';
 
 import {
   authApi,
+  ApiRequestError,
   bffApi,
   categoryApi,
   taskApi,
@@ -138,6 +139,18 @@ export function App() {
     setNewTaskDefaults(undefined);
   };
 
+  const refreshAfterConflict = async () => {
+    try {
+      const refreshed = await bffApi.bootstrap();
+      setTasks(refreshed.tasks);
+      setCategories(refreshed.categories);
+      closeForm();
+      setError('This task changed in another tab. Your task list was refreshed. Reopen it and try again.');
+    } catch {
+      setError('This task changed in another tab. Refresh the page, then reopen it and try again.');
+    }
+  };
+
   const saveTask = async (draft: TaskDraft) => {
     const category = categories.find(
       (item) => item.id === draft.categoryId
@@ -164,6 +177,10 @@ export function App() {
 
       closeForm();
     } catch (requestError) {
+      if (requestError instanceof ApiRequestError && requestError.status === 409) {
+        await refreshAfterConflict();
+        return;
+      }
       setError(
         requestError instanceof Error
           ? requestError.message
@@ -235,6 +252,10 @@ export function App() {
         )
       );
     } catch (requestError) {
+      if (requestError instanceof ApiRequestError && requestError.status === 409) {
+        await refreshAfterConflict();
+        return;
+      }
       setError(
         requestError instanceof Error
           ? requestError.message

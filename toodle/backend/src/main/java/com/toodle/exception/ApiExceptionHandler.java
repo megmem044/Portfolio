@@ -6,6 +6,7 @@ import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -42,6 +43,11 @@ public class ApiExceptionHandler {
             default -> "REQUEST_FAILED";
         };
         return error(status, code, exception.getReason() == null ? status.getReasonPhrase() : exception.getReason(), request);
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    ResponseEntity<ApiError> handleOptimisticLock(ObjectOptimisticLockingFailureException exception, HttpServletRequest request) {
+        return error(HttpStatus.CONFLICT, "RESOURCE_CONFLICT", "This task changed since you opened it. Refresh and try again.", request);
     }
 
     private ResponseEntity<ApiError> error(HttpStatus status, String code, String message, HttpServletRequest request) {

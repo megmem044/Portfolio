@@ -16,6 +16,7 @@ public record TaskRequest(
     LocalTime dueTime,
     @NotNull Priority priority,
     UUID categoryId,
-    boolean completed
+    boolean completed,
+    Long version
 ) {
 }
