@@ -1,3 +1,4 @@
+// Signals that an owner-scoped resource could not be found.
 package com.toodle.exception;
 
 import java.util.UUID;

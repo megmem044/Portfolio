@@ -1,3 +1,4 @@
+// Provides owner-scoped task database queries.
 package com.toodle.repository;
 
 import com.toodle.model.Task;

@@ -1,3 +1,4 @@
+// Converts application failures into consistent HTTP responses.
 package com.toodle.exception;
 
 import jakarta.servlet.http.HttpServletRequest;

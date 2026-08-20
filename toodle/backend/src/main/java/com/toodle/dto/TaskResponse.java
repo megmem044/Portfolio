@@ -1,3 +1,4 @@
+// Defines task data returned by the API.
 package com.toodle.dto;
 
 import com.toodle.model.Task;

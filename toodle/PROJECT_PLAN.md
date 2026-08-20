@@ -1,196 +1,110 @@
-# Toodle project plan
+# Toodle Project Plan
 
-_Last updated: August 15, 2026_
+_Last updated: August 19, 2026_
 
-## Engineering goal
+## Goal
 
-Modernize a legacy browser task manager into a secure, contract-driven, production-grade multi-tier application.
+Build a secure and reliable task application that is ready for real users. Keep the current four-part design: React, Express BFF, Spring Boot, and PostgreSQL.
 
-Toodle will keep its current architecture:
+## Current progress
 
-```text
-React + TypeScript
-        |
-        v
-Express BFF
-        |
-        v
-Spring Boot API
-        |
-        v
-PostgreSQL
-```
+The local application, API contract, database tests, update protection, security tests, accessibility automation, and frontend data handling are complete.
 
-The goal is to make this architecture reliable and well tested, not to add more services or unnecessary technology.
+The next major step is cloud deployment.
 
-## What Toodle should demonstrate
+## Completed
 
-- Strong Java and Spring Boot development.
-- Clear API contracts between services.
-- Secure authentication and owner-based authorization.
-- Safe database migrations and concurrency handling.
-- Accessible, responsive React interfaces.
-- Testing with real infrastructure.
-- Useful logging, tracing, CI, and cloud deployment.
+### 1. Shared API contract
 
-## Current status
+- [x] Create OpenAPI JSON from Spring.
+- [x] Generate and check BFF TypeScript types.
+- [x] Check contract changes in CI.
+- [x] Document compatibility rules.
 
-Already implemented:
+### 2. Real PostgreSQL tests
 
-- React and TypeScript frontend with day, week, and month views.
-- Task and category CRUD, search, filters, and statistics.
-- Express BFF between the browser and Spring API.
-- Spring controllers, services, repositories, DTOs, validation, security, and JPA.
-- PostgreSQL persistence with Flyway migrations.
-- JWT authentication and owner-scoped data access.
-- Structured API errors, health checks, and correlation IDs.
-- Frontend, BFF, backend, and container checks in GitHub Actions.
-- A production-shaped Docker Compose stack.
+- [x] Run Spring integration tests with Testcontainers.
+- [x] Run Flyway migrations in the test database.
+- [x] Test the API and database together.
+- [x] Keep small unit tests where a database is unnecessary.
 
-Not yet completed:
+### 3. Safe task updates
 
-- OpenAPI contract and generated or validated TypeScript types.
-- Automated accessibility checks.
-- Dedicated frontend server-state management.
-- Cloud deployment, distributed tracing, and infrastructure as code.
+- [x] Add a version number to each task.
+- [x] Send the version through the API.
+- [x] Return `409 Conflict` for an old edit.
+- [x] Refresh the frontend and explain how to retry.
+- [x] Test two clients editing the same task.
 
-## Priorities
+### 4. Security
 
-### 1. Add an OpenAPI contract
+- [x] Test missing, invalid, and expired tokens.
+- [x] Test that users cannot access each other's data.
+- [x] Reject malformed requests and blocked fields.
+- [x] Check password hashing, token expiry, CORS, validation, and headers.
+- [x] Require production secrets from environment variables.
 
-- [x] Generate an OpenAPI specification from Spring Boot.
-- [x] Use it to validate or generate TypeScript types for the BFF.
-- [x] Add a CI check that catches breaking API changes.
-- [x] Document API versioning and compatibility rules.
+### 5. Accessibility automation
 
-Result: Spring, the BFF, and the frontend share a clear, checked contract.
-
-### 2. Test with real PostgreSQL
-
-- [x] Add Testcontainers to the Spring integration tests.
-- [x] Run Flyway migrations in the test container.
-- [x] Test database constraints, repositories, services, and controllers together.
-- [x] Keep small unit tests where a database is not needed.
-
-Result: integration tests use the same database engine as production.
-
-### 3. Prevent silent task overwrites
-
-- [x] Add a JPA `@Version` field to tasks through a new Flyway migration.
-- [x] Include the version in task API requests and responses.
-- [x] Return `409 Conflict` when an old copy of a task is saved.
-- [x] Show a clear refresh-and-retry message in the frontend.
-- [x] Test two clients updating the same task.
-
-Result: an older edit cannot silently overwrite a newer one.
-
-### 4. Strengthen security tests
-
-- [ ] Verify missing, invalid, and expired tokens return `401`.
-- [ ] Verify users cannot access another user's tasks or categories.
-- [ ] Verify malformed payloads and blocked field changes are rejected.
-- [ ] Review password hashing, token expiry, CORS, validation, and security headers.
-- [ ] Confirm secrets come from environment variables in production.
-
-Result: authentication and owner-based authorization are clearly tested.
-
-### 5. Automate accessibility checks
-
-- [ ] Add axe-core checks to component tests.
-- [ ] Add Playwright tests for the most important browser workflows.
-- [ ] Test labels, dialogs, focus behavior, keyboard navigation, form errors, and tab order.
+- [x] Run axe checks in component tests.
+- [x] Test an important keyboard workflow with Playwright.
+- [x] Test labels, dialogs, focus, errors, and keyboard order.
 - [ ] Run a manual Lighthouse and WCAG review before release.
 
-Result: accessibility problems are caught during development and CI.
+### 6. Frontend data handling
 
-### 6. Improve frontend data handling
+- [x] Use TanStack Query for server data.
+- [x] Show loading, empty, success, and error states.
+- [x] Refresh stale data and handle failed changes safely.
+- [x] Keep Redux out unless the project later needs it.
 
-- [ ] Add a server-state library such as TanStack Query if it simplifies the current code.
-- [ ] Define loading, empty, success, and error states for API requests.
-- [ ] Handle cache refresh and failed updates safely.
-- [ ] Do not add Redux unless the application develops a real need for it.
+## Next
 
-Result: the UI handles slow, stale, and failed requests clearly.
+### 7. Cloud deployment
 
-### 7. Deploy the application
-
-- [ ] Choose cloud hosting and a managed PostgreSQL service.
-- [ ] Use GitHub Actions to test, build, publish images, and deploy.
+- [ ] Choose a cloud host and managed PostgreSQL provider.
+- [ ] Make GitHub Actions publish images and deploy them.
 - [ ] Configure TLS, secrets, CORS, migrations, and health checks.
-- [ ] Test registration, login, CRUD, persistence, and owner isolation after deployment.
-- [ ] Document rollback and recovery steps.
+- [ ] Test login, tasks, persistence, and user separation online.
+- [ ] Write rollback and recovery instructions.
 
-Result: Toodle becomes a tested, production-style deployed application.
+### 8. Tracing
 
-### 8. Add cross-service tracing
+- [ ] Keep one request ID through the browser, BFF, and Spring.
+- [ ] Add OpenTelemetry.
+- [ ] Record request and database timing.
+- [ ] Keep passwords, tokens, and private data out of traces.
 
-- [ ] Keep the same request identity through the browser, BFF, and Spring API.
-- [ ] Add OpenTelemetry tracing.
-- [ ] Record useful request and database timing information.
-- [ ] Confirm sensitive values are not included in traces.
+### 9. Infrastructure as code
 
-Result: slow or failed requests can be followed across service boundaries.
+- [ ] Define cloud resources with Terraform.
+- [ ] Keep secrets and environment values outside Terraform source files.
+- [ ] Document how to create, change, and remove the cloud environment.
 
-### 9. Add infrastructure as code
+## Optional later work
 
-- [ ] Define the selected cloud resources with Terraform.
-- [ ] Keep environment-specific values and secrets outside the Terraform source.
-- [ ] Document setup, changes, and teardown.
+### 10. Live updates
 
-Result: the cloud environment can be reviewed and recreated consistently.
+- [ ] Decide whether SSE or WebSockets would improve the application.
+- [ ] Update another open tab when a task changes.
+- [ ] Test reconnection and duplicate events.
 
-### 10. Consider real-time updates later
+This work is optional and must not delay deployment.
 
-- [ ] After the higher priorities are complete, evaluate SSE or WebSockets.
-- [ ] If useful, update another open tab when the same user changes a task.
-- [ ] Test reconnect and duplicate-event behavior.
+## Keep the project focused
 
-This is optional and should not delay the main modernization work.
+Do not add extra microservices, Redis, Kafka, Kubernetes, another database, machine learning, or Redux without a real product need.
 
-## Scope limits
+Do not edit old Flyway migrations. Add a new migration for every database change.
 
-Do not add these technologies unless a real requirement appears:
+## Release check
 
-- More Spring microservices.
-- Redis or Kafka.
-- A Python service or machine-learning features.
-- Kubernetes.
-- Another database.
-- Redux only for resume value.
+Before release:
 
-The code in `legacy/` remains reference material and is not part of the active build. Existing Flyway migrations must not be edited; database changes require a new migration.
+1. Run all backend, BFF, frontend, and Playwright tests.
+2. Build all production Docker images.
+3. Run the manual Lighthouse and WCAG review.
+4. Manually test login, tasks, categories, calendar views, keyboard use, errors, persistence, user separation, and health checks.
+5. Confirm the documentation matches the deployed application.
 
-## Release checklist
-
-```powershell
-cd frontend
-npm ci
-npm test
-npm run build
-
-cd ../bff
-npm ci
-npm test
-npm run build
-
-cd ../backend
-mvn -s maven-settings.xml test
-
-cd ..
-docker compose -f compose.production.yaml build
-```
-
-Before a release, manually verify authentication, task and category workflows, calendar views, keyboard use, error recovery, persistence after restart, owner isolation, and service health checks.
-
-## Definition of done
-
-The modernization is complete when:
-
-- The API contract is checked in CI.
-- Spring integration tests run against PostgreSQL with Testcontainers.
-- Conflicting task updates return `409` and are handled in the UI.
-- Security and owner isolation have strong automated coverage.
-- Important user workflows pass automated accessibility checks.
-- All automated and manual release checks pass.
-- Documentation matches the real system.
-- Any cloud deployment claim is backed by a working, tested deployment.
+The modernization is complete when all required boxes above are checked and the cloud deployment works.

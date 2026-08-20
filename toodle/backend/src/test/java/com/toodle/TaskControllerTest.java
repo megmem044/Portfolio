@@ -1,6 +1,8 @@
+// Tests the secured API against a real PostgreSQL container.
 package com.toodle;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -9,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import com.jayway.jsonpath.JsonPath;
+import com.toodle.security.JwtService;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,6 +88,16 @@ class TaskControllerTest {
     }
 
     @Test
+    void rejectsAnExpiredTokenThroughTheSecurityFilter() throws Exception {
+        JwtService expiredTokenService = new JwtService("test-jwt-signing-secret-that-is-long-enough-for-hmac-sha-256", -1);
+        String expiredAuthorization = "Bearer " + expiredTokenService.createToken("expired@example.com");
+
+        mockMvc.perform(get("/api/tasks").header("Authorization", expiredAuthorization))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"));
+    }
+
+    @Test
     void rejectsDuplicateRegistrationAndInvalidRegistrationData() throws Exception {
         String email = "duplicate" + System.nanoTime() + "@example.com";
         String registration = "{\"name\":\"Test User\",\"email\":\"" + email + "\",\"password\":\"password123\"}";
@@ -95,6 +108,40 @@ class TaskControllerTest {
         mockMvc.perform(post("/api/auth/register").contentType("application/json").content("{\"name\":\"\",\"email\":\"invalid\",\"password\":\"short\"}"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void hashesPasswordsAndRejectsProtectedOrUnknownFields() throws Exception {
+        String email = "security" + System.nanoTime() + "@example.com";
+        registerUser(email);
+
+        String passwordHash = jdbcTemplate.queryForObject("select password_hash from app_user where email = ?", String.class, email);
+        org.junit.jupiter.api.Assertions.assertNotEquals("password123", passwordHash);
+        org.junit.jupiter.api.Assertions.assertTrue(passwordHash.startsWith("$2"));
+
+        mockMvc.perform(post("/api/tasks").header("Authorization", authorization).contentType("application/json")
+                .content("{\"title\":\"Blocked owner change\",\"priority\":\"LOW\",\"ownerId\":\"00000000-0000-0000-0000-000000000000\"}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"));
+    }
+
+    @Test
+    void appliesSecurityHeadersAndOnlyAllowsConfiguredCorsOrigins() throws Exception {
+        mockMvc.perform(get("/api/tasks").header("Authorization", authorization))
+            .andExpect(status().isOk())
+            .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+            .andExpect(header().string("X-Frame-Options", "DENY"));
+
+        mockMvc.perform(options("/api/tasks")
+                .header("Origin", "http://localhost:5173")
+                .header("Access-Control-Request-Method", "GET"))
+            .andExpect(status().isOk())
+            .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
+
+        mockMvc.perform(options("/api/tasks")
+                .header("Origin", "https://untrusted.example")
+                .header("Access-Control-Request-Method", "GET"))
+            .andExpect(status().isForbidden());
     }
 
     @Test

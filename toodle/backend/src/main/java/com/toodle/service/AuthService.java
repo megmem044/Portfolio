@@ -1,3 +1,4 @@
+// Registers accounts and checks login credentials.
 package com.toodle.service;
 
 import com.toodle.dto.AuthResponse;

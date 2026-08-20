@@ -1,3 +1,4 @@
+// Starts the Toodle Spring Boot API.
 package com.toodle;
 
 import org.springframework.boot.SpringApplication;

@@ -1,3 +1,4 @@
+// Verifies that expired JWTs cannot be read.
 package com.toodle;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;

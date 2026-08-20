@@ -1,3 +1,4 @@
+// Creates and verifies signed login tokens.
 package com.toodle.security;
 
 import io.jsonwebtoken.Claims;

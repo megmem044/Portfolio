@@ -1,3 +1,4 @@
+// Finds accounts by their unique email address.
 package com.toodle.repository;
 
 import com.toodle.model.AppUser;

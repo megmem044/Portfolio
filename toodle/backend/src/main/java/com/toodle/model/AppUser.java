@@ -1,3 +1,4 @@
+// Stores account identity and password hash data.
 package com.toodle.model;
 
 import jakarta.persistence.Column;

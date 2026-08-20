@@ -1,3 +1,4 @@
+// Defines and validates login input.
 package com.toodle.dto;
 
 import jakarta.validation.constraints.Email;

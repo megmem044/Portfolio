@@ -1,3 +1,4 @@
+// Keeps one correlation ID in each API request, response, and log entry.
 package com.toodle.security;
 
 import jakarta.servlet.FilterChain;

@@ -1,3 +1,4 @@
+// Describes the public API and JWT scheme shown in OpenAPI.
 package com.toodle.config;
 
 import io.swagger.v3.oas.models.Components;

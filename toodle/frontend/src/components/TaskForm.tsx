@@ -1,5 +1,5 @@
 // Controlled create/edit dialog that converts form state into a typed task draft.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CategoryPicker } from './CategoryPicker';
 import type { Category, Priority, Task, TaskDraft } from '../features/tasks/types';
 
@@ -34,8 +34,22 @@ function displayTime(time: string) {
 }
 
 export function TaskForm({ task, defaultDate, defaultStartTime, categories, onCreateCategory, onSave, onDelete, onClose }: TaskFormProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState(() => draftFor(task, defaultDate, defaultStartTime));
   useEffect(() => setDraft(draftFor(task, defaultDate, defaultStartTime)), [task, defaultDate, defaultStartTime]);
+  useEffect(() => {
+    const keepFocusInDialog = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])'));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', keepFocusInDialog);
+    return () => document.removeEventListener('keydown', keepFocusInDialog);
+  }, []);
   const update = <Key extends keyof TaskDraft>(key: Key, value: TaskDraft[Key]) => setDraft((currentDraft) => ({ ...currentDraft, [key]: value }));
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -43,7 +57,7 @@ export function TaskForm({ task, defaultDate, defaultStartTime, categories, onCr
   };
   const closeOnBackdrop = (event: React.MouseEvent<HTMLDivElement>) => { if (event.target === event.currentTarget) onClose(); };
   return <div className="modal-overlay show" onMouseDown={closeOnBackdrop} role="presentation">
-    <div className="modal" role="dialog" aria-modal="true" aria-labelledby="task-form-title">
+    <div ref={dialogRef} className="modal" role="dialog" aria-modal="true" aria-labelledby="task-form-title">
       <div className="modal-header"><h2 id="task-form-title">{task ? 'Edit Task' : 'New Task'}</h2><button className="close-btn" type="button" aria-label="Close" onClick={onClose}>x</button></div>
       <div className="modal-content"><form onSubmit={submit}>
         <div className="form-group"><label htmlFor="task-title">Title</label><input id="task-title" value={draft.title} onChange={(event) => update('title', event.target.value)} placeholder="Task title" required autoFocus /></div>
@@ -56,8 +70,8 @@ export function TaskForm({ task, defaultDate, defaultStartTime, categories, onCr
           <div className="form-group form-group-half"><label htmlFor="task-due-date">Due Date</label><input id="task-due-date" type="date" value={draft.dueDate} onChange={(event) => update('dueDate', event.target.value)} /></div>
           <div className="form-group form-group-half"><label htmlFor="task-due-time">Time</label><select id="task-due-time" className="time-select" value={draft.dueTime} disabled={!draft.dueDate} onChange={(event) => update('dueTime', event.target.value)}>{timeOptions().map((time) => <option key={time || 'none'} value={time}>{displayTime(time)}</option>)}</select></div>
         </div>
-        <div className="form-group"><label>Priority</label><div className="priority-selector">{(['low', 'medium', 'high'] as Priority[]).map((priority) => <button key={priority} type="button" className={`priority-btn ${draft.priority === priority ? 'active' : ''}`} data-priority={priority} onClick={() => update('priority', priority)}>{priority[0].toUpperCase() + priority.slice(1)}</button>)}</div></div>
-        <div className="form-group"><label>Category</label><CategoryPicker categories={categories} selectedCategoryId={draft.categoryId} onSelect={(categoryId) => update('categoryId', categoryId)} onCreate={onCreateCategory} /></div>
+        <fieldset className="form-group form-fieldset"><legend>Priority</legend><div className="priority-selector">{(['low', 'medium', 'high'] as Priority[]).map((priority) => <button key={priority} type="button" aria-pressed={draft.priority === priority} className={`priority-btn ${draft.priority === priority ? 'active' : ''}`} data-priority={priority} onClick={() => update('priority', priority)}>{priority[0].toUpperCase() + priority.slice(1)}</button>)}</div></fieldset>
+        <fieldset className="form-group form-fieldset"><legend>Category</legend><CategoryPicker categories={categories} selectedCategoryId={draft.categoryId} onSelect={(categoryId) => update('categoryId', categoryId)} onCreate={onCreateCategory} /></fieldset>
         <div className="form-actions"><button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button><button type="submit" className="btn btn-primary">Save</button></div>
         {task && <button type="button" className="btn btn-danger" onClick={onDelete}><i className="fas fa-trash" /> Delete Task</button>}
       </form></div>

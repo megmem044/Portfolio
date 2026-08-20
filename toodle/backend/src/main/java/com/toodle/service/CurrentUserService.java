@@ -1,3 +1,4 @@
+// Resolves the signed-in account for owner-scoped operations.
 package com.toodle.service;
 
 import com.toodle.model.AppUser;

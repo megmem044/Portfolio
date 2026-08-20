@@ -1,3 +1,4 @@
+// Exposes registration and login endpoints.
 package com.toodle.controller;
 
 import com.toodle.dto.AuthResponse;

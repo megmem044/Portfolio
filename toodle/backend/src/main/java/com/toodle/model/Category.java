@@ -1,3 +1,4 @@
+// Stores a user-owned task category.
 package com.toodle.model;
 
 import jakarta.persistence.Entity;

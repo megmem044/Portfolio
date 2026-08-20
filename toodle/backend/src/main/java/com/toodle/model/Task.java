@@ -1,3 +1,4 @@
+// Stores a user-owned task and its optimistic-lock version.
 package com.toodle.model;
 
 import jakarta.persistence.Entity;

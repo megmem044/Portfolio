@@ -1,3 +1,4 @@
+# Tests every Toodle layer and verifies that production images still build.
 name: Toodle CI
 
 on:
@@ -33,6 +34,12 @@ jobs:
       - name: Test and build frontend
         working-directory: toodle/frontend
         run: npm ci && npm test && npm run build
+      - name: Install Playwright browser
+        working-directory: toodle/frontend
+        run: npx playwright install --with-deps chromium
+      - name: Test frontend keyboard workflows
+        working-directory: toodle/frontend
+        run: npm run test:e2e
       - name: Test backend and export OpenAPI contract
         working-directory: toodle/backend
         run: mvn -s maven-settings.xml test
@@ -41,4 +48,7 @@ jobs:
         run: npm ci && npm test && npm run build
       - name: Build production images
         working-directory: toodle
+        env:
+          POSTGRES_PASSWORD: ci-build-only-password
+          JWT_SECRET: ci-build-only-jwt-secret-that-is-long-enough-for-hmac-sha-256
         run: docker compose -f compose.production.yaml build

@@ -1742,6 +1742,44 @@ select:focus-visible {
     }
 }
 
+.request-status,
+.request-error {
+  width: min(1180px, calc(100% - 40px));
+  margin: 20px auto;
+}
+
+.request-status {
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.request-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--danger-color);
+  background: var(--surface);
+}
+
+.request-error p {
+  margin: 0;
+}
+
+.form-fieldset {
+  min-width: 0;
+  margin-inline: 0;
+  padding: 0;
+  border: 0;
+}
+
+.form-fieldset legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-weight: 600;
+}
+
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
         scroll-behavior: auto !important;

@@ -1,3 +1,4 @@
+// Defines task input, including the version used for safe updates.
 package com.toodle.dto;
 
 import com.toodle.model.Priority;

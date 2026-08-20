@@ -1,3 +1,4 @@
+// Applies task rules, ownership checks, and safe update handling.
 package com.toodle.service;
 
 import com.toodle.dto.TaskRequest;

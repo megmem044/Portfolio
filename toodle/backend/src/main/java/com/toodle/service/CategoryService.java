@@ -1,3 +1,4 @@
+// Applies category rules within the current user's account.
 package com.toodle.service;
 
 import com.toodle.dto.CategoryRequest;

@@ -1,64 +1,58 @@
 # Toodle
 
-_Last updated: August 15, 2026_
+_Last updated: August 19, 2026_
 
-Toodle modernizes a legacy browser task manager into a secure, contract-driven, production-grade multi-tier application. It uses a React/TypeScript frontend, an Express backend-for-frontend (BFF), a secured Spring Boot API, and PostgreSQL.
+Toodle is a task and calendar application. Users can create an account, organize tasks, and view their work by day, week, or month.
 
-> Project status: active development. The integrated stack includes a verified automated CI workflow, production container definitions, health monitoring, and deployment-ready architecture. A cloud deployment has not been completed.
+## Project status
 
-## Current architecture
+The application works locally and has automated tests. It is not deployed to the cloud yet.
+
+Completed work includes:
+
+- A React and TypeScript frontend.
+- An Express BFF between the browser and Spring.
+- A Spring Boot API with PostgreSQL and Flyway migrations.
+- JWT login and data protection between users.
+- A checked OpenAPI contract and generated BFF types.
+- PostgreSQL integration tests with Testcontainers.
+- Protection against two browser tabs overwriting the same task.
+- Automated security and accessibility tests.
+- TanStack Query loading, retry, cache, and error handling.
+- Docker production images and GitHub Actions checks.
+
+The next major job is cloud deployment. See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the remaining steps.
+
+## How it works
 
 ```text
-React + TypeScript (frontend, :5173)
-                |
-                v
-Node/Express BFF (bff, :3000)
-                |
-                v
-Spring Boot API (backend, :8080)
-                |
-                v
-PostgreSQL (Docker, host :5433)
+React frontend
+      |
+      v
+Express BFF
+      |
+      v
+Spring Boot API
+      |
+      v
+PostgreSQL
 ```
 
-The active code lives in `frontend/`, `bff/`, and `backend/`. Earlier vanilla web and SwiftUI versions are retained in `legacy/` as migration references and are not part of the active build.
+The active application is in these folders:
 
-## Implemented
+```text
+frontend/   Browser interface
+bff/        Browser-facing API layer
+backend/    Spring API and database code
+```
 
-- React and TypeScript task UI with day, week, and month views
-- Responsive visual system using the Toodle palette, editorial typography, and code-drawn decorative graphics
-- Task search, status filters, categories, and CRUD workflows
-- Node/Express BFF, including a composed bootstrap response
-- Spring Boot REST endpoints for authentication, tasks, and categories
-- PostgreSQL persistence with Flyway migrations
-- PostgreSQL integration testing with Testcontainers and production Flyway migrations
-- JWT authentication and owner-scoped server-side data access
-- Standard API error responses with status, code, message, path, timestamp, and correlation ID
-- Optimistic task locking with `409 Conflict` recovery for stale browser edits
-- Owner-isolation, authentication, schedule-validation, and CRUD integration coverage
-- Tasks and Calendar feature domains composed by the React shell
-- GitHub Actions verification for frontend tests/build, BFF tests/type-checking, backend tests, and production image builds
-- Production Docker Compose stack with Nginx routing browser `/api` requests to the BFF
-- Health endpoints, container health checks, and request correlation IDs
+## Requirements
 
-## Roadmap
-
-- Publish an OpenAPI contract from Spring and validate or generate TypeScript types for the BFF.
-- Expand security tests for tokens, invalid input, blocked field changes, and owner isolation.
-- Add automated accessibility checks with axe-core and browser tests with Playwright.
-- Improve frontend loading, caching, stale-data, and error handling.
-- Deploy through CI using managed PostgreSQL and secure cloud configuration.
-- Add OpenTelemetry tracing across the BFF and Spring API.
-- Define stable cloud resources with Terraform.
-- Consider simple real-time updates only after the higher-priority work is complete.
-
-The goal is to deepen the current architecture, not make it more distributed. Toodle will not add extra microservices, Redis, Kafka, Python, machine learning, Kubernetes, or another database without a real product need. See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the ordered plan.
-
-## Prerequisites
-
-- Node.js 20 or newer and npm
-- Java 17 and Maven 3.9 or newer
-- Docker Desktop with Docker Compose
+- Node.js 20 or newer
+- npm
+- Java 17
+- Maven 3.9 or newer
+- Docker Desktop
 
 ## Run locally
 
@@ -69,14 +63,14 @@ The goal is to deepen the current architecture, not make it more distributed. To
    docker compose up -d
    ```
 
-2. Start Spring Boot in a second terminal:
+2. Start Spring in a new terminal:
 
    ```powershell
    cd backend
    mvn spring-boot:run
    ```
 
-3. Start the BFF in a third terminal:
+3. Start the BFF in a new terminal:
 
    ```powershell
    cd bff
@@ -84,7 +78,7 @@ The goal is to deepen the current architecture, not make it more distributed. To
    npm run dev
    ```
 
-4. Start React in a fourth terminal:
+4. Start the frontend in a new terminal:
 
    ```powershell
    cd frontend
@@ -94,105 +88,71 @@ The goal is to deepen the current architecture, not make it more distributed. To
 
 Open `http://127.0.0.1:5173`.
 
-## API documentation
+## Run tests
 
-While the Spring Boot API is running, its OpenAPI contract is available as JSON at
-`http://127.0.0.1:8080/v3/api-docs` and as an interactive Swagger page at
-`http://127.0.0.1:8080/swagger-ui.html`. Authentication routes are public; task and
-category routes use the documented JWT bearer scheme.
-
-The backend contract test exports the verified specification to
-`backend/target/openapi.json`. The BFF generates its Spring response types from that
-file:
+Docker Desktop must be running. Run the backend first because it creates the OpenAPI file checked by the BFF.
 
 ```powershell
 cd backend
-mvn -s maven-settings.xml -Dtest=OpenApiContractTest test
+mvn -s maven-settings.xml test
 
 cd ../bff
-npm run generate:api-types
+npm ci
+npm test
 npm run build
+
+cd ../frontend
+npm ci
+npm test
+npm run build
+npx playwright install chromium
+npm run test:e2e
 ```
 
-`npm run build` fails when the checked-in generated types no longer match the latest
-exported backend contract.
+The test suite currently has 18 backend tests, 6 BFF tests, 12 frontend component tests, and 1 Playwright browser test.
 
-See [API_COMPATIBILITY.md](API_COMPATIBILITY.md) for the rules that distinguish safe
-contract additions from breaking changes and explain when a new API version is needed.
+## API documentation
 
-## Run the production-shaped container stack
+When Spring is running:
 
-1. Copy `.env.example` to `.env` and replace the password and JWT secret.
-2. Run:
+- OpenAPI JSON: `http://127.0.0.1:8080/v3/api-docs`
+- Swagger UI: `http://127.0.0.1:8080/swagger-ui.html`
 
-   ```powershell
-   docker compose -f compose.production.yaml up --build
-   ```
+The backend test writes the checked contract to `backend/target/openapi.json`. The BFF build compares its generated TypeScript types with that file. Compatibility rules are in [API_COMPATIBILITY.md](API_COMPATIBILITY.md).
 
-Open `http://127.0.0.1:8088`. Nginx serves the frontend and routes `/api` to the BFF internally.
+## Production-style Docker stack
 
-## Configuration
-
-| Variable | Service | Default | Purpose |
-| --- | --- | --- | --- |
-| `VITE_API_URL` | frontend | `http://127.0.0.1:3000/api` | Browser-facing BFF base URL |
-| `PORT` | bff | `3000` | BFF port |
-| `SPRING_API_URL` | bff | `http://127.0.0.1:8080/api` | Spring API base URL |
-| `DATABASE_URL` | backend | `jdbc:postgresql://localhost:5433/toodle` | JDBC connection URL |
-| `DATABASE_USERNAME` | backend | `toodle` | Database user |
-| `DATABASE_PASSWORD` | backend | `toodle` | Database password |
-| `JWT_SECRET` | backend | local-only fallback | JWT signing secret; replace outside local development |
-| `JWT_EXPIRATION_MINUTES` | backend | `120` | Token lifetime |
-| `SPRING_HEALTH_URL` | bff | `http://127.0.0.1:8080/actuator/health` | Upstream health endpoint |
-| `FRONTEND_ORIGIN` | bff | local Vite origins | Comma-separated CORS allowlist |
-
-Do not commit real secrets. Local defaults are for development only.
-
-## Observability
-
-- Spring Boot exposes unauthenticated liveness at `/actuator/health/liveness` and database-aware readiness at `/actuator/health/readiness`.
-- The BFF exposes `/health`, which reports its Spring API dependency state.
-- The BFF and Spring API accept and return `X-Correlation-Id`; when absent, the BFF generates one. Completion logs include that ID, request method/path, and status.
-- Docker Compose uses readiness checks so dependent services wait for the API and database.
-- The production Spring profile keeps operational logs while suppressing verbose framework and SQL output.
-
-## Backend guarantees
-
-- Missing, invalid, and expired authentication tokens are rejected.
-- Task and category access is scoped to the authenticated owner; inaccessible IDs return `404` without revealing another user's data.
-- Task schedules reject times without dates and due values before their corresponding start values.
-- Category names are trimmed and must be unique per user, ignoring case.
-- Deleting a category clears its task associations without deleting the tasks.
-- API failures follow one structured error contract and include a correlation ID.
-
-## Verify
+Create a local `.env` from `.env.example`, replace its sample secrets, then run:
 
 ```powershell
-cd frontend
-npm test
-npm run build
-
-cd ../bff
-npm test
-npm run build
-
-cd ../backend
-mvn -s maven-settings.xml test
+docker compose -f compose.production.yaml up --build
 ```
 
-The repository includes eight focused frontend component cases, six BFF route/forwarding tests, and 15 backend tests across OpenAPI, PostgreSQL web integration, optimistic locking, and JWT-expiration coverage. The PostgreSQL suite uses the same Maven command run by Toodle CI.
+Open `http://127.0.0.1:8088`.
 
-## Repository map
+Production requires `POSTGRES_PASSWORD` and `JWT_SECRET`. Do not commit real secrets.
 
-```text
-toodle/
-|-- frontend/    React/TypeScript client
-|-- bff/         Express backend-for-frontend
-|-- backend/     Spring Boot API, tests, and database migrations
-|-- legacy/      Archived vanilla web and SwiftUI prototypes
-|-- README.md
-|-- PROJECT_PLAN.md
-`-- SOURCE_CODE_GUIDE.md
-```
+## Main configuration
 
-For module responsibilities and request flow, see [SOURCE_CODE_GUIDE.md](SOURCE_CODE_GUIDE.md).
+| Variable | Used by | Purpose |
+| --- | --- | --- |
+| `VITE_API_URL` | Frontend | Browser-facing BFF URL |
+| `SPRING_API_URL` | BFF | Spring API URL |
+| `SPRING_HEALTH_URL` | BFF | Spring health URL |
+| `FRONTEND_ORIGIN` | BFF | Allowed browser origins |
+| `DATABASE_URL` | Backend | PostgreSQL connection URL |
+| `DATABASE_USERNAME` | Backend | PostgreSQL user |
+| `DATABASE_PASSWORD` | Backend | PostgreSQL password |
+| `JWT_SECRET` | Backend | Token signing secret |
+| `JWT_EXPIRATION_MINUTES` | Backend | Login token lifetime |
+
+## Important behavior
+
+- Missing, invalid, and expired tokens return `401`.
+- A user cannot read or change another user's data.
+- Unknown request fields are rejected.
+- Old task edits return `409` instead of overwriting newer work.
+- Request errors use one JSON format and include a correlation ID.
+- Loading, empty, error, retry, and stale-data states are handled in the frontend.
+
+For a guided code tour, see [SOURCE_CODE_GUIDE.md](SOURCE_CODE_GUIDE.md).

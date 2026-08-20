@@ -1,3 +1,4 @@
+# Builds React and serves it through Nginx.
 FROM node:24-alpine AS build
 WORKDIR /workspace/frontend
 COPY frontend/package.json frontend/package-lock.json ./

@@ -1,3 +1,4 @@
+// Reads bearer tokens and creates Spring Security authentication.
 package com.toodle.security;
 
 import io.jsonwebtoken.JwtException;

@@ -1,7 +1,8 @@
-// Application conflict test verifies stale task updates refresh the visible server state.
+// Application server-state tests cover loading, retry, and stale-write recovery.
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App } from './App';
 import type { Task } from '../features/tasks/types';
 
@@ -27,6 +28,11 @@ const task = (title: string, version: number): Task => ({
   createdAt: new Date().toISOString(),
   version,
 });
+
+function renderApp() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}><App /></QueryClientProvider>);
+}
 
 beforeEach(() => {
   localStorage.setItem('toodle_auth_token', 'test-token');
@@ -56,10 +62,38 @@ test('refreshes tasks and explains how to retry after a stale update', async () 
     throw new Error(`Unexpected request: ${url}`);
   }));
 
-  render(<App />);
+  renderApp();
   await userEvent.click(await screen.findByRole('button', { name: 'Mark Shared task complete' }));
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Your task list was refreshed. Reopen it and try again.');
   expect(await screen.findByText('Updated elsewhere')).toBeInTheDocument();
   expect(bootstrapCalls).toBe(2);
+});
+
+test('shows loading and then the empty task state', async () => {
+  let resolveBootstrap!: (response: Response) => void;
+  vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((resolve) => { resolveBootstrap = resolve; })));
+
+  renderApp();
+  expect(screen.getByRole('status')).toHaveTextContent('Loading your tasks');
+
+  resolveBootstrap(Response.json({ tasks: [], categories: [] }));
+  expect(await screen.findByText('No Tasks')).toBeInTheDocument();
+});
+
+test('retries a failed bootstrap request', async () => {
+  let calls = 0;
+  vi.stubGlobal('fetch', vi.fn(async () => {
+    calls += 1;
+    return calls === 1
+      ? Response.json({ message: 'Service is unavailable' }, { status: 503 })
+      : Response.json({ tasks: [], categories: [] });
+  }));
+
+  renderApp();
+  expect(await screen.findByRole('alert')).toHaveTextContent('Service is unavailable');
+  await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
+
+  expect(await screen.findByText('No Tasks')).toBeInTheDocument();
+  expect(calls).toBe(2);
 });

@@ -1,3 +1,4 @@
+// Configures protected routes, CORS, security errors, and password hashing.
 package com.toodle.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

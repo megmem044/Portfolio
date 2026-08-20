@@ -1,3 +1,4 @@
+// Defines and validates category input from clients.
 package com.toodle.dto;
 
 import jakarta.validation.constraints.NotBlank;

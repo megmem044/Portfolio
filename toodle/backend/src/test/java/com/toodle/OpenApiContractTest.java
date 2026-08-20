@@ -1,3 +1,4 @@
+// Verifies and exports the Spring OpenAPI contract used by the BFF.
 package com.toodle;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;

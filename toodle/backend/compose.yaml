@@ -1,3 +1,4 @@
+# Runs the PostgreSQL database used for local backend development.
 services:
   postgres:
     image: postgres:16-alpine

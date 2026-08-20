@@ -1,3 +1,4 @@
+// Projects tasks into a selectable month grid.
 import { dateToKey, isSameDay } from '../features/tasks/taskUtils';
 import type { Task } from '../features/tasks/types';
 

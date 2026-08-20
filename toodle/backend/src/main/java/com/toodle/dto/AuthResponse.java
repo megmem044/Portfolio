@@ -1,3 +1,4 @@
+// Defines the login and registration response sent to clients.
 package com.toodle.dto;
 
 import com.toodle.model.AppUser;

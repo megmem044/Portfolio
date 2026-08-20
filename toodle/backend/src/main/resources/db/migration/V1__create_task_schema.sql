@@ -1,3 +1,4 @@
+-- Creates the original task and category tables.
 CREATE TABLE category (
     id UUID PRIMARY KEY,
     name VARCHAR(255) NOT NULL,

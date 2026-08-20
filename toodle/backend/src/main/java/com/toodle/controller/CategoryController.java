@@ -1,3 +1,4 @@
+// Exposes category operations for the signed-in user.
 package com.toodle.controller;
 
 import com.toodle.dto.CategoryRequest;

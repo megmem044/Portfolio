@@ -1,3 +1,4 @@
+// Defines the shared JSON error format.
 package com.toodle.exception;
 
 import java.time.Instant;

@@ -1,5 +1,6 @@
 // Application shell: coordinates authentication, remote task state, navigation, and modal workflows.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { AuthForm } from '../components/AuthForm';
 import { TaskForm } from '../components/TaskForm';
@@ -11,6 +12,7 @@ import {
   categoryApi,
   taskApi,
   type AuthSession,
+  type BootstrapResponse,
 } from '../features/tasks/api';
 
 import {
@@ -22,7 +24,6 @@ import {
 
 import type {
   CalendarView,
-  Category,
   Filter,
   Task,
   TaskDraft,
@@ -41,8 +42,7 @@ type NewTaskDefaults = {
 };
 
 export function App() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
   const [error, setError] = useState<string>();
 
   const [session, setSession] = useState<AuthSession | null>(() =>
@@ -61,28 +61,18 @@ export function App() {
 
   const [deletingTaskId, setDeletingTaskId] =
     useState<string>();
-
-  // Load the user's tasks and categories after authentication.
-  useEffect(() => {
-    if (!session) {
-      return;
-    }
-
-    bffApi
-      .bootstrap()
-      .then(
-        ({
-          tasks: loadedTasks,
-          categories: loadedCategories,
-        }) => {
-          setTasks(loadedTasks);
-          setCategories(loadedCategories);
-        }
-      )
-      .catch((requestError: Error) => {
-        setError(requestError.message);
-      });
-  }, [session]);
+  const queryClient = useQueryClient();
+  const bootstrapKey = ['bootstrap', session?.email] as const;
+  const bootstrap = useQuery({
+    queryKey: bootstrapKey,
+    queryFn: bffApi.bootstrap,
+    enabled: session !== null,
+  });
+  const tasks = bootstrap.data?.tasks ?? [];
+  const categories = bootstrap.data?.categories ?? [];
+  const updateBootstrap = (update: (current: BootstrapResponse) => BootstrapResponse) => {
+    queryClient.setQueryData<BootstrapResponse>(bootstrapKey, (current) => current ? update(current) : current);
+  };
 
   // Allow Escape to close any open task/delete modal.
   useEffect(() => {
@@ -91,6 +81,10 @@ export function App() {
         setEditingTask(undefined);
         setNewTaskDefaults(undefined);
         setDeletingTaskId(undefined);
+        window.setTimeout(() => {
+          returnFocusRef.current?.focus();
+          returnFocusRef.current = null;
+        }, 0);
       }
     };
 
@@ -121,6 +115,7 @@ export function App() {
     date = dateToKey(currentDate),
     time?: string
   ) => {
+    returnFocusRef.current = document.activeElement as HTMLElement | null;
     setEditingTask(undefined);
 
     setNewTaskDefaults({
@@ -132,18 +127,21 @@ export function App() {
   const closeForm = () => {
     setEditingTask(undefined);
     setNewTaskDefaults(undefined);
+    window.setTimeout(() => {
+      returnFocusRef.current?.focus();
+      returnFocusRef.current = null;
+    }, 0);
   };
 
   const openTask = (task: Task) => {
+    returnFocusRef.current = document.activeElement as HTMLElement | null;
     setEditingTask(task);
     setNewTaskDefaults(undefined);
   };
 
   const refreshAfterConflict = async () => {
     try {
-      const refreshed = await bffApi.bootstrap();
-      setTasks(refreshed.tasks);
-      setCategories(refreshed.categories);
+      await queryClient.fetchQuery({ queryKey: bootstrapKey, queryFn: bffApi.bootstrap, staleTime: 0 });
       closeForm();
       setError('This task changed in another tab. Your task list was refreshed. Reopen it and try again.');
     } catch {
@@ -165,15 +163,12 @@ export function App() {
           })
         : await taskApi.create(draft);
 
-      setTasks((currentTasks) =>
-        editingTask
-          ? currentTasks.map((task) =>
-              task.id === savedTask.id
-                ? savedTask
-                : task
-            )
-          : [...currentTasks, savedTask]
-      );
+      updateBootstrap((current) => ({
+        ...current,
+        tasks: editingTask
+          ? current.tasks.map((task) => task.id === savedTask.id ? savedTask : task)
+          : [...current.tasks, savedTask],
+      }));
 
       closeForm();
     } catch (requestError) {
@@ -193,11 +188,7 @@ export function App() {
     try {
       await taskApi.delete(taskId);
 
-      setTasks((currentTasks) =>
-        currentTasks.filter(
-          (task) => task.id !== taskId
-        )
-      );
+      updateBootstrap((current) => ({ ...current, tasks: current.tasks.filter((task) => task.id !== taskId) }));
 
       setDeletingTaskId(undefined);
       closeForm();
@@ -219,10 +210,7 @@ export function App() {
       color
     );
 
-    setCategories((currentCategories) => [
-      ...currentCategories,
-      category,
-    ]);
+    updateBootstrap((current) => ({ ...current, categories: [...current.categories, category] }));
 
     return category;
   };
@@ -244,13 +232,10 @@ export function App() {
         isCompleted: !task.isCompleted,
       });
 
-      setTasks((currentTasks) =>
-        currentTasks.map((item) =>
-          item.id === taskId
-            ? updatedTask
-            : item
-        )
-      );
+      updateBootstrap((current) => ({
+        ...current,
+        tasks: current.tasks.map((item) => item.id === taskId ? updatedTask : item),
+      }));
     } catch (requestError) {
       if (requestError instanceof ApiRequestError && requestError.status === 409) {
         await refreshAfterConflict();
@@ -349,8 +334,16 @@ export function App() {
         </p>
       )}
 
+      {bootstrap.isPending && <p className="request-status" role="status">Loading your tasks...</p>}
+      {bootstrap.isError && (
+        <div className="request-error" role="alert">
+          <p>{bootstrap.error.message}</p>
+          <button className="btn btn-secondary" type="button" onClick={() => bootstrap.refetch()}>Retry</button>
+        </div>
+      )}
+
       {/* Tasks micro-frontend */}
-      <TasksMfe
+      {bootstrap.isSuccess && <TasksMfe
         tasks={viewTasks}
         filter={filter}
         searchQuery={searchQuery}
@@ -358,10 +351,10 @@ export function App() {
         onSearchQueryChange={
           setSearchQuery
         }
-      />
+      />}
 
       {/* Calendar micro-frontend */}
-      <CalendarMfe
+      {bootstrap.isSuccess && <CalendarMfe
         tasks={filteredTasks}
         currentDate={currentDate}
         view={view}
@@ -377,7 +370,7 @@ export function App() {
         onDeleteTask={
           setDeletingTaskId
         }
-      />
+      />}
 
       {/* Create / edit task modal */}
       {isFormOpen && (

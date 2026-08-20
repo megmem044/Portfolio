@@ -6,6 +6,7 @@ logging:
     org.hibernate.SQL: WARN
     org.hibernate.orm.jdbc.bind: WARN
 
+# Production logging and runtime settings for the Spring API.
 spring:
   jpa:
     show-sql: false
