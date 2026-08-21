@@ -8,5 +8,13 @@ logging:
 
 # Production logging and runtime settings for the Spring API.
 spring:
+  datasource:
+    url: jdbc:${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
   jpa:
     show-sql: false
+
+toodle:
+  jwt:
+    secret: ${JWT_SECRET}

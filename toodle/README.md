@@ -1,12 +1,12 @@
 # Toodle
 
-_Last updated: August 19, 2026_
+_Last updated: August 20, 2026_
 
 Toodle is a task and calendar application. Users can create an account, organize tasks, and view their work by day, week, or month.
 
 ## Project status
 
-The application works locally and has automated tests. It is not deployed to the cloud yet.
+The application works locally, has automated tests, and is ready for a Render deployment. No cloud resources have been created yet.
 
 Completed work includes:
 
@@ -20,8 +20,9 @@ Completed work includes:
 - Automated security and accessibility tests.
 - TanStack Query loading, retry, cache, and error handling.
 - Docker production images and GitHub Actions checks.
+- A Render Blueprint for private PostgreSQL, Spring, the BFF, HTTPS, and the static frontend.
 
-The next major job is cloud deployment. See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the remaining steps.
+The final deployment action is intentionally waiting for approval because it creates paid cloud resources. See [DEPLOYMENT.md](DEPLOYMENT.md) for that step and [PROJECT_PLAN.md](PROJECT_PLAN.md) for the remaining work.
 
 ## How it works
 
@@ -109,7 +110,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The test suite currently has 18 backend tests, 6 BFF tests, 12 frontend component tests, and 1 Playwright browser test.
+The test suite currently has 18 backend tests, 7 BFF tests, 12 frontend component tests, and 1 Playwright browser test.
 
 ## API documentation
 
@@ -142,6 +143,7 @@ Production requires `POSTGRES_PASSWORD` and `JWT_SECRET`. Do not commit real sec
 | `VITE_API_URL` | Frontend | Browser-facing BFF URL |
 | `SPRING_API_URL` | BFF | Spring API URL |
 | `SPRING_HEALTH_URL` | BFF | Spring health URL |
+| `SPRING_HOSTPORT` | BFF | Render private Spring host and port |
 | `FRONTEND_ORIGIN` | BFF | Allowed browser origins |
 | `DATABASE_URL` | Backend | PostgreSQL connection URL |
 | `DATABASE_USERNAME` | Backend | PostgreSQL user |

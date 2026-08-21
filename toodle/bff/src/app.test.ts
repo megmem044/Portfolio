@@ -7,7 +7,10 @@ import { createApp } from './app.js';
 
 const servers: Server[] = [];
 
-afterEach(() => Promise.all(servers.splice(0).map((server) => new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve())))));
+afterEach(() => {
+  delete process.env.SPRING_HOSTPORT;
+  return Promise.all(servers.splice(0).map((server) => new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()))));
+});
 
 async function request(fetchFromUpstream: typeof fetch, path: string, init?: RequestInit) {
   const server = createApp({ fetch: fetchFromUpstream }).listen(0);
@@ -27,6 +30,18 @@ test('health returns 503 when Spring cannot be reached', async () => {
   const response = await request(async () => { throw new Error('offline'); }, '/health');
   assert.equal(response.status, 503);
   assert.deepEqual(await response.json(), { status: 'DOWN' });
+});
+
+test('uses the private Spring address supplied by Render', async () => {
+  process.env.SPRING_HOSTPORT = 'toodle-api.internal:10000';
+  let upstreamUrl = '';
+  const response = await request(async (input) => {
+    upstreamUrl = String(input);
+    return Response.json({ status: 'UP' });
+  }, '/health');
+
+  assert.equal(response.status, 200);
+  assert.equal(upstreamUrl, 'http://toodle-api.internal:10000/actuator/health');
 });
 
 test('bootstrap composes tasks and categories and forwards authentication', async () => {

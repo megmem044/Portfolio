@@ -1,10 +1,14 @@
 # Shared Spring settings for local development and tests.
+server:
+  port: ${PORT:8080}
+
 spring:
   jackson:
     deserialization:
       fail-on-unknown-properties: true
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/toodle}
+    # Render supplies postgresql://; Spring's driver needs the jdbc: prefix.
+    url: jdbc:${DATABASE_URL:postgresql://localhost:5433/toodle}
     username: ${DATABASE_USERNAME:toodle}
     password: ${DATABASE_PASSWORD:toodle}
   jpa:

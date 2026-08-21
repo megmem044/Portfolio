@@ -19,8 +19,10 @@ export interface AppOptions {
 export function createApp(options: AppOptions = {}) {
   const app = express();
   const fetchFromUpstream = options.fetch ?? globalThis.fetch;
-  const springApiUrl = options.springApiUrl ?? process.env.SPRING_API_URL ?? 'http://127.0.0.1:8080/api';
-  const springHealthUrl = options.springHealthUrl ?? process.env.SPRING_HEALTH_URL ?? 'http://127.0.0.1:8080/actuator/health';
+  const renderSpringOrigin = process.env.SPRING_HOSTPORT ? `http://${process.env.SPRING_HOSTPORT}` : undefined;
+  // Render gives the BFF a private host and port instead of a complete URL.
+  const springApiUrl = options.springApiUrl ?? process.env.SPRING_API_URL ?? (renderSpringOrigin ? `${renderSpringOrigin}/api` : 'http://127.0.0.1:8080/api');
+  const springHealthUrl = options.springHealthUrl ?? process.env.SPRING_HEALTH_URL ?? (renderSpringOrigin ? `${renderSpringOrigin}/actuator/health` : 'http://127.0.0.1:8080/actuator/health');
   const frontendOrigins = options.frontendOrigins ?? process.env.FRONTEND_ORIGIN?.split(',').map((origin) => origin.trim()).filter(Boolean) ?? ['http://127.0.0.1:5173', 'http://localhost:5173'];
 
   app.use(cors({ origin: frontendOrigins, exposedHeaders: ['X-Correlation-Id'] }));

@@ -18,7 +18,7 @@ services:
     build:
       context: ./backend
     environment:
-      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-toodle}
+      DATABASE_URL: postgresql://postgres:5432/${POSTGRES_DB:-toodle}
       DATABASE_USERNAME: ${POSTGRES_USER:-toodle}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}

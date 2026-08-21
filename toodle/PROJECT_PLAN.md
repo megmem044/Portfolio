@@ -1,6 +1,6 @@
 # Toodle Project Plan
 
-_Last updated: August 19, 2026_
+_Last updated: August 20, 2026_
 
 ## Goal
 
@@ -10,7 +10,7 @@ Build a secure and reliable task application that is ready for real users. Keep 
 
 The local application, API contract, database tests, update protection, security tests, accessibility automation, and frontend data handling are complete.
 
-The next major step is cloud deployment.
+The cloud configuration is ready. The next step is approving the paid resources in Render and testing the live application.
 
 ## Completed
 
@@ -62,9 +62,9 @@ The next major step is cloud deployment.
 
 ### 7. Cloud deployment
 
-- [ ] Choose a cloud host and managed PostgreSQL provider.
-- [ ] Make GitHub Actions publish images and deploy them.
-- [ ] Configure TLS, secrets, CORS, migrations, and health checks.
+- [x] Choose Render and Render PostgreSQL.
+- [x] Deploy automatically only after GitHub checks pass.
+- [x] Configure TLS, secrets, CORS, migrations, and health checks.
 - [ ] Test login, tasks, persistence, and user separation online.
 - [x] Write rollback and recovery instructions.
 
@@ -77,9 +77,9 @@ The next major step is cloud deployment.
 
 ### 9. Infrastructure as code
 
-- [ ] Define cloud resources with Terraform.
-- [ ] Keep secrets and environment values outside Terraform source files.
-- [ ] Document how to create, change, and remove the cloud environment.
+- [x] Define Render resources in `render.yaml`.
+- [x] Keep secrets outside source files.
+- [x] Document how to create, change, and remove the cloud environment.
 
 ## Optional later work
 

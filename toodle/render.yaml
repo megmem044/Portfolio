@@ -1,0 +1,83 @@
+# Render Blueprint for the production Toodle environment.
+databases:
+  - name: toodle-db-megmem044
+    plan: basic-256mb
+    region: oregon
+    postgresMajorVersion: "16"
+    databaseName: toodle
+    user: toodle
+    ipAllowList: []
+
+services:
+  - type: pserv
+    name: toodle-api-megmem044
+    runtime: docker
+    plan: starter
+    region: oregon
+    rootDir: toodle/backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: toodle-db-megmem044
+          property: connectionString
+      - key: DATABASE_USERNAME
+        fromDatabase:
+          name: toodle-db-megmem044
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: toodle-db-megmem044
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+
+  - type: web
+    name: toodle-bff-megmem044
+    runtime: docker
+    plan: starter
+    region: oregon
+    rootDir: toodle/bff
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SPRING_HOSTPORT
+        fromService:
+          type: pserv
+          name: toodle-api-megmem044
+          property: hostport
+      - key: FRONTEND_ORIGIN
+        value: https://toodle-web-megmem044.onrender.com
+
+  - type: web
+    name: toodle-web-megmem044
+    runtime: static
+    rootDir: toodle/frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: VITE_API_URL
+        value: https://toodle-bff-megmem044.onrender.com/api
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
