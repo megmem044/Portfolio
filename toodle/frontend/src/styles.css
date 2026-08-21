@@ -1824,3 +1824,13 @@ select:focus-visible {
 .auth-error { margin: 8px 0 16px; padding: 11px 13px; border-radius: var(--radius-sm); background: rgba(227,104,136,.14); color: #8d2944; }
 .auth-switch-copy { margin-top: 22px; color: var(--text-secondary); text-align: center; font-size: 14px; }
 .auth-switch-copy button { border: 0; background: transparent; color: var(--night); font-weight: 800; text-decoration: underline; text-decoration-color: var(--blush); text-decoration-thickness: 3px; text-underline-offset: 3px; cursor: pointer; }
+
+@media (max-width: 760px) {
+    .auth-page { grid-template-columns: minmax(0, 1fr); }
+    .auth-story { min-height: auto; padding: 22px 20px; }
+    .auth-brand h1 { font-size: 36px; }
+    .auth-story-copy,
+    .auth-shapes { display: none; }
+    .auth-panel { min-height: calc(100svh - 92px); padding: 36px 20px; }
+    .auth-form { width: min(460px, 100%); }
+}

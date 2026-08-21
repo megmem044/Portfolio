@@ -1,4 +1,3 @@
--- Adds accounts and connects existing data to an owner.
 CREATE TABLE app_user (
     id UUID PRIMARY KEY,
     name VARCHAR(255) NOT NULL,

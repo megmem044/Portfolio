@@ -1,12 +1,12 @@
 # Toodle
 
-_Last updated: August 20, 2026_
+_Last updated: August 20, 2026 (release review complete)_
 
 Toodle is a task and calendar application. Users can create an account, organize tasks, and view their work by day, week, or month.
 
 ## Project status
 
-The application works locally, has automated tests, and is ready for a Render deployment. No cloud resources have been created yet.
+The application works locally, has automated tests, passed its accessibility review, and is ready for a Render deployment. No cloud resources have been created yet.
 
 Completed work includes:
 
@@ -19,10 +19,12 @@ Completed work includes:
 - Protection against two browser tabs overwriting the same task.
 - Automated security and accessibility tests.
 - TanStack Query loading, retry, cache, and error handling.
+- OpenTelemetry request and database tracing across the BFF and Spring API.
+- Lighthouse scores of 100 for Accessibility, Best Practices, and final SEO.
 - Docker production images and GitHub Actions checks.
 - A Render Blueprint for private PostgreSQL, Spring, the BFF, HTTPS, and the static frontend.
 
-The final deployment action is intentionally waiting for approval because it creates paid cloud resources. See [DEPLOYMENT.md](DEPLOYMENT.md) for that step and [PROJECT_PLAN.md](PROJECT_PLAN.md) for the remaining work.
+The only required step left is creating the paid Render resources and testing the live application. See [DEPLOYMENT.md](DEPLOYMENT.md) for that step and [PROJECT_PLAN.md](PROJECT_PLAN.md) for the release checklist.
 
 ## How it works
 
@@ -150,6 +152,9 @@ Production requires `POSTGRES_PASSWORD` and `JWT_SECRET`. Do not commit real sec
 | `DATABASE_PASSWORD` | Backend | PostgreSQL password |
 | `JWT_SECRET` | Backend | Token signing secret |
 | `JWT_EXPIRATION_MINUTES` | Backend | Login token lifetime |
+| `OTEL_SDK_DISABLED` | Backend and BFF | Turns OpenTelemetry off or on |
+| `OTEL_SERVICE_NAME` | Backend and BFF | Names the service in each trace |
+| `OTEL_TRACES_EXPORTER` | Backend and BFF | Chooses where trace records are sent |
 
 ## Important behavior
 
@@ -158,6 +163,8 @@ Production requires `POSTGRES_PASSWORD` and `JWT_SECRET`. Do not commit real sec
 - Unknown request fields are rejected.
 - Old task edits return `409` instead of overwriting newer work.
 - Request errors use one JSON format and include a correlation ID.
+- OpenTelemetry records BFF, Spring request, and database timing in production logs.
+- Trace settings do not capture authorization headers, request bodies, or database values.
 - Loading, empty, error, retry, and stale-data states are handled in the frontend.
 
 For a guided code tour, see [SOURCE_CODE_GUIDE.md](SOURCE_CODE_GUIDE.md).

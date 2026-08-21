@@ -21,6 +21,26 @@ toodle:
     secret: ${JWT_SECRET:toodle-local-development-secret-key-change-before-production-2026}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:120}
 
+# Tracing is off by default for local work. Production enables it explicitly.
+otel:
+  sdk:
+    disabled: ${OTEL_SDK_DISABLED:true}
+  service:
+    name: ${OTEL_SERVICE_NAME:toodle-api}
+  traces:
+    exporter: ${OTEL_TRACES_EXPORTER:none}
+  instrumentation:
+    jdbc:
+      statement-sanitizer:
+        enabled: true
+    http:
+      client:
+        capture-request-headers: []
+        capture-response-headers: []
+      server:
+        capture-request-headers: []
+        capture-response-headers: []
+
 management:
   endpoints:
     web:

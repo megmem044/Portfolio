@@ -4,14 +4,18 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "start": "tsx src/server.ts",
+    "dev": "tsx watch --import ./src/instrumentation.ts src/server.ts",
+    "start": "tsx --import ./src/instrumentation.ts src/server.ts",
     "build": "npm run check:api-types && tsc --noEmit",
     "generate:api-types": "openapi-typescript ../backend/target/openapi.json -o src/generated/spring-api.ts",
     "check:api-types": "openapi-typescript ../backend/target/openapi.json -o src/generated/spring-api.ts --check",
     "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/auto-instrumentations-node": "^0.79.0",
+    "@opentelemetry/sdk-node": "^0.221.0",
+    "@opentelemetry/sdk-trace-node": "^2.10.0",
     "cors": "latest",
     "express": "latest"
   },

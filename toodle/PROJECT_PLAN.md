@@ -1,6 +1,6 @@
 # Toodle Project Plan
 
-_Last updated: August 20, 2026_
+_Last updated: August 20, 2026 (release review complete)_
 
 ## Goal
 
@@ -8,7 +8,7 @@ Build a secure and reliable task application that is ready for real users. Keep 
 
 ## Current progress
 
-The local application, API contract, database tests, update protection, security tests, accessibility automation, and frontend data handling are complete.
+The local application, API contract, database tests, update protection, security tests, accessibility review, frontend data handling, tracing, and production Docker checks are complete.
 
 The cloud configuration is ready. The next step is approving the paid resources in Render and testing the live application.
 
@@ -49,7 +49,7 @@ The cloud configuration is ready. The next step is approving the paid resources 
 - [x] Run axe checks in component tests.
 - [x] Test an important keyboard workflow with Playwright.
 - [x] Test labels, dialogs, focus, errors, and keyboard order.
-- [ ] Run a manual Lighthouse and WCAG review before release.
+- [x] Run a manual Lighthouse and WCAG review before release.
 
 ### 6. Frontend data handling
 
@@ -71,15 +71,28 @@ The cloud configuration is ready. The next step is approving the paid resources 
 ### 8. Tracing
 
 - [x] Keep one request ID through the browser, BFF, and Spring.
-- [ ] Add OpenTelemetry.
-- [ ] Record request and database timing.
-- [ ] Keep passwords, tokens, and private data out of traces.
+- [x] Add OpenTelemetry.
+- [x] Record request and database timing.
+- [x] Keep passwords, tokens, and private data out of traces.
 
 ### 9. Infrastructure as code
 
 - [x] Define Render resources in `render.yaml`.
 - [x] Keep secrets outside source files.
 - [x] Document how to create, change, and remove the cloud environment.
+
+## Resume version
+
+**Toodle | Full-Stack Task and Calendar Application**
+React, TypeScript, TanStack Query, Express, Spring Boot, PostgreSQL, Docker, OpenTelemetry, Playwright, Testcontainers, GitHub Actions, Render
+
+- Built a secure full-stack task and calendar application with JWT authentication, user-owned data, categories, day/week/month views, and conflict-safe task editing.
+- Designed a four-part system with a React frontend, Express backend-for-frontend, Spring Boot REST API, and PostgreSQL database managed with Flyway migrations.
+- Generated and checked TypeScript API types from Spring OpenAPI output to prevent frontend and backend contract drift in continuous integration.
+- Added PostgreSQL integration tests with Testcontainers, security boundary tests, accessible component checks with axe, and keyboard workflow tests with Playwright.
+- Added end-to-end request IDs and OpenTelemetry tracing for BFF, API, and database timing while excluding passwords, tokens, and private values.
+- Prepared production Docker images, health checks, secret-based configuration, rollback instructions, and Render infrastructure as code with deployment gated by GitHub checks.
+- Achieved Lighthouse scores of 100 for Accessibility, Best Practices, and final SEO, and corrected responsive mobile and production caching issues found during review.
 
 ## Optional later work
 

@@ -21,6 +21,12 @@ services:
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: production
+      - key: OTEL_SDK_DISABLED
+        value: "false"
+      - key: OTEL_SERVICE_NAME
+        value: toodle-api
+      - key: OTEL_TRACES_EXPORTER
+        value: logging
       - key: DATABASE_URL
         fromDatabase:
           name: toodle-db-megmem044
@@ -49,6 +55,12 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: OTEL_SDK_DISABLED
+        value: "false"
+      - key: OTEL_SERVICE_NAME
+        value: toodle-bff
+      - key: OTEL_TRACES_EXPORTER
+        value: console
       - key: SPRING_HOSTPORT
         fromService:
           type: pserv
