@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-08-23T23:56:22.419Z",
+  "configuration": {
+    "baseUrl": "http://frontend/api",
+    "taskCount": 500,
+    "concurrency": 20,
+    "durationSeconds": 30,
+    "seedConcurrency": 20,
+    "traceSamplingRatio": 1,
+    "unusedOtlpExporters": "enabled"
+  },
+  "databaseProfile": {
+    "planningTimeMs": 10.406,
+    "executionTimeMs": 3.067,
+    "rows": 500
+  },
+  "seed": {
+    "tasks": 500,
+    "categories": 8,
+    "seconds": 27.13
+  },
+  "overall": {
+    "requests": 272,
+    "successful": 272,
+    "failed": 0,
+    "requestsPerSecond": 8.61,
+    "latencyMs": { "min": 442.36, "p50": 1981.47, "p95": 5019.43, "p99": 7275.07, "max": 7415.02 }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-08-24T00:13:08.840Z",
+  "configuration": {
+    "baseUrl": "http://frontend/api",
+    "taskCount": 500,
+    "concurrency": 20,
+    "durationSeconds": 30,
+    "seedConcurrency": 20,
+    "traceSamplingRatio": 0.1,
+    "unusedOtlpExporters": "disabled"
+  },
+  "seed": {
+    "tasks": 500,
+    "categories": 8,
+    "seconds": 23.39
+  },
+  "overall": {
+    "requests": 388,
+    "successful": 388,
+    "failed": 0,
+    "requestsPerSecond": 12.16,
+    "latencyMs": { "min": 509.65, "p50": 1503.76, "p95": 2646.85, "p99": 3428.61, "max": 3720.84 }
+  },
+  "improvement": {
+    "throughputPercent": 41.23,
+    "p95LatencyReductionPercent": 47.27
+  }
+}

@@ -1,12 +1,12 @@
 # Toodle
 
-_Last updated: August 20, 2026 (release review complete)_
+_Last updated: August 23, 2026_
 
 Toodle is a task and calendar application. Users can create an account, organize tasks, and view their work by day, week, or month.
 
 ## Project status
 
-The application works locally, has automated tests, passed its accessibility review, and is ready for a Render deployment. No cloud resources have been created yet.
+The application works locally, has automated tests, passed its accessibility review, and has production-style Docker and benchmark tooling. No cloud resources have been created yet.
 
 Completed work includes:
 
@@ -20,11 +20,26 @@ Completed work includes:
 - Automated security and accessibility tests.
 - TanStack Query loading, retry, cache, and error handling.
 - OpenTelemetry request and database tracing across the BFF and Spring API.
+- A reproducible 500-task concurrent load benchmark with saved p50, p95, throughput, and PostgreSQL timing results.
 - Lighthouse scores of 100 for Accessibility, Best Practices, and final SEO.
 - Docker production images and GitHub Actions checks.
 - A Render Blueprint for private PostgreSQL, Spring, the BFF, HTTPS, and the static frontend.
 
 The only required step left is creating the paid Render resources and testing the live application. See [DEPLOYMENT.md](DEPLOYMENT.md) for that step and [PROJECT_PLAN.md](PROJECT_PLAN.md) for the release checklist.
+
+## Performance evidence
+
+The local production-style benchmark seeds 500 tasks through the real HTTP application and runs 20 concurrent clients for 30 measured seconds. PostgreSQL executed the profiled 500-row owner query in 3.07 ms, showing that full-volume telemetry export rather than the database plan was the main measured bottleneck.
+
+Changing production-like tracing from 100% console export to 10% parent-based sampling and disabling unused OTLP metrics/log exporters produced this controlled result:
+
+| Result | Before | After | Change |
+| --- | ---: | ---: | ---: |
+| Throughput | 8.61 req/s | 12.16 req/s | 41.23% higher |
+| Overall p95 | 5,019 ms | 2,647 ms | 47.27% lower |
+| Failed requests | 0 | 0 | No regression |
+
+These are local machine results, not a production capacity promise. The runner, PostgreSQL profile, method, and JSON evidence are in [`benchmark/`](benchmark/README.md).
 
 ## How it works
 
@@ -155,6 +170,9 @@ Production requires `POSTGRES_PASSWORD` and `JWT_SECRET`. Do not commit real sec
 | `OTEL_SDK_DISABLED` | Backend and BFF | Turns OpenTelemetry off or on |
 | `OTEL_SERVICE_NAME` | Backend and BFF | Names the service in each trace |
 | `OTEL_TRACES_EXPORTER` | Backend and BFF | Chooses where trace records are sent |
+| `OTEL_TRACES_SAMPLER_ARG` | Backend and BFF | Sets the fraction of root traces retained |
+| `OTEL_METRICS_EXPORTER` | Backend and BFF | Disables or selects metrics export |
+| `OTEL_LOGS_EXPORTER` | Backend and BFF | Disables or selects telemetry log export |
 
 ## Important behavior
 

@@ -26,6 +26,10 @@ services:
       OTEL_SDK_DISABLED: "false"
       OTEL_SERVICE_NAME: toodle-api
       OTEL_TRACES_EXPORTER: logging
+      OTEL_TRACES_SAMPLER: parentbased_traceidratio
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-0.1}
+      OTEL_METRICS_EXPORTER: ${OTEL_METRICS_EXPORTER:-none}
+      OTEL_LOGS_EXPORTER: ${OTEL_LOGS_EXPORTER:-none}
     depends_on:
       postgres:
         condition: service_healthy
@@ -45,6 +49,10 @@ services:
       OTEL_SDK_DISABLED: "false"
       OTEL_SERVICE_NAME: toodle-bff
       OTEL_TRACES_EXPORTER: console
+      OTEL_TRACES_SAMPLER: parentbased_traceidratio
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-0.1}
+      OTEL_METRICS_EXPORTER: ${OTEL_METRICS_EXPORTER:-none}
+      OTEL_LOGS_EXPORTER: ${OTEL_LOGS_EXPORTER:-none}
     depends_on:
       backend:
         condition: service_healthy
@@ -70,6 +78,36 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+  benchmark:
+    image: node:24-alpine
+    profiles: ["benchmark"]
+    working_dir: /benchmark
+    command: ["node", "run.mjs"]
+    environment:
+      BENCHMARK_URL: http://frontend/api
+      BENCHMARK_TASKS: ${BENCHMARK_TASKS:-500}
+      BENCHMARK_CONCURRENCY: ${BENCHMARK_CONCURRENCY:-20}
+      BENCHMARK_DURATION_SECONDS: ${BENCHMARK_DURATION_SECONDS:-30}
+      BENCHMARK_SEED_CONCURRENCY: ${BENCHMARK_SEED_CONCURRENCY:-20}
+      BENCHMARK_RESULT: /benchmark/results/latest.json
+    volumes:
+      - ./benchmark:/benchmark
+    depends_on:
+      frontend:
+        condition: service_healthy
+
+  benchmark-db-profile:
+    image: postgres:16-alpine
+    profiles: ["benchmark"]
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+    command: ["psql", "-h", "postgres", "-U", "${POSTGRES_USER:-toodle}", "-d", "${POSTGRES_DB:-toodle}", "-f", "/benchmark/db-profile.sql"]
+    volumes:
+      - ./benchmark:/benchmark:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres-data:

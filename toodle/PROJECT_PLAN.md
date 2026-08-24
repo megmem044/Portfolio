@@ -1,6 +1,6 @@
 # Toodle Project Plan
 
-_Last updated: August 20, 2026 (release review complete)_
+_Last updated: August 23, 2026_
 
 ## Goal
 
@@ -8,9 +8,9 @@ Build a secure and reliable task application that is ready for real users. Keep 
 
 ## Current progress
 
-The local application, API contract, database tests, update protection, security tests, accessibility review, frontend data handling, tracing, and production Docker checks are complete.
+The local application, API contract, database tests, update protection, security tests, accessibility review, frontend data handling, tracing, production Docker checks, and local performance benchmark are complete.
 
-The cloud configuration is ready. The next step is approving the paid resources in Render and testing the live application.
+The cloud configuration is ready but has not been deployed. The project truthfully claims production-ready configuration, not a live production deployment.
 
 ## Completed
 
@@ -58,9 +58,21 @@ The cloud configuration is ready. The next step is approving the paid resources 
 - [x] Refresh stale data and handle failed changes safely.
 - [x] Keep Redux out unless the project later needs it.
 
-## Next
+### 7. Local performance benchmark
 
-### 7. Cloud deployment
+- [x] Run the complete Docker/PostgreSQL stack locally.
+- [x] Seed 500 tasks and eight categories through the real API path.
+- [x] Measure p50, p95, throughput, failures, and concurrent behavior.
+- [x] Profile the owner-scoped PostgreSQL query with `EXPLAIN ANALYZE`.
+- [x] Save reproducible benchmark code and machine-readable results.
+- [x] Use the evidence to optimize trace export instead of guessing.
+- [x] Rerun the same workload and record the before/after result.
+
+Measured local result with 20 concurrent clients for 30 seconds: throughput improved from 8.61 to 12.16 requests/second (41.23%), and p95 fell from 5,019 ms to 2,647 ms (47.27%), with zero failed requests. PostgreSQL executed the profiled 500-row query in 3.07 ms.
+
+## Remaining deployment work
+
+### 8. Cloud deployment
 
 - [x] Choose Render and Render PostgreSQL.
 - [x] Deploy automatically only after GitHub checks pass.
@@ -68,14 +80,14 @@ The cloud configuration is ready. The next step is approving the paid resources 
 - [ ] Test login, tasks, persistence, and user separation online.
 - [x] Write rollback and recovery instructions.
 
-### 8. Tracing
+### 9. Tracing
 
 - [x] Keep one request ID through the browser, BFF, and Spring.
 - [x] Add OpenTelemetry.
 - [x] Record request and database timing.
 - [x] Keep passwords, tokens, and private data out of traces.
 
-### 9. Infrastructure as code
+### 10. Infrastructure as code
 
 - [x] Define Render resources in `render.yaml`.
 - [x] Keep secrets outside source files.
@@ -90,13 +102,14 @@ React, TypeScript, TanStack Query, Express, Spring Boot, PostgreSQL, Docker, Ope
 - Designed a four-part system with a React frontend, Express backend-for-frontend, Spring Boot REST API, and PostgreSQL database managed with Flyway migrations.
 - Generated and checked TypeScript API types from Spring OpenAPI output to prevent frontend and backend contract drift in continuous integration.
 - Added PostgreSQL integration tests with Testcontainers, security boundary tests, accessible component checks with axe, and keyboard workflow tests with Playwright.
-- Added end-to-end request IDs and OpenTelemetry tracing for BFF, API, and database timing while excluding passwords, tokens, and private values.
+- Added end-to-end request IDs and sampled OpenTelemetry tracing for BFF, API, and database timing while excluding passwords, tokens, and private values.
+- Load-tested the production-style Docker stack with 500 seeded tasks and 20 concurrent clients; increased throughput 41% and reduced p95 latency 47% by sampling traces and removing unused telemetry export.
 - Prepared production Docker images, health checks, secret-based configuration, rollback instructions, and Render infrastructure as code with deployment gated by GitHub checks.
 - Achieved Lighthouse scores of 100 for Accessibility, Best Practices, and final SEO, and corrected responsive mobile and production caching issues found during review.
 
 ## Optional later work
 
-### 10. Live updates
+### 11. Live updates
 
 - [ ] Decide whether SSE or WebSockets would improve the application.
 - [ ] Update another open tab when a task changes.

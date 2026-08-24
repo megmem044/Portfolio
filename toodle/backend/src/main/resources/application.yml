@@ -29,6 +29,12 @@ otel:
     name: ${OTEL_SERVICE_NAME:toodle-api}
   traces:
     exporter: ${OTEL_TRACES_EXPORTER:none}
+    sampler: ${OTEL_TRACES_SAMPLER:parentbased_traceidratio}
+    sampler-arg: ${OTEL_TRACES_SAMPLER_ARG:0.1}
+  metrics:
+    exporter: ${OTEL_METRICS_EXPORTER:none}
+  logs:
+    exporter: ${OTEL_LOGS_EXPORTER:none}
   instrumentation:
     jdbc:
       statement-sanitizer:
