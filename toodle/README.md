@@ -1,68 +1,97 @@
 # Toodle
 
-_Last updated: August 23, 2026_
+_Last updated: August 24, 2026_
 
-Toodle is a task and calendar application. Users can create an account, organize tasks, and view their work by day, week, or month.
+Toodle is a full-stack task and calendar application for organizing day-to-day work without losing sight of when it needs to happen. Users can create an account, group tasks into categories, search and filter their work, and move between day, week, and month views.
 
-## Project status
+The project started as a task manager and grew into a production-style engineering exercise. It now includes user isolation, conflict-safe editing, a checked API contract, real PostgreSQL integration tests, distributed tracing, accessibility automation, containerized deployment configuration, and a reproducible performance benchmark.
 
-The application works locally, has automated tests, passed its accessibility review, and has production-style Docker and benchmark tooling. No cloud resources have been created yet.
+## What the application does
 
-Completed work includes:
+- Registers and authenticates users with signed JWTs and hashed passwords.
+- Keeps every user's tasks and categories private.
+- Creates, edits, completes, searches, filters, and deletes tasks.
+- Organizes tasks into categories and calendar views.
+- Detects stale edits instead of silently overwriting newer changes.
+- Shows clear loading, empty, retry, validation, and error states.
+- Carries one request ID from the browser through the BFF and Spring API.
 
-- A React and TypeScript frontend.
-- An Express BFF between the browser and Spring.
-- A Spring Boot API with PostgreSQL and Flyway migrations.
-- JWT login and data protection between users.
-- A checked OpenAPI contract and generated BFF types.
-- PostgreSQL integration tests with Testcontainers.
-- Protection against two browser tabs overwriting the same task.
-- Automated security and accessibility tests.
-- TanStack Query loading, retry, cache, and error handling.
-- OpenTelemetry request and database tracing across the BFF and Spring API.
-- A reproducible 500-task concurrent load benchmark with saved p50, p95, throughput, and PostgreSQL timing results.
-- Lighthouse scores of 100 for Accessibility, Best Practices, and final SEO.
-- Docker production images and GitHub Actions checks.
-- A Render Blueprint for private PostgreSQL, Spring, the BFF, HTTPS, and the static frontend.
+## Architecture
 
-The only required step left is creating the paid Render resources and testing the live application. See [DEPLOYMENT.md](DEPLOYMENT.md) for that step and [PROJECT_PLAN.md](PROJECT_PLAN.md) for the release checklist.
+```text
+React + TypeScript
+        |
+        v
+Express BFF
+        |
+        v
+Spring Boot API
+        |
+        v
+PostgreSQL
+```
 
-## Performance evidence
+The code is divided into three application folders:
 
-The local production-style benchmark seeds 500 tasks through the real HTTP application and runs 20 concurrent clients for 30 measured seconds. PostgreSQL executed the profiled 500-row owner query in 3.07 ms, showing that full-volume telemetry export rather than the database plan was the main measured bottleneck.
+- `frontend/` contains the React interface, TanStack Query data layer, calendar views, component tests, and Playwright workflow.
+- `bff/` contains the browser-facing Express API, request composition, correlation-ID handling, and OpenTelemetry setup.
+- `backend/` contains Spring Security, business rules, REST controllers, JPA persistence, Flyway migrations, and PostgreSQL integration tests.
 
-Changing production-like tracing from 100% console export to 10% parent-based sampling and disabling unused OTLP metrics/log exporters produced this controlled result:
+The BFF gives the browser one stable API boundary and forwards authenticated work to Spring. Spring remains the source of truth for validation, ownership, and persistence.
 
-| Result | Before | After | Change |
+## Engineering decisions
+
+### Checked API contract
+
+The backend generates an OpenAPI document during testing. The BFF generates TypeScript types from that document and checks them during its build. GitHub Actions runs the same workflow, so an incompatible Spring response cannot quietly drift away from the TypeScript contract. The compatibility rules are documented in [API_COMPATIBILITY.md](API_COMPATIBILITY.md).
+
+### Real database testing
+
+Testcontainers starts PostgreSQL for integration tests and runs the real Flyway migration history before exercising the API. This checks the schema, JPA mappings, ownership rules, and HTTP behavior against the same database engine used by the production configuration.
+
+Applied Flyway migrations are treated as permanent history. New database changes must use a new migration rather than editing an existing file and breaking its checksum.
+
+### Conflict-safe updates
+
+Tasks carry an optimistic-lock version. If two tabs read the same task and one saves first, the second receives `409 Conflict` instead of overwriting the newer change. The frontend refreshes the data and explains how to retry with the latest version.
+
+### Security boundaries
+
+Spring Security validates JWTs and protects task and category routes. Repository queries include the authenticated owner, and integration tests prove that one account cannot read or modify another account's records. Production secrets come from environment variables and are never committed.
+
+### Accessible interaction
+
+Testing Library and axe check the authentication form and task dialog. Playwright verifies a keyboard user can sign in, open the task dialog, close it with Escape, and return focus to the original button.
+
+A Lighthouse and WCAG review also uncovered a mobile layout problem that automated scores did not explain. After the responsive fix, the focused audit scored 100 for Accessibility, Best Practices, and SEO. Desktop Performance measured 96; simulated mobile Performance measured 67 and remains an honest area for future improvement.
+
+### Tracing and request IDs
+
+The browser creates a correlation ID for each request. Express validates and forwards it, Spring includes it in structured logs, and failed browser requests display it for troubleshooting.
+
+OpenTelemetry traces HTTP work across the BFF and Spring API and records JDBC timing. Production-style tracing uses 10% parent-based sampling. Authorization headers, passwords, tokens, request bodies, and database parameter values are not added to traces.
+
+## Measured performance work
+
+The benchmark under [`benchmark/`](benchmark/README.md) runs against the production-style Docker stack. It creates a dedicated account, seeds eight categories and 500 tasks through the real HTTP path, warms the application, and sends task-list and bootstrap traffic from 20 concurrent clients for 30 measured seconds.
+
+The first run showed 5,019 ms p95 latency and 8.61 requests per second. PostgreSQL completed the profiled 500-row owner query in 3.07 ms, which pointed away from the database plan and toward full-volume console telemetry export.
+
+After changing tracing to 10% parent-based sampling and disabling unused OTLP metrics and log exporters, the same workload produced:
+
+| Measurement | Baseline | Optimized | Change |
 | --- | ---: | ---: | ---: |
 | Throughput | 8.61 req/s | 12.16 req/s | 41.23% higher |
 | Overall p95 | 5,019 ms | 2,647 ms | 47.27% lower |
 | Failed requests | 0 | 0 | No regression |
 
-These are local machine results, not a production capacity promise. The runner, PostgreSQL profile, method, and JSON evidence are in [`benchmark/`](benchmark/README.md).
+The runner, SQL profile, and baseline/optimized JSON reports are committed with the project. These results describe one controlled local machine, not guaranteed production capacity.
 
-## How it works
+## Project status
 
-```text
-React frontend
-      |
-      v
-Express BFF
-      |
-      v
-Spring Boot API
-      |
-      v
-PostgreSQL
-```
+The complete production-style stack has been built and run locally with healthy frontend, BFF, backend, and PostgreSQL containers. Automated tests, accessibility review, tracing, benchmark tooling, health checks, and deployment documentation are complete.
 
-The active application is in these folders:
-
-```text
-frontend/   Browser interface
-bff/        Browser-facing API layer
-backend/    Spring API and database code
-```
+`render.yaml` is ready to create a managed PostgreSQL database, private Spring service, public BFF, and static frontend. No paid Render resources have been created, so this project is deployment-ready but not deployed to production. See [DEPLOYMENT.md](DEPLOYMENT.md) for the final provider-specific step and [PROJECT_PLAN.md](PROJECT_PLAN.md) for the full implementation record.
 
 ## Requirements
 
@@ -72,43 +101,55 @@ backend/    Spring API and database code
 - Maven 3.9 or newer
 - Docker Desktop
 
-## Run locally
+## Run the development stack
 
-1. Start PostgreSQL:
+Start each part in its own PowerShell terminal.
 
-   ```powershell
-   cd backend
-   docker compose up -d
-   ```
+First, start PostgreSQL:
 
-2. Start Spring in a new terminal:
+```powershell
+cd backend
+docker compose up -d
+```
 
-   ```powershell
-   cd backend
-   mvn spring-boot:run
-   ```
+Start Spring:
 
-3. Start the BFF in a new terminal:
+```powershell
+cd backend
+mvn spring-boot:run
+```
 
-   ```powershell
-   cd bff
-   npm ci
-   npm run dev
-   ```
+Start the BFF:
 
-4. Start the frontend in a new terminal:
+```powershell
+cd bff
+npm ci
+npm run dev
+```
 
-   ```powershell
-   cd frontend
-   npm ci
-   npm run dev
-   ```
+Start the frontend:
+
+```powershell
+cd frontend
+npm ci
+npm run dev
+```
 
 Open `http://127.0.0.1:5173`.
 
-## Run tests
+## Run the production-style stack
 
-Docker Desktop must be running. Run the backend first because it creates the OpenAPI file checked by the BFF.
+Create a local `.env` from `.env.example`, replace the sample secrets, and run:
+
+```powershell
+docker compose -f compose.production.yaml up --build
+```
+
+Open `http://127.0.0.1:8088`. The production-style stack requires `POSTGRES_PASSWORD` and `JWT_SECRET`. Do not commit real secret values.
+
+## Run the tests
+
+Docker Desktop must be running. Run the backend first because its tests create `backend/target/openapi.json`, which the BFF contract check needs.
 
 ```powershell
 cd backend
@@ -127,7 +168,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The test suite currently has 18 backend tests, 7 BFF tests, 12 frontend component tests, and 1 Playwright browser test.
+The verified suite contains 19 backend tests, 9 BFF tests, 12 frontend component tests, and 1 Playwright browser workflow.
 
 ## API documentation
 
@@ -136,24 +177,9 @@ When Spring is running:
 - OpenAPI JSON: `http://127.0.0.1:8080/v3/api-docs`
 - Swagger UI: `http://127.0.0.1:8080/swagger-ui.html`
 
-The backend test writes the checked contract to `backend/target/openapi.json`. The BFF build compares its generated TypeScript types with that file. Compatibility rules are in [API_COMPATIBILITY.md](API_COMPATIBILITY.md).
+The provider-neutral release, rollback, backup, and database recovery runbook is in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-Provider-neutral release, rollback, and database recovery steps are in
-[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
-
-## Production-style Docker stack
-
-Create a local `.env` from `.env.example`, replace its sample secrets, then run:
-
-```powershell
-docker compose -f compose.production.yaml up --build
-```
-
-Open `http://127.0.0.1:8088`.
-
-Production requires `POSTGRES_PASSWORD` and `JWT_SECRET`. Do not commit real secrets.
-
-## Main configuration
+## Configuration reference
 
 | Variable | Used by | Purpose |
 | --- | --- | --- |
@@ -169,20 +195,9 @@ Production requires `POSTGRES_PASSWORD` and `JWT_SECRET`. Do not commit real sec
 | `JWT_EXPIRATION_MINUTES` | Backend | Login token lifetime |
 | `OTEL_SDK_DISABLED` | Backend and BFF | Turns OpenTelemetry off or on |
 | `OTEL_SERVICE_NAME` | Backend and BFF | Names the service in each trace |
-| `OTEL_TRACES_EXPORTER` | Backend and BFF | Chooses where trace records are sent |
+| `OTEL_TRACES_EXPORTER` | Backend and BFF | Chooses where traces are sent |
 | `OTEL_TRACES_SAMPLER_ARG` | Backend and BFF | Sets the fraction of root traces retained |
 | `OTEL_METRICS_EXPORTER` | Backend and BFF | Disables or selects metrics export |
 | `OTEL_LOGS_EXPORTER` | Backend and BFF | Disables or selects telemetry log export |
-
-## Important behavior
-
-- Missing, invalid, and expired tokens return `401`.
-- A user cannot read or change another user's data.
-- Unknown request fields are rejected.
-- Old task edits return `409` instead of overwriting newer work.
-- Request errors use one JSON format and include a correlation ID.
-- OpenTelemetry records BFF, Spring request, and database timing in production logs.
-- Trace settings do not capture authorization headers, request bodies, or database values.
-- Loading, empty, error, retry, and stale-data states are handled in the frontend.
 
 For a guided code tour, see [SOURCE_CODE_GUIDE.md](SOURCE_CODE_GUIDE.md).
