@@ -22,3 +22,4 @@ class User(Base):
     transactions = relationship("Transaction", back_populates="owner")
     categories = relationship("Category", back_populates="owner")
     category_rules = relationship("CategoryRule", back_populates="owner")
+    transaction_imports = relationship("TransactionImport", back_populates="owner", cascade="all, delete-orphan")

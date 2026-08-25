@@ -12,6 +12,7 @@ from app.models.category_rule import CategoryRule  # noqa: F401
 from app.models.revoked_token import RevokedToken  # noqa: F401
 from app.models.transaction import Transaction  # noqa: F401
 from app.models.user import User  # noqa: F401
+from app.models.transaction_import import TransactionImport, TransactionImportRow  # noqa: F401
 
 
 config = context.config

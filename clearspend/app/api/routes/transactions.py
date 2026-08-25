@@ -2,8 +2,11 @@
 
 from datetime import date
 from decimal import Decimal
+import csv
+import io
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
@@ -223,6 +226,28 @@ def monthly_summary(
         "overall_total": overall_total,
         "totals_by_category": totals_by_category,
     }
+
+
+@router.get("/export.csv")
+def export_transactions(
+    start: date | None = None,
+    end: date | None = None,
+    category: str | None = None,
+    search: str | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if start is not None and end is not None and start > end:
+        raise HTTPException(status_code=422, detail="start date must be on or before end date")
+    query = db.query(Transaction).join(Transaction.category_record).filter(Transaction.owner_id == current_user.id)
+    if start is not None: query = query.filter(Transaction.date >= start)
+    if end is not None: query = query.filter(Transaction.date <= end)
+    if category: query = query.filter(Category.name == category.strip())
+    if search: query = query.filter(Transaction.merchant.ilike(f"%{search.strip()}%"))
+    output = io.StringIO(); writer = csv.writer(output, lineterminator="\n"); writer.writerow(["date", "merchant", "category", "amount"])
+    for transaction in query.order_by(Transaction.date.desc(), Transaction.id.desc()).yield_per(1000):
+        writer.writerow([transaction.date.isoformat(), transaction.merchant, transaction.category, f"{Decimal(transaction.amount):.2f}"])
+    return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=clearspend-transactions.csv"})
 
 
 def find_transaction(

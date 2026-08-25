@@ -30,7 +30,7 @@ docker compose ps
 Set the database address for the current PowerShell window:
 
 ```powershell
-$env:DATABASE_URL="postgresql+psycopg://transaction_app:local_dev_password@localhost:5433/transactions"
+$env:DATABASE_URL="postgresql+psycopg://transaction_app:local_dev_password@localhost:55432/transactions"
 ```
 
 Apply all database migrations:
@@ -46,7 +46,7 @@ The API will use PostgreSQL when it is started from the same PowerShell window.
 In a separate PowerShell window, set the test database address:
 
 ```powershell
-$env:TEST_DATABASE_URL="postgresql+psycopg://transaction_app:local_dev_password@localhost:5433/transactions_test"
+$env:TEST_DATABASE_URL="postgresql+psycopg://transaction_app:local_dev_password@localhost:55432/transactions_test"
 python -m pytest
 ```
 
@@ -76,6 +76,26 @@ Recorded development measurement:
 | With date index | Bitmap index scan | 0.840 ms |
 
 This run measured a 12.03× speedup. Timings depend on the computer, database state, and data shape, so the repeatable script is more important than any single result.
+
+## Inspect analytics query plans
+
+With `DATABASE_URL` pointing to PostgreSQL, run:
+
+```powershell
+python scripts/explain_analytics.py
+```
+
+The script runs `EXPLAIN (ANALYZE, BUFFERS)` for monthly trends, merchant
+aggregation, and filtered export. All three queries apply `owner_id` before
+aggregation; the filtered export can combine the owner and date indexes. Treat
+plans from an empty database as structural checks and capture portfolio timing
+claims only after loading representative generated data.
+
+The August 24 structural run selected owner-scoped indexes for both grouped
+analytics queries and completed them in under 0.3 ms on the empty development
+database. The filtered export completed in 0.06 ms. Composite `(owner_id, date)`
+and `(owner_id, merchant)` indexes are included so representative datasets can
+filter tenant data before date ordering or merchant grouping.
 
 ## Stop PostgreSQL
 

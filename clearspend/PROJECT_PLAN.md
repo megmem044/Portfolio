@@ -1,315 +1,161 @@
 # ClearSpend Project Plan
 
-_Last updated: August 15, 2026_
+_Last updated: August 24, 2026_
 
-## Goal
+## Purpose
 
-Build ClearSpend into a reliable transaction data platform. It will accept inconsistent bank data, check and clean it, prevent duplicate financial records, and create trustworthy analytics with SQL.
+ClearSpend is meant to be more than a personal-finance CRUD application. Its
+main engineering story is a trustworthy Python and PostgreSQL pipeline that can
+turn inconsistent bank exports into clean, explainable transaction data.
 
-The existing FastAPI API, PostgreSQL database, and React website will stay in place. They support the main project story, which is now data pipelines, analytics, data quality, performance, and financial correctness.
+A successful import should be safe to retry, easy to inspect, and fully
+reconciled. No source row should disappear without an outcome, no duplicate
+should be removed without an explanation, and no financial total should depend
+on floating-point arithmetic.
 
-## What success looks like
+## Key aspects
 
-A user should be able to upload a bank CSV file, review every row, understand any errors or duplicate warnings, and safely save approved transactions. Uploading the same data again must not create duplicate records.
+These are the strongest verified results from the project and the most useful
+ones to carry into a resume or technical interview:
 
-The system should also:
+- Built a streamed FastAPI/PostgreSQL transaction-import pipeline with staged
+  validation, deterministic normalization, row-level lineage, duplicate review,
+  transactional commits, and complete reconciliation.
+- Reduced measured peak Python memory for a generated 100,000-row workload from
+  126.85 MiB to 29.99 MiB by replacing whole-file materialization with streaming,
+  1,000-row staging batches, and paginated previews—a 76.4% reduction.
+- Benchmarked PostgreSQL insertion strategies and measured native `COPY` at
+  approximately 66,108 rows/second for 10,000 generated rows: 87.8 times the
+  throughput of row-at-a-time insertion and 10.3 times SQLAlchemy bulk execute.
+- Prevented repeated and competing imports through stable SHA-256 fingerprints,
+  an owner-scoped uniqueness constraint, row locking, idempotent commit behavior,
+  and rollback tests that prove partial transactions are not retained.
+- Enforced the reconciliation rule `input = imported + duplicates + invalid +
+  rejected` and verified that accepted staging totals match linked transaction
+  totals using exact decimal money types.
+- Implemented SQL analytics with grouped queries and window functions, including
+  month-over-month changes, three-month rolling averages, merchant totals,
+  category share, largest transactions, and uncategorized rate.
+- Improved a representative PostgreSQL date query from 10.107 ms to 0.840 ms
+  through indexing, with reproducible `EXPLAIN ANALYZE` tooling and additional
+  owner/date and owner/merchant composite indexes.
+- Maintained 73 backend tests that pass on both SQLite and PostgreSQL, alongside
+  a React/TypeScript production build and lint-clean frontend.
 
-- Keep an audit trail from each saved transaction back to its source file and row.
-- Prove that all input rows are imported, rejected, or marked as duplicates.
-- Keep money calculations exact.
-- Produce useful reports with SQL.
-- Measure pipeline quality and processing speed.
-- Learn simple categorization patterns from corrections without making machine learning the main feature.
+The measurements above come from generated workloads on the development
+machine. They should be presented as reproducible benchmark results, not as
+hardware-independent guarantees.
 
-## Current state
-
-The project already has:
-
-- A FastAPI backend and React frontend
-- PostgreSQL and SQLite support
-- Alembic database migrations
-- Private user accounts and protected user data
-- Transaction creation, editing, deletion, search, filtering, sorting, and pagination
-- Categories and merchant categorization rules
-- Monthly category totals calculated in the database
-- Backend tests and a measured PostgreSQL index improvement
-
-The import pipeline, staging tables, analytics models, dbt project, data-quality dashboard, large-import benchmarks, and correction-trained model have not been built yet.
-
-## Planned data flow
+## Current architecture
 
 ```text
-Upload bank file
-       |
-       v
-Choose or detect its format
-       |
-       v
-Map and parse columns
-       |
-       v
-Store rows in staging tables
-       |
-       v
-Validate and normalize data
-       |
-       v
-Find exact and possible duplicates
-       |
-       v
-Preview and approve results
-       |
-       v
-Save trusted transactions
-       |
-       +------------------+
-       |                  |
-       v                  v
-Categorization       SQL analytics
-       |                  |
-       v                  v
- Corrections       Reports and exports
+Bank CSV or manual entry
+           |
+           v
+ Mapping and streamed parsing
+           |
+           v
+ Staging, validation, normalization
+           |
+           v
+ Exact and possible duplicate review
+           |
+           v
+ Transactional commit and reconciliation
+           |
+     +-----+-----+
+     |           |
+     v           v
+Categorization  SQL analytics and exports
 ```
 
-## Roadmap
-
-### Milestone 1: Design the import foundation
-
-Status: Next
-
-Build:
-
-- Define one standard transaction format for all sources.
-- Add `imports` and `import_rows` staging tables.
-- Store the filename, source, row number, raw values, cleaned values, status, and error reason.
-- Define import states such as uploaded, validating, ready, committed, and failed.
-- Document how a saved transaction links back to its source row.
-
-Complete when:
-
-- Database migrations work on a clean database.
-- Relationships and ownership rules are tested.
-- A failed import can be inspected without adding partial transactions.
-
-### Milestone 2: Build CSV parsing and validation
-
-Status: Not started
-
-Build:
-
-- Accept common bank CSV layouts.
-- Let users map unfamiliar columns to ClearSpend fields.
-- Parse dates, debit and credit columns, signed amounts, merchants, and currencies.
-- Validate required values and explain row-level errors.
-- Preview the results before saving them.
-- Add safe file-size and row-count limits.
-
-Complete when:
-
-- Several different sample bank formats produce the same standard records.
-- Invalid rows show clear reasons and do not block the review of valid rows.
-- Empty, malformed, oversized, and unusual files are tested.
-
-### Milestone 3: Normalize and deduplicate data
-
-Status: Not started
-
-Build:
-
-- Create small, testable cleaning steps for whitespace, case, dates, amounts, and merchant names.
-- Preserve both raw and cleaned merchant values.
-- Support merchant aliases such as different Amazon descriptions becoming `Amazon`.
-- Create a stable fingerprint from important transaction fields.
-- Classify rows as new, exact duplicate, possible duplicate, or invalid.
-- Make import retries idempotent, meaning repeated requests do not create repeated records.
-
-Complete when:
-
-- Normalization rules have regression tests.
-- Uploading the same file twice creates no extra transactions.
-- Possible duplicates are shown for review instead of silently removed.
-
-### Milestone 4: Commit and reconcile imports
-
-Status: Not started
-
-Build:
-
-- Commit approved rows in a safe database transaction.
-- Process rows in batches and roll back safely after failures.
-- Produce a reconciliation report for each import.
-- Track input, valid, invalid, exact duplicate, possible duplicate, and imported counts.
-- Confirm that every input row is accounted for.
-
-Complete when:
-
-- The report satisfies this rule: `input rows = imported + duplicates + invalid or rejected rows`.
-- Money totals for accepted rows match the saved transaction totals.
-- Interrupted and repeated commits are tested.
-
-### Milestone 5: Add SQL analytics and marts
-
-Status: Not started
-
-Build:
-
-- Monthly spending by category
-- Month-over-month spending changes
-- Merchant spending totals and transaction counts
-- Three-month rolling averages
-- Largest transactions and category share
-- Uncategorized transaction rate
-- Analytics tables for monthly, category, merchant, and import-quality reporting
-- CSV exports for filtered transactions and analytics
-
-Use SQL joins, common table expressions, window functions, conditional totals, indexes, and query plans where they make the result clearer or faster.
-
-Complete when:
-
-- Analytics totals agree with the trusted transaction records.
-- Important queries have tests and documented query plans.
-- Users can export useful datasets without direct database access.
-
-### Milestone 6: Add dbt and data-quality checks
-
-Status: Not started
-
-Build:
-
-- Organize dbt models into staging, intermediate, and reporting layers.
-- Test required fields, unique keys, relationships, and accepted status values.
-- Document each reporting model and its source data.
-- Run dbt models and tests automatically.
-
-Complete when:
-
-- A clean PostgreSQL database can build all analytics models.
-- Data-quality failures stop bad reporting data from being published.
-- Model definitions and important columns are documented.
-
-### Milestone 7: Measure and improve import performance
-
-Status: Not started
-
-Build:
-
-- Generate safe test files with 1,000, 10,000, 100,000, and larger row counts.
-- Measure parsing, validation, database insertion, total runtime, memory use, and rows per second.
-- Compare row-by-row inserts, batch inserts, and PostgreSQL bulk loading where appropriate.
-- Record the effect of batch size, indexes, and transaction boundaries.
-
-Complete when:
-
-- Results can be reproduced from documented commands.
-- Before-and-after measurements support any performance claims.
-- Large imports stay within defined time and memory limits.
-
-### Milestone 8: Show pipeline quality
-
-Status: Not started
-
-Build:
-
-- Display import row counts and reconciliation results.
-- Track validation failure rate, duplicate rate, missing merchant rate, categorization coverage, import duration, and processing speed.
-- Add alerts or visible warnings for important quality failures.
-- Keep historical results so quality changes can be compared over time.
-
-Complete when:
-
-- Each import has a clear quality report.
-- The dashboard explains what failed and why.
-- Important metrics can be queried or exported.
-
-### Milestone 9: Add simple learning from corrections
-
-Status: Later
-
-Build:
-
-- Save the original category suggestion and the user's correction.
-- Create privacy-safe training and evaluation datasets.
-- Start with a simple text classifier and compare it with merchant rules.
-- Return a confidence score and ask for review when confidence is low.
-- Version models and keep rule-based categorization as a fallback.
-- Track confidence, correction rate, and category or merchant changes over time.
-
-Complete when:
-
-- Results are measured on data that was not used for training.
-- Accuracy, precision, recall, and F1 are reported by category.
-- The app still works when the model is unavailable.
-- A model version can be reproduced or rolled back.
-
-### Milestone 10: Automate and deploy
-
-Status: Not started
-
-Build:
-
-- Run backend, pipeline, dbt, frontend, and migration checks in CI.
-- Containerize the application where it improves repeatable setup.
-- Add health checks, structured logs, request IDs, and basic monitoring.
-- Create repeatable deployment, backup, and restore instructions.
-- Keep security and frontend quality at a practical production-ready level.
-
-Complete when:
-
-- A clean environment can build and run the project from the documentation.
-- Failed required checks block deployment.
-- A deployed environment passes smoke tests.
-- Backup restoration has been tested.
-
-## Immediate priorities
-
-1. Design the standard transaction format and staging tables.
-2. Collect or create safe example CSV files with different column layouts.
-3. Define import statuses, row results, and reconciliation rules.
-4. Build the first CSV parser and preview flow.
-5. Add merchant normalization and deterministic fingerprints.
-6. Prove that retrying the same import creates no duplicates.
-
-Frontend category screens, richer charts, and extra authentication features are still useful, but they should not delay the data pipeline.
-
-## Data-quality rules
-
-- Use Python `Decimal` and PostgreSQL `NUMERIC` for money.
+The FastAPI backend owns validation and financial correctness. PostgreSQL stores
+trusted transactions, staging records, lineage, review decisions, and import
+metrics. The React application provides the mapping, preview, review, and commit
+workflow without trying to reproduce backend business rules.
+
+## Completed work
+
+### Import integrity
+
+The core pipeline is complete. It supports streamed multipart uploads, custom
+column mappings, debit/credit or signed-amount layouts, several date formats,
+currency validation, deterministic fingerprints, exact and possible duplicate
+classification, and reusable mapping presets.
+
+Raw and normalized values are stored together in owner-scoped staging tables.
+Preview results are paginated, and possible duplicates can be approved or
+rejected individually. Commits use database transactions and locking, keep a
+source-row link on each saved transaction, and remain safe when repeated or when
+two staged imports compete for the same fingerprint.
+
+### Performance and observability
+
+Generated 1K, 10K, and 100K workloads measure processing time, throughput, and
+memory. Separate insertion benchmarks compare row-at-a-time, configurable
+batches, bulk execute, and PostgreSQL `COPY`. Each real import stores its
+processing duration, throughput, commit duration, and estimated peak staging
+buffer size.
+
+### Analytics
+
+The focused analytics layer is complete. It uses SQL aggregation and window
+functions for monthly trends and rolling averages, and provides merchant,
+category, largest-transaction, and uncategorized-rate reports. Users can export
+filtered trusted transactions without direct database access. Important query
+plans can be reproduced from a checked-in script.
+
+### Application workflow
+
+The React interface supports authentication, transaction management, monthly
+summaries, CSV selection, automatic mapping suggestions, manual mapping,
+paginated row review, duplicate decisions, safe commit, and reconciliation
+results. The backend and frontend verification commands pass cleanly.
+
+## Next phase
+
+The original high-priority pipeline work is finished. Future work should be
+chosen for a specific product or job-search need rather than added only to make
+the stack larger.
+
+Good next options are:
+
+1. Add dbt staging and reporting models if targeting analytics-engineering roles.
+2. Build a historical data-quality view for validation, duplicate,
+   categorization, and throughput trends.
+3. Add CI for backend tests, PostgreSQL integration tests, migrations, frontend
+   build, and lint.
+4. Add structured logs, request IDs, health checks, backup instructions, and a
+   tested restore procedure before deployment.
+5. Experiment with category suggestions learned from user corrections only after
+   the pipeline and evaluation dataset justify it.
+
+## Engineering rules
+
+- Use `Decimal` and PostgreSQL `NUMERIC` for money.
+- Preserve raw values before applying transformations.
+- Keep transformations deterministic, small, and testable.
+- Scope every staging, transaction, and analytics query to its owner.
 - Never silently discard an input row.
-- Preserve raw source values before cleaning them.
-- Make every transformation small, deterministic, and testable.
-- Keep user data isolated at every pipeline stage.
-- Require category totals to equal the monthly total.
-- Require reconciliation counts to equal the number of input rows.
-- Treat duplicate matching as an explained classification, not a hidden deletion.
-- Use generated or anonymous test data; never commit real bank records.
+- Treat possible duplicates as review decisions, not automatic deletions.
+- Require count reconciliation and exact accepted-versus-saved totals.
+- Use generated or anonymous data in tests, fixtures, and benchmarks.
+- Attach performance claims to reproducible commands and recorded conditions.
 
-## Main risks
+## Known tradeoffs
 
-| Risk | Response |
-|---|---|
-| Banks use different CSV layouts | Support column mapping and keep reusable fixtures for each format. |
-| Cleaning changes the meaning of data | Preserve raw values and test each transformation. |
-| Retries create duplicate transactions | Use stable fingerprints, database constraints, and idempotency tests. |
-| Possible duplicates are incorrectly removed | Show them for review and separate them from exact duplicates. |
-| Financial totals are wrong | Use exact number types and test reconciliation and total invariants. |
-| Large files use too much time or memory | Stream or batch work, set limits, and benchmark realistic sizes. |
-| Analytics drift away from source records | Add dbt relationship tests and compare report totals with trusted data. |
-| Machine learning distracts from the pipeline | Keep the model simple and focus on its data lifecycle and measurements. |
+Streaming reduced memory substantially, but the tracemalloc-enabled 100K
+validation benchmark takes about 65 seconds on the development machine. Further
+speed work should profile normalization and fingerprinting before changing the
+correctness model.
 
-## Main skills demonstrated
-
-- Python and PostgreSQL
-- SQL analytics and query tuning
-- ETL pipelines and CSV processing
-- Data modeling and staging tables
-- Data cleaning and normalization
-- Deduplication and idempotency
-- Batch processing and performance measurement
-- dbt and analytics engineering
-- Data quality, lineage, and reconciliation
-- Exact financial calculations
-- A small, measured machine-learning lifecycle
+Mapping presets are intentionally simple and local. A larger preset library
+would need versioning and fixture coverage because bank export formats can
+change. Likewise, machine learning remains optional: deterministic merchant
+rules are easier to explain and already provide a reliable fallback.
 
 ## Plan maintenance
 
-Review this plan after every milestone and update its status and date. Put detailed implementation notes and measured results in `docs/`. Update the README whenever the current feature list or next major priority changes.
+Update this document only when implementation or measurements change. Detailed
+commands and benchmark conditions belong in `docs/`, while the README should
+remain the shortest accurate introduction to the project.

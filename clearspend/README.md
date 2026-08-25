@@ -1,167 +1,135 @@
 # ClearSpend
 
-_Last updated: August 15, 2026_
+ClearSpend is a personal-finance data application built around a simple problem:
+bank exports are inconsistent, but financial records still need to be exact,
+traceable, and safe to process more than once.
 
-ClearSpend is a personal finance data application. It turns messy transaction data from bank files and manual entries into clean, reliable records and useful spending reports.
+The project combines a FastAPI service, PostgreSQL, and a React interface. A user
+can upload a CSV, map unfamiliar columns, inspect normalized rows and validation
+errors, review possible duplicates, and commit approved transactions. Every
+saved transaction keeps its link to the original file and row.
 
-The main focus of this project is data engineering: importing data, checking its quality, cleaning it, preventing duplicates, and using SQL to produce accurate analytics. The FastAPI backend and React website provide a simple way to use and demonstrate that data pipeline.
-
-## How it works
+## Import pipeline
 
 ```text
-Bank CSV files or manual entries
-              |
-              v
-       Import and staging
-              |
-              v
-     Validation and cleaning
-              |
-              v
-  Duplicate checks and review
-              |
-              v
-     Trusted transactions
-          /          \
-         v            v
- Categorization   SQL analytics
-         \            /
-          v          v
-        ClearSpend dashboard
+CSV upload → column mapping → staging → validation and normalization
+           → duplicate review → transactional commit → reconciliation
 ```
 
-ClearSpend will support different bank CSV formats by mapping them into one standard transaction format. Imported rows will first go into a staging area, where the app can explain errors and possible duplicates before saving approved records.
+Uploads are parsed as streams and written to staging in 1,000-row batches. The
+preview API is paginated, so large imports do not produce a single enormous
+response. Raw values are retained alongside cleaned dates, merchants, currency
+codes, and exact decimal amounts.
 
-## What works today
+Stable SHA-256 fingerprints identify exact duplicates. Transactions with the
+same date and amount but a different merchant are treated as possible duplicates
+and remain visible for an explicit decision. A database constraint provides a
+final safeguard against repeated or competing commits.
 
-- Register, sign in, sign out, and keep each user's data private
-- Add, view, edit, and delete transactions
-- Search, filter, sort, and page through transactions
-- Suggest categories using merchant rules
-- Create and manage categories and categorization rules through the API
-- Calculate exact monthly totals by category in the database
-- Run with SQLite for simple development or PostgreSQL
-- Apply repeatable database changes with Alembic migrations
-- Demonstrate a measured improvement from a PostgreSQL index
-- Use a React dashboard for authentication, transactions, and monthly totals
-- Test the main backend, database, and security behavior
+After a commit, ClearSpend verifies both of these invariants:
 
-## What comes next
-
-The next major feature is a reliable CSV data pipeline. It will:
-
-1. Accept files from different banks.
-2. Map different column names into one standard format.
-3. Store uploaded rows in staging tables before final approval.
-4. Validate dates, amounts, merchants, and currencies.
-5. Clean merchant names and other inconsistent values.
-6. Mark rows as new, exact duplicates, possible duplicates, or invalid.
-7. Preview results before saving transactions.
-8. Make retries safe so the same file does not create duplicate records.
-9. Reconcile every input row with an imported, duplicate, or invalid result.
-10. Measure processing speed and data-quality results.
-
-After importing is reliable, the project will add:
-
-- SQL reports for monthly change, category share, merchant totals, rolling averages, and uncategorized transactions
-- Analytics tables designed for reporting
-- dbt models and data-quality tests
-- CSV exports for analysts
-- Import performance benchmarks using large generated datasets
-- A small category model trained from reviewed corrections
-- Monitoring for import quality and changes in categorization results
-- Automated delivery and deployment checks
-
-## Data correctness
-
-Financial data must remain exact and explainable. ClearSpend uses Python `Decimal` values and exact database number types instead of binary floating-point values for money.
-
-Important checks will include:
-
-- Category totals add up to the monthly total.
-- Imported, duplicate, and invalid rows add up to the number of input rows.
-- Retrying an import does not create duplicate transactions.
-- Every saved transaction can be traced back to its source import and row.
-- Invalid data is explained instead of silently changed or discarded.
-
-## Main technologies
-
-- Python and FastAPI for the API and data-processing services
-- PostgreSQL and SQL for storage, validation, and analytics
-- SQLAlchemy and Alembic for database access and migrations
-- dbt for planned analytics models and data tests
-- React and TypeScript for the supporting web interface
-- Pytest for automated backend and pipeline tests
-
-## Run the backend
-
-You need Python 3.11 or newer.
-
-1. Create and activate a virtual environment:
-
-   ```powershell
-   python -m venv .venv
-   .venv\Scripts\Activate.ps1
-   ```
-
-2. Install the application and test tools:
-
-   ```powershell
-   python -m pip install -e ".[dev]"
-   ```
-
-3. Apply database migrations:
-
-   ```powershell
-   python -m alembic upgrade head
-   ```
-
-4. Start the API:
-
-   ```powershell
-   python -m uvicorn app.main:app --reload
-   ```
-
-5. Open `http://127.0.0.1:8000/docs` to explore the API.
-
-Run backend tests with:
-
-```powershell
-python -m pytest
+```text
+input rows = imported + exact duplicates + invalid + rejected
+accepted staging total = saved transaction total
 ```
 
-Copy `.env.example` to `.env` to change local settings. Never commit `.env` or real financial data.
+## Features
 
-## Run the frontend
+- Private user accounts and owner-scoped data
+- Manual transaction creation, editing, deletion, filtering, sorting, and paging
+- Streamed CSV uploads with custom mappings and reusable format presets
+- Row-level validation errors without silently dropping input
+- Deterministic normalization, fingerprints, and idempotent retries
+- Explicit possible-duplicate approval or rejection
+- Transactional commits, rollback protection, lineage, and reconciliation
+- Stored import duration, throughput, commit time, and staging-buffer metrics
+- Monthly trends, rolling averages, merchant totals, category share, largest
+  transactions, and uncategorized-rate analytics
+- Filtered transaction export as CSV
+- React import workflow for mapping, paginated review, decisions, and results
+- SQLite for lightweight development and PostgreSQL for production-like testing
 
-From the `frontend` folder:
+## Measured results
+
+Benchmarks use generated data rather than personal bank records. On the
+development machine:
+
+- Streaming the 100,000-row parsing and validation path reduced peak Python
+  memory from 126.85 MiB to 29.99 MiB, a 76.4% reduction.
+- PostgreSQL `COPY` processed a 10,000-row insertion benchmark at approximately
+  66,108 rows/second.
+- In that run, `COPY` delivered 87.8 times the throughput of row-at-a-time
+  insertion and 10.3 times the throughput of SQLAlchemy bulk execute.
+- A PostgreSQL date-index benchmark improved a representative query from
+  10.107 ms to 0.840 ms, a 12.03-times speedup.
+- The backend suite contains 73 tests and passes on both SQLite and PostgreSQL.
+
+Timings vary by machine and database state. The repository includes the scripts
+used to reproduce the measurements.
+
+## Technology
+
+- Python 3.11, FastAPI, SQLAlchemy, Alembic, and Pytest
+- PostgreSQL 17 with exact `NUMERIC` money fields, indexes, window functions,
+  query-plan inspection, and native `COPY`
+- React 19, TypeScript, and Vite
+- Docker Compose for the local PostgreSQL environment
+
+## Run locally
+
+Create a virtual environment and install the backend:
 
 ```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+python -m alembic upgrade head
+python -m uvicorn app.main:app --reload
+```
+
+The API documentation is available at `http://127.0.0.1:8000/docs`.
+
+To use PostgreSQL instead of SQLite:
+
+```powershell
+docker compose up -d database
+$env:DATABASE_URL="postgresql+psycopg://transaction_app:local_dev_password@localhost:55432/transactions"
+python -m alembic upgrade head
+```
+
+Run the frontend in another terminal:
+
+```powershell
+cd frontend
 npm install
 npm run dev
 ```
 
-Use `npm run lint` and `npm run build` to check the frontend.
+## Verification and benchmarks
 
-## Project folders
+```powershell
+python -m pytest
+python scripts/benchmark_import_pipeline.py --phase processing --sizes 1000 10000 100000
+python scripts/benchmark_import_pipeline.py --phase insertion --sizes 1000 10000 --database-url $env:DATABASE_URL
+python scripts/explain_analytics.py
+```
 
-- `app/api` contains API routes and shared request helpers.
-- `app/services` contains business rules and categorization logic.
-- `app/models` contains database models.
-- `app/schemas` defines accepted and returned data.
-- `app/db` manages database connections.
-- `migrations` contains repeatable database changes.
-- `tests` contains automated backend tests.
-- `frontend` contains the React and TypeScript website.
-- `docs` contains the product, architecture, database, frontend, and phase guides.
+Frontend checks:
 
-Planned data-pipeline and analytics folders will be added only when their features are implemented.
+```powershell
+cd frontend
+npm run build
+npm run lint
+```
+
+Never commit `.env` files or real financial data. Tests and benchmarks use
+generated or anonymous records.
 
 ## Documentation
 
-- [Project plan](PROJECT_PLAN.md): priorities, milestones, and completion checks
-- [Product requirements](docs/product-requirements.md): user stories and expected behavior
-- [Detailed phase plan](docs/phase-plan.md): the existing implementation log
-- [Architecture guide](docs/architecture.md): how the current application is organized
-- [PostgreSQL guide](docs/postgresql.md): database setup and performance notes
-- [Frontend guide](docs/frontend.md): React structure and API integration
+- [Project plan](PROJECT_PLAN.md)
+- [Import pipeline](docs/import-pipeline.md)
+- [Analytics](docs/analytics.md)
+- [PostgreSQL and performance](docs/postgresql.md)
+- [Architecture](docs/architecture.md)
+- [Product requirements](docs/product-requirements.md)

@@ -10,7 +10,11 @@ A user adds transactions such as:
 
 The app recognizes the merchant and suggests a category such as **Food & Dining**. The user can review transactions, correct categories, and see how much they spent each month.
 
-The project currently provides a tested backend with private user accounts. The React frontend supports registration, login, logout, real monthly totals, and complete transaction management with search, filters, sorting, pagination, editing, and deletion. Category and rule screens, richer charts, file imports, and machine learning are still planned work.
+The project provides a tested backend with private user accounts. The React
+frontend supports registration, login, logout, monthly totals, complete
+transaction management, and a mapped CSV import workflow with row preview,
+duplicate decisions, commit, and reconciliation. Category/rule screens, richer
+charts, and machine learning remain planned work.
 
 ## Why is it useful?
 

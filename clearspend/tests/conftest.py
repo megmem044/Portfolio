@@ -14,6 +14,7 @@ from app.main import create_app
 from app.models.category import Category
 from app.models.category_rule import CategoryRule
 from app.models.user import User
+from app.models.transaction_import import TransactionImport, TransactionImportRow  # noqa: F401
 from app.services.security import create_access_token
 
 

@@ -7,7 +7,7 @@ import {
 import TransactionForm from '../components/TransactionForm'
 import '../App.css'
 
-const navigationItems = ['Overview', 'Transactions', 'Categories', 'Rules']
+const navigationItems = ['Overview', 'Transactions', 'Import', 'Categories', 'Rules']
 
 type DashboardPageProps = {
   email: string
@@ -15,6 +15,7 @@ type DashboardPageProps = {
   isLoggingOut: boolean
   onLogout: () => Promise<void>
   onShowTransactions: () => void
+  onShowImports: () => void
 }
 
 function currentMonthKey() {
@@ -40,6 +41,7 @@ function DashboardPage({
   isLoggingOut,
   onLogout,
   onShowTransactions,
+  onShowImports,
 }: DashboardPageProps) {
   const initial = email.charAt(0).toUpperCase()
   const month = currentMonthKey()
@@ -102,7 +104,7 @@ function DashboardPage({
               type="button"
               key={item}
               aria-current={index === 0 ? 'page' : undefined}
-              onClick={item === 'Transactions' ? onShowTransactions : undefined}
+              onClick={item === 'Transactions' ? onShowTransactions : item === 'Import' ? onShowImports : undefined}
             >
               {item}
             </button>

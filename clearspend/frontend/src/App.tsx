@@ -4,9 +4,10 @@ import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import TransactionsPage from './pages/TransactionsPage'
+import ImportPage from './pages/ImportPage'
 
 type AuthScreen = 'login' | 'register'
-type AuthenticatedScreen = 'overview' | 'transactions'
+type AuthenticatedScreen = 'overview' | 'transactions' | 'imports'
 
 function App() {
   const [authScreen, setAuthScreen] = useState<AuthScreen>('login')
@@ -47,6 +48,9 @@ function App() {
         />
       )
     }
+    if (authenticatedScreen === 'imports') {
+      return <ImportPage token={token} email={user.email} onBack={() => setAuthenticatedScreen('overview')} />
+    }
 
     return (
       <DashboardPage
@@ -55,6 +59,7 @@ function App() {
         isLoggingOut={isLoggingOut}
         onLogout={handleLogout}
         onShowTransactions={() => setAuthenticatedScreen('transactions')}
+        onShowImports={() => setAuthenticatedScreen('imports')}
       />
     )
   }

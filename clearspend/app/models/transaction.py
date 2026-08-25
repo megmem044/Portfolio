@@ -1,6 +1,6 @@
 """Describe how transaction records and their category link are stored."""
 
-from sqlalchemy import Column, Date, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Column, Date, ForeignKey, Index, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
@@ -10,6 +10,11 @@ from app.db.base import Base
 class Transaction(Base):
     # Table name is defined
     __tablename__ = "transactions"
+    __table_args__ = (
+        UniqueConstraint("owner_id", "fingerprint", name="uq_transaction_owner_fingerprint"),
+        Index("ix_transactions_owner_date", "owner_id", "date"),
+        Index("ix_transactions_owner_merchant", "owner_id", "merchant"),
+    )
 
     # Primary key column is defined
     id = Column(Integer, primary_key=True, index=True)
@@ -36,9 +41,11 @@ class Transaction(Base):
 
     # Transaction date is stored
     date = Column(Date, nullable=False, index=True)
+    fingerprint = Column(String(64), nullable=True, index=True)
 
     category_record = relationship("Category", back_populates="transactions")
     owner = relationship("User", back_populates="transactions")
+    source_row = relationship("TransactionImportRow", back_populates="transaction", uselist=False)
 
     @property
     def category(self) -> str:
