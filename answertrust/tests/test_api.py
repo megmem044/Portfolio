@@ -6,13 +6,21 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy import select
 
 from src.auth import create_token, create_user
-from src.api import app, get_evaluation_enqueuer, get_session
+from src.api import (
+    app,
+    evaluation_rate_limiter,
+    get_evaluation_enqueuer,
+    get_session,
+)
+from src.config import MAX_ANSWER_LENGTH, MAX_REQUEST_BODY_BYTES
 from src.api_client import AnswerTrustAPIClient
 from src.db import create_session_factory, session_scope
 from src.db_models import Base, UserRecord
 from src.evaluation_repository import EvaluationRepository
 from src.evaluator import evaluate_answer
 from src.models import Decision, EvaluationInput
+from src.job_queue import QueueSaturatedError
+from src.resource_limits import RateLimiter
 
 
 test_engine = create_engine(
@@ -145,6 +153,93 @@ def test_create_evaluation_rejects_missing_input():
     )
 
     assert response.status_code == 422
+
+
+def test_create_evaluation_rejects_oversized_answer():
+    response = client.post(
+        "/api/v1/evaluations",
+        json={
+            "question": "Is this supported?",
+            "paper_text": "RESULTS\nThe result is supported.",
+            "answer": "x" * (MAX_ANSWER_LENGTH + 1),
+        },
+    )
+    assert response.status_code == 422
+    assert response.json()["error"] == {
+        "code": "VALIDATION_ERROR", "message": "Invalid value for answer."
+    }
+
+
+def test_create_evaluation_rejects_oversized_request_body():
+    response = client.post(
+        "/api/v1/evaluations",
+        content=b"x" * (MAX_REQUEST_BODY_BYTES + 1),
+        headers={"content-type": "application/json"},
+    )
+    assert response.status_code == 413
+    assert response.json()["error"]["code"] == "REQUEST_TOO_LARGE"
+
+
+def test_create_evaluation_handles_malformed_json():
+    response = client.post(
+        "/api/v1/evaluations",
+        content=b'{"question":',
+        headers={"content-type": "application/json"},
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+def test_rate_limiter_rejects_requests_over_the_window_limit():
+    limiter = RateLimiter(limit=2, window_seconds=60)
+    assert limiter.allow("client") == (True, 0)
+    assert limiter.allow("client") == (True, 0)
+    allowed, retry_after = limiter.allow("client")
+    assert allowed is False
+    assert retry_after > 0
+
+
+def test_create_evaluation_returns_retry_after_when_rate_limited():
+    payload = {
+        "question": "Is this supported?",
+        "paper_text": "RESULTS\nThe result is supported.",
+        "answer": "The result is supported.",
+    }
+    original = app.dependency_overrides[get_evaluation_enqueuer]
+    app.dependency_overrides[get_evaluation_enqueuer] = lambda: (lambda _: None)
+    evaluation_rate_limiter.reset()
+    try:
+        for _ in range(evaluation_rate_limiter.limit):
+            assert client.post("/api/v1/evaluations", json=payload).status_code == 202
+        response = client.post("/api/v1/evaluations", json=payload)
+    finally:
+        evaluation_rate_limiter.reset()
+        app.dependency_overrides[get_evaluation_enqueuer] = original
+    assert response.status_code == 429
+    assert int(response.headers["retry-after"]) > 0
+    assert response.json()["error"]["code"] == "RATE_LIMITED"
+
+
+def test_create_evaluation_reports_queue_saturation():
+    def saturated_enqueue(evaluation_id):
+        raise QueueSaturatedError("full")
+
+    original = app.dependency_overrides[get_evaluation_enqueuer]
+    app.dependency_overrides[get_evaluation_enqueuer] = lambda: saturated_enqueue
+    try:
+        response = client.post(
+            "/api/v1/evaluations",
+            json={
+                "question": "Is this supported?",
+                "paper_text": "RESULTS\nThe result is supported.",
+                "answer": "The result is supported.",
+            },
+        )
+    finally:
+        app.dependency_overrides[get_evaluation_enqueuer] = original
+    assert response.status_code == 503
+    assert response.headers["retry-after"] == "30"
+    assert response.json()["error"]["code"] == "SERVICE_UNAVAILABLE"
 
 
 def test_get_evaluation_by_id():

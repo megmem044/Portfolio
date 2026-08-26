@@ -1,6 +1,6 @@
 # AnswerTrust
 
-**Last updated: August 17, 2026**
+**Last updated: August 25, 2026**
 
 AnswerTrust is a paper-grounded AI evaluation system. It decomposes an
 AI-generated answer into claims, retrieves relevant passages from a supplied
@@ -24,12 +24,13 @@ The target stack is:
 - Redis and a separate worker for asynchronous evaluation;
 - Docker Compose for reproducible local environments;
 - pytest and Playwright for unit, integration, and browser testing;
-- GitHub Actions for build and test automation;
+- a future CI workflow for build and test automation;
 - structured logging and operational metrics.
 
-This platform foundation is now implemented. Benchmark expansion, release
-preparation, and optional deployment remain in the roadmap. See
-[PROJECT_PLAN.md](PROJECT_PLAN.md) for the phased definitions of done.
+Most of this platform foundation is implemented. Continuous integration,
+benchmark expansion, release preparation, and optional deployment remain. See
+[the complete project reference](PROJECT_REFERENCE.md) for the verified
+file map, design rationale, implementation tradeoffs, and roadmap.
 
 ## Current status
 
@@ -44,7 +45,7 @@ The repository currently contains the verified web MVP:
 - reviewer and administrator authentication with protected actions;
 - structured logs, health checks, readiness checks, and persistent analytics;
 - a Docker Compose stack for React, FastAPI, PostgreSQL, Redis, and the worker;
-- GitHub Actions checks for backend, frontend, browser, and container builds;
+- local commands for backend, frontend, browser, and container verification;
 - local MiniLM embeddings for paraphrase-aware evidence retrieval;
 - academic section priors and keyword retrieval fallback;
 - confidence-gated NLI with deterministic fallback;
@@ -57,6 +58,27 @@ The repository currently contains the verified web MVP:
 
 React is the primary interface. Evaluation requests return immediately while a
 separate worker processes claims and the result page polls for status updates.
+
+### Key aspects
+
+- The supplied paper is the only evidence source; outside knowledge is never
+  silently treated as proof.
+- Every answer is decomposed into claims with section-labelled evidence and an
+  inspectable explanation.
+- MiniLM semantic retrieval and confidence-gated NLI are constrained by
+  deterministic academic rules and conservative fallback behavior.
+- Evaluation is asynchronous: the API persists and queues work, an RQ worker
+  performs inference, and the client polls persisted state.
+- Review-required cases enter an authenticated human workflow that preserves
+  the original system decision as an audit record.
+- SQLAlchemy repositories and Alembic migrations support easy local SQLite use
+  and a production-style PostgreSQL topology.
+- Structured logs, request IDs, health/readiness checks, metrics, analytics,
+  benchmarks, and browser/backend tests make behavior observable and testable.
+- Public resource boundaries cap body, question, paper, and answer size;
+  throttle evaluation bursts; and reject saturated worker queues explicitly.
+- Current benchmarks are regression sets, not evidence that the system can
+  autonomously validate scientific or clinical truth.
 
 ## Current architecture
 
@@ -150,13 +172,14 @@ and 100 provenance-labelled real-paper cases:
 | False-publish rate | 0% |
 | Human-review rate | 26.67% |
 
-The verified test run completed with 76 backend tests passing, one optional
-test skipped, and all 9 Playwright browser tests passing. The harder mixed
-benchmark intentionally exposes remaining conservative errors while retaining
-a zero false-publish rate. The lower accuracy relative to the earlier 100-case
-run reflects the addition of harder null-result, limitation, subgroup,
-confidence-interval, and paraphrase cases rather than a change to the earlier
-test set.
+The current backend verification completes with 82 tests passing and one
+optional PostgreSQL test skipped. The browser suite covers the primary
+evaluation, authentication, review, benchmark, and analytics workflows. The
+harder mixed benchmark intentionally exposes remaining conservative errors
+while retaining a zero false-publish rate. The lower accuracy relative to the
+earlier 100-case run reflects the addition of harder null-result, limitation,
+subgroup, confidence-interval, and paraphrase cases rather than a change to the
+earlier test set.
 
 ### Semantic retrieval benchmark
 
@@ -248,6 +271,17 @@ python -m scripts.create_user --email admin@example.com --role ADMIN
 Create reviewer accounts in the same way with `--role REVIEWER`. In a deployed
 environment, set `ANSWERTRUST_AUTH_SECRET` to a long random value before
 starting the API so signed sessions use a private secret.
+
+Evaluation submissions have explicit resource boundaries. By default, request
+bodies are capped at 1 MiB, questions at 2,000 characters, paper text at
+500,000 characters, and answers at 20,000 characters. A client may submit 30
+evaluations per 60-second window, and the Redis queue accepts a backlog of up
+to 100 jobs. Oversized, malformed, throttled, and queue-saturated requests use
+the standard JSON error envelope; throttled or saturated responses also include
+`Retry-After`. These values can be adjusted with the corresponding variables in
+`.env.example`. The built-in rate limiter is process-local, so a multi-instance
+deployment should enforce a shared limit at its gateway or replace it with a
+Redis-backed limiter.
 
 The API exposes two operational checks:
 
@@ -341,9 +375,10 @@ Stop the stack with `Ctrl+C`. To stop containers without deleting saved data:
 docker compose down
 ```
 
-GitHub Actions runs backend tests against PostgreSQL, builds and checks the
-React application, runs Playwright in Chromium, and verifies both container
-images on every push and pull request.
+Continuous integration is not checked into the repository yet. The intended
+workflow should run backend tests against PostgreSQL, build and lint the React
+application, run Playwright in Chromium, and verify both container images on
+pushes and pull requests.
 
 The NLI analysis reports incorrect or below-threshold examples, false
 entailments, false contradictions, and a confidence-threshold sweep.
@@ -374,5 +409,6 @@ validation.
 
 ## Database guide
 
-See [docs/database.md](docs/database.md) for SQLite and PostgreSQL setup,
-Alembic migrations, integration testing, and legacy data import instructions.
+See the [database modes and legacy import section](PROJECT_REFERENCE.md#database-modes-and-legacy-import)
+for SQLite and PostgreSQL setup, Alembic migrations, integration testing, and
+legacy data import instructions.

@@ -23,7 +23,17 @@ from src.db_models import EvaluationRecord, UserRecord
 from src.evaluation_repository import EvaluationRepository
 from src.models import ClaimLabel, Decision, EvaluationInput, EvaluationResult
 from src.job_queue import enqueue_evaluation
+from src.job_queue import QueueSaturatedError
 from src.observability import RequestObservabilityMiddleware, logger, metrics
+from src.config import (
+    EVALUATION_RATE_LIMIT,
+    EVALUATION_RATE_WINDOW_SECONDS,
+    MAX_ANSWER_LENGTH,
+    MAX_PAPER_LENGTH,
+    MAX_QUESTION_LENGTH,
+    MAX_REQUEST_BODY_BYTES,
+)
+from src.resource_limits import EvaluationResourceLimitMiddleware, RateLimiter
 
 
 app = FastAPI(title="AnswerTrust API", version="1.0.0")
@@ -39,6 +49,14 @@ app.add_middleware(
 # SQLite is the local fallback; DATABASE_URL can point this at PostgreSQL.
 engine = create_database_engine()
 SessionFactory = create_session_factory(engine)
+evaluation_rate_limiter = RateLimiter(
+    EVALUATION_RATE_LIMIT, EVALUATION_RATE_WINDOW_SECONDS
+)
+app.add_middleware(
+    EvaluationResourceLimitMiddleware,
+    max_body_bytes=MAX_REQUEST_BODY_BYTES,
+    limiter=evaluation_rate_limiter,
+)
 
 def get_session():
     """Provide one safe database session to an API request."""
@@ -53,11 +71,18 @@ def get_evaluation_enqueuer():
 @app.exception_handler(HTTPException)
 def handle_http_error(request: Request, error: HTTPException) -> JSONResponse:
     """Return the same error shape for expected API errors."""
+    codes = {
+        404: "NOT_FOUND",
+        413: "REQUEST_TOO_LARGE",
+        429: "RATE_LIMITED",
+        503: "SERVICE_UNAVAILABLE",
+    }
     return JSONResponse(
         status_code=error.status_code,
+        headers=error.headers,
         content={
             "error": {
-                "code": "NOT_FOUND" if error.status_code == 404 else "HTTP_ERROR",
+                "code": codes.get(error.status_code, "HTTP_ERROR"),
                 "message": str(error.detail),
             }
         },
@@ -85,9 +110,9 @@ def handle_validation_error(
 class EvaluationRequest(BaseModel):
     """Information required to evaluate an AI-generated answer."""
 
-    question: str = Field(min_length=3)
-    paper_text: str = Field(min_length=3)
-    answer: str = Field(min_length=3)
+    question: str = Field(min_length=3, max_length=MAX_QUESTION_LENGTH)
+    paper_text: str = Field(min_length=3, max_length=MAX_PAPER_LENGTH)
+    answer: str = Field(min_length=3, max_length=MAX_ANSWER_LENGTH)
 
 
 class ReviewRequest(BaseModel):
@@ -263,6 +288,14 @@ def create_evaluation(request: EvaluationRequest, session: Session = Depends(get
     session.commit()
     try:
         enqueue(evaluation_id)
+    except QueueSaturatedError as error:
+        repository.save_failure(evaluation_id, "The evaluation queue is full.", final=True)
+        session.commit()
+        raise HTTPException(
+            status_code=503,
+            detail="The evaluation queue is full. Try again later.",
+            headers={"Retry-After": "30"},
+        ) from error
     except Exception as error:
         repository.save_failure(evaluation_id, "The evaluation queue is unavailable.", final=True)
         session.commit()
