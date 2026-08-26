@@ -60,7 +60,28 @@ class TaskControllerTest {
     void returnsAnEmptyTaskList() throws Exception {
         mockMvc.perform(get("/api/tasks").header("Authorization", authorization))
             .andExpect(status().isOk())
+            .andExpect(header().exists("ETag"))
+            .andExpect(header().string("Cache-Control", "no-cache, must-revalidate, private"))
+            .andExpect(header().string("Vary", "Authorization"))
             .andExpect(content().json("[]"));
+    }
+
+    @Test
+    void returnsNotModifiedWhenTheAuthenticatedTaskListHasNotChanged() throws Exception {
+        String etag = mockMvc.perform(get("/api/tasks").header("Authorization", authorization))
+            .andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
+
+        mockMvc.perform(get("/api/tasks").header("Authorization", authorization).header("If-None-Match", etag))
+            .andExpect(status().isNotModified())
+            .andExpect(header().string("ETag", etag))
+            .andExpect(header().string("Cache-Control", "no-cache, must-revalidate, private"))
+            .andExpect(content().string(""));
+
+        mockMvc.perform(post("/api/tasks").header("Authorization", authorization).contentType("application/json")
+                .content("{\"title\":\"Changes representation\",\"priority\":\"LOW\"}"))
+            .andExpect(status().isCreated());
+        mockMvc.perform(get("/api/tasks").header("Authorization", authorization).header("If-None-Match", etag))
+            .andExpect(status().isOk()).andExpect(header().string("ETag", org.hamcrest.Matchers.not(etag)));
     }
 
     @Test
@@ -140,10 +161,12 @@ class TaskControllerTest {
 
     @Test
     void appliesSecurityHeadersAndOnlyAllowsConfiguredCorsOrigins() throws Exception {
-        mockMvc.perform(get("/api/tasks").header("Authorization", authorization))
+        mockMvc.perform(get("/api/tasks").secure(true).header("Authorization", authorization))
             .andExpect(status().isOk())
             .andExpect(header().string("X-Content-Type-Options", "nosniff"))
-            .andExpect(header().string("X-Frame-Options", "DENY"));
+            .andExpect(header().string("X-Frame-Options", "DENY"))
+            .andExpect(header().string("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"))
+            .andExpect(header().string("Strict-Transport-Security", org.hamcrest.Matchers.containsString("max-age=31536000")));
 
         mockMvc.perform(options("/api/tasks")
                 .header("Origin", "http://localhost:5173")

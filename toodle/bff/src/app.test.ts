@@ -79,7 +79,29 @@ test('browser correlation ID is preserved across the BFF', async () => {
   });
   assert.equal(response.headers.get('x-correlation-id'), 'browser-request-123');
   assert.equal(forwardedId, 'browser-request-123');
-  assert.equal(response.headers.get('access-control-expose-headers'), 'X-Correlation-Id');
+  assert.equal(response.headers.get('access-control-expose-headers'), 'X-Correlation-Id,ETag,Cache-Control');
+});
+
+test('forwards conditional GETs and preserves private-cache responses', async () => {
+  let condition: string | null = null;
+  const upstream: typeof fetch = async (_input, init) => {
+    condition = new Headers(init?.headers).get('if-none-match');
+    return new Response(null, { status: 304, headers: { ETag: '"tasks-v1"', 'Cache-Control': 'private, no-cache, must-revalidate', Vary: 'Authorization' } });
+  };
+  const response = await request(upstream, '/api/tasks', { headers: { Authorization: 'Bearer test-token', 'If-None-Match': '"tasks-v1"' } });
+  assert.equal(condition, '"tasks-v1"');
+  assert.equal(response.status, 304);
+  assert.equal(response.headers.get('etag'), '"tasks-v1"');
+  assert.match(response.headers.get('cache-control') ?? '', /private/);
+  assert.equal(await response.text(), '');
+});
+
+test('sets browser security headers at the public BFF boundary', async () => {
+  const response = await request(async () => Response.json([]), '/api/tasks', { headers: { Authorization: 'Bearer test-token' } });
+  assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(response.headers.get('x-frame-options'), 'DENY');
+  assert.equal(response.headers.get('content-security-policy'), "default-src 'none'; frame-ancestors 'none'; base-uri 'none'");
+  assert.match(response.headers.get('strict-transport-security') ?? '', /max-age=31536000/);
 });
 
 test('unsafe correlation ID is replaced before logging or forwarding', async () => {

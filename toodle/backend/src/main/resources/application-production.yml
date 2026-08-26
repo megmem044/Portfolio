@@ -6,6 +6,11 @@ logging:
     org.hibernate.SQL: WARN
     org.hibernate.orm.jdbc.bind: WARN
 
+# TLS terminates at the deployment edge. Honor its Forwarded/X-Forwarded-* headers so
+# Spring identifies the original scheme and emits HTTPS-only policies such as HSTS.
+server:
+  forward-headers-strategy: framework
+
 # Production logging and runtime settings for the Spring API.
 spring:
   datasource:
