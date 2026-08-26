@@ -24,11 +24,11 @@ The target stack is:
 - Redis and a separate worker for asynchronous evaluation;
 - Docker Compose for reproducible local environments;
 - pytest and Playwright for unit, integration, and browser testing;
-- a future CI workflow for build and test automation;
+- GitHub Actions for backend, frontend, browser, and container checks;
 - structured logging and operational metrics.
 
-Most of this platform foundation is implemented. Continuous integration,
-benchmark expansion, release preparation, and optional deployment remain. See
+Most of this platform foundation is implemented. Benchmark expansion, release
+preparation, and optional deployment remain. See
 [the complete project reference](PROJECT_REFERENCE.md) for the verified
 file map, design rationale, implementation tradeoffs, and roadmap.
 
@@ -45,7 +45,7 @@ The repository currently contains the verified web MVP:
 - reviewer and administrator authentication with protected actions;
 - structured logs, health checks, readiness checks, and persistent analytics;
 - a Docker Compose stack for React, FastAPI, PostgreSQL, Redis, and the worker;
-- local commands for backend, frontend, browser, and container verification;
+- GitHub Actions checks for backend, frontend, browser, and container builds;
 - local MiniLM embeddings for paraphrase-aware evidence retrieval;
 - academic section priors and keyword retrieval fallback;
 - confidence-gated NLI with deterministic fallback;
@@ -375,10 +375,12 @@ Stop the stack with `Ctrl+C`. To stop containers without deleting saved data:
 docker compose down
 ```
 
-Continuous integration is not checked into the repository yet. The intended
-workflow should run backend tests against PostgreSQL, build and lint the React
-application, run Playwright in Chromium, and verify both container images on
-pushes and pull requests.
+The `AnswerTrust CI` GitHub Actions workflow runs when AnswerTrust or its
+workflow file changes. It applies every Alembic migration to PostgreSQL and runs
+the backend suite, builds and lints the React application, runs Playwright in
+Chromium, and builds the Docker Compose images. Failed browser runs upload the
+Playwright report for seven days. A newer run on the same branch cancels an
+older in-progress run.
 
 The NLI analysis reports incorrect or below-threshold examples, false
 entailments, false contradictions, and a confidence-threshold sweep.

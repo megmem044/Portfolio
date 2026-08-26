@@ -1,15 +1,27 @@
-name: CI
+name: AnswerTrust CI
 
 on:
   push:
+    paths:
+      - "answertrust/**"
+      - ".github/workflows/answertrust-ci.yml"
   pull_request:
+    paths:
+      - "answertrust/**"
+      - ".github/workflows/answertrust-ci.yml"
+
+concurrency:
+  group: answertrust-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
   backend:
+    name: Backend and PostgreSQL
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: answertrust
@@ -40,7 +52,9 @@ jobs:
       - run: python -m pytest -q
 
   frontend:
+    name: Frontend and browser
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: answertrust/frontend
@@ -56,9 +70,19 @@ jobs:
       - run: npm run lint
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: answertrust-playwright-report
+          path: answertrust/frontend/playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
 
   containers:
+    name: Container builds
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: answertrust

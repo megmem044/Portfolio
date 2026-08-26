@@ -658,17 +658,25 @@ loading behavior.
 
 ### 9.8 CI and release automation
 
-There is currently **no checked-in `.github/workflows` or equivalent CI
-pipeline**. Backend tests, frontend lint/build, Playwright, and container builds
-are available as local commands, but the repository does not presently enforce
-them on commits or pull requests.
+The repository-level `.github/workflows/answertrust-ci.yml` file defines the
+`AnswerTrust CI` workflow. It runs for pushes and pull requests that change
+`answertrust/**` or the workflow itself. Runs on the same branch share a
+concurrency group, so a newer run cancels older work.
 
-This is the clearest gap between the earlier project plan and the implemented
-repository. A future CI unit should run Python tests, frontend lint/build,
-browser tests, migration checks, and image builds, with the PostgreSQL suite on
-a service container. Its advantage would be repeatable merge gates; its cost is
-runtime, browser/image caching complexity, and maintenance. CI must not be
-claimed as implemented until its workflow files exist and pass.
+| Job | What it checks |
+| --- | --- |
+| `Backend and PostgreSQL` | Starts PostgreSQL 17, installs Python 3.11 dependencies, applies all Alembic migrations, and runs pytest with both database URLs set to the test database. |
+| `Frontend and browser` | Installs Node 24 dependencies with `npm ci`, builds TypeScript/Vite, runs Oxlint, installs Chromium, and runs Playwright. A failed run uploads the Playwright report for seven days. |
+| `Container builds` | Runs `docker compose build`, which builds the shared API/worker image and the nginx frontend image. |
+
+Each job has a time limit and only read access to repository contents. Python
+and npm dependency caches are keyed from their lock/dependency files. The main
+advantage is that pull requests cannot rely only on a developer's machine.
+
+The workflow does not start Redis or run a real request through the complete
+API, queue, worker, database, and browser stack. It builds the containers but
+does not run a container smoke test. Dependency and image security scanning are
+also not included yet.
 
 ### 9.9 Documentation and legal material
 
@@ -1118,7 +1126,7 @@ benchmark and recording its model and policy setup.
 - The application does not verify source quality or compare outside evidence.
 - Rate limits and operational counters are process-local.
 - Full Redis/PostgreSQL/browser/container integration is not one default test.
-- No CI workflow currently enforces repository checks.
+- CI does not yet run a complete Redis/worker/browser smoke test or security scan.
 - Authentication lacks account recovery, token revocation, SSO, and managed
   identity integration.
 - Deployment, backups, TLS, alerting, and cost controls are not automated.
@@ -1127,17 +1135,15 @@ benchmark and recording its model and policy setup.
 
 ### Near-term priorities
 
-1. Add checked-in CI for backend tests, frontend lint/build, Playwright,
-   migrations, and container builds.
-2. Add a full-stack smoke test that uses PostgreSQL, Redis, API, worker, and
+1. Add a full-stack smoke test that uses PostgreSQL, Redis, API, worker, and
    frontend together.
-3. Expand independently reviewed real-paper cases and report agreement,
+2. Expand independently reviewed real-paper cases and report agreement,
    confidence intervals, category slices, and error analysis.
-4. Split API routes/schemas and frontend pages only when growth makes the
+3. Split API routes/schemas and frontend pages only when growth makes the
    current cohesive files hard to maintain.
-5. If horizontally deploying, replace process-local limiting/metrics with
+4. If horizontally deploying, replace process-local limiting/metrics with
    shared infrastructure and make queue admission atomic.
-6. Document deployment configuration, secrets, backups, rollback, monitoring,
+5. Document deployment configuration, secrets, backups, rollback, monitoring,
    and cost boundaries before a public release.
 
 ### Deferred until justified
