@@ -1,5 +1,7 @@
 # ClearSpend
 
+[![ClearSpend CI](https://github.com/megmem044/Portfolio/actions/workflows/clearspend-ci.yml/badge.svg)](https://github.com/megmem044/Portfolio/actions/workflows/clearspend-ci.yml)
+
 ClearSpend is a personal-finance data application built around a simple problem:
 bank exports are inconsistent, but financial records still need to be exact,
 traceable, and safe to process more than once.
@@ -8,6 +10,35 @@ The project combines a FastAPI service, PostgreSQL, and a React interface. A use
 can upload a CSV, map unfamiliar columns, inspect normalized rows and validation
 errors, review possible duplicates, and commit approved transactions. Every
 saved transaction keeps its link to the original file and row.
+
+## Key aspects
+
+- Built a streamed FastAPI/PostgreSQL import pipeline with staged validation,
+  deterministic normalization, source-row lineage, duplicate review,
+  transactional commits, and complete reconciliation.
+- Reduced measured peak Python memory for a generated 100,000-row workload from
+  126.85 MiB to 29.99 MiB through streaming, 1,000-row staging batches, and
+  paginated previews—a 76.4% reduction.
+- Measured native PostgreSQL `COPY` at approximately 66,108 rows/second for
+  10,000 generated rows: 87.8 times row-at-a-time insertion and 10.3 times
+  SQLAlchemy bulk execute in that run.
+- Prevented repeated and competing imports with SHA-256 fingerprints,
+  owner-scoped uniqueness, row locking, idempotent commits, and tested rollback.
+- Enforced count and money reconciliation with exact `Decimal`/`NUMERIC` values.
+- Implemented SQL aggregation and window-function analytics for monthly changes,
+  rolling averages, merchants, categories, largest transactions, and data quality.
+- Improved a representative PostgreSQL date query from 10.107 ms to 0.840 ms,
+  backed by reproducible benchmark and `EXPLAIN ANALYZE` scripts.
+- Maintained 80 backend tests on SQLite and PostgreSQL, including deliberate HTTP
+  contract coverage for authentication, owner hiding, conflicts, idempotency,
+  pagination, status codes, and content types.
+- Added GitHub Actions gates for Python checks, both database suites, an Alembic
+  migration round trip, frontend lint/type-checking, Vitest, and production build.
+- Documented the entire system in one canonical reference and a focused database
+  design guide covering files, choices, principles, advantages, and drawbacks.
+
+Measurements use generated data on the development machine and are reproducible
+benchmarks, not hardware-independent guarantees.
 
 ## Import pipeline
 
@@ -62,7 +93,7 @@ development machine:
   insertion and 10.3 times the throughput of SQLAlchemy bulk execute.
 - A PostgreSQL date-index benchmark improved a representative query from
   10.107 ms to 0.840 ms, a 12.03-times speedup.
-- The backend suite contains 73 tests and passes on both SQLite and PostgreSQL.
+- The backend suite contains 80 tests and passes on both SQLite and PostgreSQL.
 
 Timings vary by machine and database state. The repository includes the scripts
 used to reproduce the measurements.
@@ -107,6 +138,10 @@ npm run dev
 
 ## Verification and benchmarks
 
+GitHub Actions runs the backend suite with SQLite and PostgreSQL, validates a
+complete Alembic upgrade/downgrade cycle, runs Ruff checks, and enforces frontend
+lint, type-check, tests, and production build on every ClearSpend pull request.
+
 ```powershell
 python -m pytest
 python scripts/benchmark_import_pipeline.py --phase processing --sizes 1000 10000 100000
@@ -127,9 +162,9 @@ generated or anonymous records.
 
 ## Documentation
 
-- [Project plan](PROJECT_PLAN.md)
+- [Complete project reference](PROJECT_REFERENCE.md): canonical product,
+  architecture, file-by-file, design-choice, and tradeoff guide
 - [Import pipeline](docs/import-pipeline.md)
 - [Analytics](docs/analytics.md)
 - [PostgreSQL and performance](docs/postgresql.md)
-- [Architecture](docs/architecture.md)
-- [Product requirements](docs/product-requirements.md)
+- [Database design](docs/database-design.md)
